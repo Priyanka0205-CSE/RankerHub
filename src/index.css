@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;550;700;900&display=swap');
 
 @tailwind base;
@@ -86,3 +87,78 @@
 .bg-blob-blue-strong {
   background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 70%);
 }
+
+.font-logo {
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+@keyframes rotate-gradient {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rotating-gradient-border {
+  position: relative;
+  border-radius: 9999px;
+  z-index: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(226, 232, 240, 0.1);
+}
+
+.rotating-gradient-border::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  left: -50%;
+  top: -50%;
+  width: 200%;
+  height: 200%;
+  background-color: transparent;
+  background-image: conic-gradient(
+    from 0deg,
+    #7c3aed 0%,
+    #3b82f6 25%,
+    #ec4899 50%,
+    #3b82f6 75%,
+    #7c3aed 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: 0 0;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+  border-radius: 50%;
+}
+
+.rotating-gradient-border:hover::before {
+  opacity: 1;
+  animation: rotate-gradient 3s linear infinite;
+}
+
+.rotating-gradient-border::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 4px;
+  top: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  background: white;
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+
+.dark .rotating-gradient-border::after {
+  background: #070B16;
+}
+
+

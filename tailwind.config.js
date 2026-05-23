@@ -16,6 +16,7 @@ export default {
       },
       fontFamily: {
         sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
       },
       animation: {
         'blob': 'blob 7s infinite',

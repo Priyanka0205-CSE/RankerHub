@@ -11,7 +11,6 @@ import {
   Settings,
   LogOut,
   X,
-  TrendingUp,
   Info,
   HelpCircle,
   Award,
@@ -20,6 +19,7 @@ import {
 import { Github } from "../ui/Icons";
 import { sidebarLinks, systemBadges } from "../../constants";
 import LogoutConfirmModal from "../ui/LogoutConfirmModal";
+import logo from "../../assets/logo.png";
 
 const iconMap = {
   Home,
@@ -82,10 +82,10 @@ export const MobileSidebar = ({ isOpen, close }) => {
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/50">
                 <Link to="/" onClick={close} className="flex items-center gap-2.5">
-                  <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
-                    <TrendingUp className="w-4.5 h-4.5 text-white" />
+                  <div className="w-[34px] h-[34px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-900 border border-slate-800/50 shadow-md">
+                    <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
                   </div>
-                  <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight">
+                  <span className="font-montserrat font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight">
                     RankerHub
                   </span>
                 </Link>

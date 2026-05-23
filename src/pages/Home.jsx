@@ -15,6 +15,7 @@ import { Github } from "../components/ui/Icons";
 import { fadeUp, staggerContainer } from "../utils/motion";
 import GradientButton from "../components/ui/GradientButton";
 import Card from "../components/ui/Card";
+import logo from "../assets/logo.png";
 
 export const Home = () => {
   const features = [
@@ -63,55 +64,69 @@ export const Home = () => {
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blob-blue-strong pointer-events-none -z-10 animate-pulse-slow" />
 
       {/* Hero Section */}
-      <section className="py-20 md:py-28 px-6 max-w-6xl mx-auto text-center space-y-8 flex flex-col items-center">
+      <section className="py-20 md:py-28 px-6 max-w-6xl mx-auto">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={staggerContainer(0.1, 0.05)}
-          className="space-y-6 flex flex-col items-center"
+          className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 text-left"
         >
-          {/* Tagline Badge */}
-          <motion.span
-            variants={fadeUp()}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20"
-          >
-            🚀 The Developer Gamification Platform
-          </motion.span>
+          <div className="flex-1 space-y-6">
+            {/* Tagline Badge */}
+            <motion.span
+              variants={fadeUp()}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20"
+            >
+              🚀 The Developer Gamification Platform
+            </motion.span>
 
-          {/* Heading */}
-          <motion.h1
-            variants={fadeUp()}
-            className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.1] max-w-4xl text-slate-900 dark:text-white my-0"
-          >
-            Level Up Your Code. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500">
-              Claim Your Leaderboard Rank.
-            </span>
-          </motion.h1>
+            {/* Heading */}
+            <motion.h1
+              variants={fadeUp()}
+              className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.1] text-slate-900 dark:text-white my-0"
+            >
+              Level Up Your Code. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500">
+                Claim Your Leaderboard Rank.
+              </span>
+            </motion.h1>
 
-          {/* Subtitle */}
-          <motion.p
-            variants={fadeUp()}
-            className="text-base sm:text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl font-medium"
-          >
-            RankerHub tracks commits, streaks, and problem-solving to gamify your software development journey. Build habits, spot-light contributions, and earn badges.
-          </motion.p>
+            {/* Subtitle */}
+            <motion.p
+              variants={fadeUp()}
+              className="text-base sm:text-lg md:text-xl text-slate-500 dark:text-slate-400 font-medium"
+            >
+              RankerHub tracks commits, streaks, and problem-solving to gamify your software development journey. Build habits, spot-light contributions, and earn badges.
+            </motion.p>
 
-          {/* CTA Buttons */}
+            {/* CTA Buttons */}
+            <motion.div
+              variants={fadeUp()}
+              className="flex flex-col sm:flex-row gap-4 pt-4"
+            >
+              <Link to="/login">
+                <GradientButton className="w-full sm:w-auto flex items-center justify-center">
+                  Get Started <ArrowRight className="w-4 h-4 ml-1" />
+                </GradientButton>
+              </Link>
+              <Link to="/gitrank">
+                <GradientButton variant="secondary" className="w-full sm:w-auto">
+                  Explore GitRank
+                </GradientButton>
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* Big Circular Logo on the Right */}
           <motion.div
             variants={fadeUp()}
-            className="flex flex-col sm:flex-row gap-4 pt-4 justify-center"
+            className="flex-shrink-0"
           >
-            <Link to="/login">
-              <GradientButton className="w-full sm:w-auto flex items-center justify-center">
-                Get Started <ArrowRight className="w-4 h-4 ml-1" />
-              </GradientButton>
-            </Link>
-            <Link to="/gitrank">
-              <GradientButton variant="secondary" className="w-full sm:w-auto">
-                Explore GitRank
-              </GradientButton>
-            </Link>
+            <div className="rotating-gradient-border w-48 h-48 md:w-56 md:h-56 shadow-2xl transition-transform duration-300 hover:scale-105">
+              <div className="w-[calc(100%-8px)] h-[calc(100%-8px)] rounded-full overflow-hidden flex items-center justify-center bg-white dark:bg-slate-950 z-10">
+                <img src={logo} alt="RankerHub Big Logo" className="w-full h-full object-cover" />
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       </section>

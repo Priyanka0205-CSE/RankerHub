@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  TrendingUp,
   Code2,
   Sparkles,
   BookOpen,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import ThemeToggle from "../components/ui/ThemeToggle";
+import logo from "../assets/logo.png";
 
 // Reusable Community & Contributors Section Components
 import TeamCard from "../components/about/TeamCard";
@@ -76,10 +76,10 @@ export const About = () => {
       {/* Standalone Header */}
       <header className="w-full h-16 border-b border-slate-200/40 dark:border-slate-800/40 bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-50 transition-colors duration-300">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
-            <TrendingUp className="w-4.5 h-4.5 text-white" />
+          <div className="w-[34px] h-[34px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-md">
+            <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-600 dark:from-violet-400 to-blue-600 dark:to-blue-400 tracking-tight">
+          <span className="font-montserrat font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-600 dark:from-violet-400 to-blue-600 dark:to-blue-400 tracking-tight">
             RankerHub
           </span>
         </Link>
@@ -105,17 +105,27 @@ export const About = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="text-center space-y-4 max-w-2xl mx-auto"
+          className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 max-w-4xl mx-auto text-left"
         >
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-            About the Project
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-violet-600 dark:from-violet-400 via-indigo-500 dark:via-indigo-300 to-blue-600 dark:to-blue-400 my-0">
-            Developer Gamification
-          </h1>
-          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
-            RankerHub is a premium performance-driven dashboard and algorithmic arena built to track coding frequency, analyze Git activity, build consistency streaks, and verify developer progress.
-          </p>
+          <div className="flex-1 space-y-4">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+              About the Project
+            </span>
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-violet-600 dark:from-violet-400 via-indigo-500 dark:via-indigo-300 to-blue-600 dark:to-blue-400 my-0">
+              Developer Gamification
+            </h1>
+            <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">
+              RankerHub is a premium performance-driven dashboard and algorithmic arena built to track coding frequency, analyze Git activity, build consistency streaks, and verify developer progress.
+            </p>
+          </div>
+          
+          <div className="flex-shrink-0">
+            <div className="rotating-gradient-border w-48 h-48 md:w-56 md:h-56 shadow-2xl transition-transform duration-300 hover:scale-105">
+              <div className="w-[calc(100%-8px)] h-[calc(100%-8px)] rounded-full overflow-hidden flex items-center justify-center bg-white dark:bg-[#070B16] z-10">
+                <img src={logo} alt="RankerHub Big Logo" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Project Description & Modules */}

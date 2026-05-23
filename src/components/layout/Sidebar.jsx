@@ -12,7 +12,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   Info,
   HelpCircle,
   Award,
@@ -21,6 +20,7 @@ import {
 import { Github } from "../ui/Icons";
 import { sidebarLinks, systemBadges } from "../../constants";
 import LogoutConfirmModal from "../ui/LogoutConfirmModal";
+import logo from "../../assets/logo.png";
 
 const iconMap = {
   Home,
@@ -67,8 +67,8 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
         {/* Sidebar Header / Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/50">
           <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <TrendingUp className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-900 border border-slate-800/50 shadow-md">
+              <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
             </div>
             <AnimatePresence>
               {!isCollapsed && (
@@ -76,7 +76,7 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  className="font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight"
+                  className="font-montserrat font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight"
                 >
                   RankerHub
                 </motion.span>

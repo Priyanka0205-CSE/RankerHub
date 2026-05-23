@@ -1,8 +1,8 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { TrendingUp } from "lucide-react";
 import { Github } from "../ui/Icons";
 import ThemeToggle from "../ui/ThemeToggle";
+import logo from "../../assets/logo.png";
 
 export const PublicNavbar = () => {
   const location = useLocation();
@@ -21,10 +21,10 @@ export const PublicNavbar = () => {
       <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-2.5">
-          <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
-            <TrendingUp className="w-4.5 h-4.5 text-white" />
+          <div className="w-[50px] h-[50px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-md">
+            <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-blue-500 tracking-tight">
+          <span className="font-montserrat font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-blue-500 tracking-tight">
             RankerHub
           </span>
         </Link>
