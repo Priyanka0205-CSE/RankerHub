@@ -161,4 +161,22 @@
   background: #070B16;
 }
 
+.font-bruno {
+  font-family: "Bruno Ace SC", sans-serif;
+}
 
+.font-medieval {
+  font-family: "MedievalSharp", cursive;
+}
+
+.font-caesar {
+  font-family: "Caesar Dressing", system-ui;
+}
+
+.font-mystery {
+  font-family: "Mystery Quest", system-ui;
+}
+
+.font-sedgwick {
+  font-family: "Sedgwick Ave Display", cursive;
+}

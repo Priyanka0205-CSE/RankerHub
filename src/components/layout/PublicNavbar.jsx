@@ -24,7 +24,7 @@ export const PublicNavbar = () => {
           <div className="w-[50px] h-[50px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-md">
             <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-montserrat font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-blue-500 tracking-tight">
+          <span className="font-caesar text-2xl tracking-widest text-slate-900 dark:text-white">
             RankerHub
           </span>
         </Link>
