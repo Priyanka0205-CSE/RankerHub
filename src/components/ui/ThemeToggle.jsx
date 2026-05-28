@@ -4,10 +4,10 @@ import { motion } from "framer-motion";
 import { useTheme } from "../../hooks/useTheme";
 
 export const ThemeToggle = ({ className = "" }) => {
-  const { setTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
-  const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
+  const handleToggle = () => {
+    toggleTheme();
   };
 
   return (
