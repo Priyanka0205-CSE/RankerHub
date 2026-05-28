@@ -1,0 +1,95 @@
+name: Quality & Formatting Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  lint-and-format:
+    name: Code & Markdown Linting
+    runs-on: ubuntu-latest
+    if: github.event_name != 'issues'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prettier Format Check
+        run: npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json,md}" || true
+
+      - name: Markdown Lint
+        uses: DavidAnson/github-format-markdown@v1
+        with:
+          inputs: '**/*.md'
+
+      - name: Spell Check
+        uses: streetsidesoftware/cspell-action@v6
+        with:
+          files: 'src/**/*.{js,jsx,ts,tsx,css,md}'
+          inline_options: '--no-progress --no-summary'
+
+  duplicate-issue-check:
+    name: Duplicate Issue Detection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+    steps:
+      - name: Check for duplicate issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue.title;
+            const issueNumber = context.payload.issue.number;
+
+            // Strip prefix tags (like [Bug], etc.) to get clean terms for search
+            const cleanTitle = title.replace(/^\[.*?\]\s*:\s*/, '').trim();
+
+            if (cleanTitle.length < 5) return;
+
+            const query = `repo:${context.repo.owner}/${context.repo.repo} is:issue state:open "${cleanTitle.replace(/"/g, '')}"`;
+            console.log(`Searching duplicate issues with query: ${query}`);
+
+            try {
+              const searchResults = await github.rest.search.issuesAndPullRequests({
+                q: query
+              });
+
+              const duplicates = searchResults.data.items.filter(item => item.number !== issueNumber);
+              if (duplicates.length > 0) {
+                let duplicateLinks = duplicates.map(item => `- [#${item.number}](${item.html_url}) - ${item.title}`).join('\n');
+                let warningMessage = `### ⚠️ Potential Duplicate Issue Detected ⚠️\n\n` +
+                  `Hello @${context.payload.issue.user.login},\n\n` +
+                  `Our automated system has detected one or more existing open issues that seem very similar to this one:\n\n` +
+                  `${duplicateLinks}\n\n` +
+                  `**Please review the issues listed above:**\n` +
+                  `- If this issue is indeed a duplicate, please close this issue and join the discussion in the original one.\n` +
+                  `- If this is a different issue, you can safely ignore this warning. A maintainer will review it soon.\n\n` +
+                  `Thank you for helping us keep the RankerHub tracker clean and organized! 🌟`;
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: warningMessage
+                });
+                console.log(`Found ${duplicates.length} potential duplicate issues.`);
+              } else {
+                console.log('No duplicate issues found.');
+              }
+            } catch (error) {
+              console.log('Error searching for duplicate issues: ', error.message);
+            }

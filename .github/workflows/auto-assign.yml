@@ -6,29 +6,87 @@ on:
 
 permissions:
   pull-requests: write
+  issues: write
+  contents: read
 
 jobs:
   auto-assign:
     name: Auto Assign Reviewer
     runs-on: ubuntu-latest
     steps:
-      - name: Request Reviewer
+      - name: Request Reviewer and Assignee
         uses: actions/github-script@v7
         with:
           script: |
             const prAuthor = context.payload.pull_request.user.login;
-            if (prAuthor !== 'indresh404') {
-              try {
+            const prNumber = context.payload.pull_request.number;
+
+            try {
+              // 1. Fetch CODEOWNERS content
+              const contentResponse = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: '.github/CODEOWNERS'
+              });
+              
+              const codeownersContent = Buffer.from(contentResponse.data.content, 'base64').toString('utf-8');
+              console.log('CODEOWNERS Content retrieved successfully.');
+
+              // 2. Parse CODEOWNERS to extract unique usernames
+              const usernames = new Set();
+              const lines = codeownersContent.split('\n');
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                
+                // Find all @usernames
+                const matches = trimmed.match(/@[a-zA-Z0-9\-]+/g);
+                if (matches) {
+                  for (const match of matches) {
+                    usernames.add(match.substring(1)); // Remove '@'
+                  }
+                }
+              }
+
+              const reviewersList = Array.from(usernames);
+              console.log(`Parsed reviewers: ${reviewersList.join(', ')}`);
+
+              // 3. Filter out the PR author
+              const eligibleReviewers = reviewersList.filter(reviewer => reviewer !== prAuthor);
+              
+              // 4. Assign default maintainer (e.g., indresh404)
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                assignees: ['indresh404']
+              });
+              console.log("Assigned PR to indresh404");
+
+              // 5. Select reviewer(s) randomly from CODEOWNERS
+              if (eligibleReviewers.length > 0) {
+                const randomReviewer = eligibleReviewers[Math.floor(Math.random() * eligibleReviewers.length)];
                 await github.rest.pulls.requestReviewers({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  pull_number: context.issue.number,
-                  reviewers: ['indresh404']
+                  pull_number: prNumber,
+                  reviewers: [randomReviewer]
                 });
-                console.log("Successfully requested review from indresh404");
-              } catch (error) {
-                console.log("Failed to assign reviewer: ", error.message);
+                console.log(`Requested review from random reviewer: ${randomReviewer}`);
+              } else {
+                // Fallback to indresh404 if no other reviewers are available
+                if (prAuthor !== 'indresh404') {
+                  await github.rest.pulls.requestReviewers({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: prNumber,
+                    reviewers: ['indresh404']
+                  });
+                  console.log("Requested review from indresh404 (fallback)");
+                } else {
+                  console.log("PR author is indresh404, skipping review request.");
+                }
               }
-            } else {
-              console.log("PR author is indresh404, skipping review request.");
+            } catch (error) {
+              console.log("Failed to complete auto-assignment: ", error.message);
             }

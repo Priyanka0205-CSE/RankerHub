@@ -1,0 +1,73 @@
+name: Triage Automation
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue Triage
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.issue.number;
+            const creator = context.payload.issue.user.login;
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              labels: ['gssoc26', "NSoC'26", 'needs-review']
+            });
+
+            // Thank user and notify maintainers
+            const commentBody = `### Thank you for opening this issue, @${creator}! 🚀\n\n` +
+              `A maintainer (@indresh404) has been notified and will triage this issue soon. ` +
+              `In the meantime, please make sure you have checked for duplicates and provided all required details.\n\n` +
+              `Happy contributing! 🌟`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: commentBody
+            });
+
+      - name: Pull Request Triage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const creator = context.payload.pull_request.user.login;
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['gssoc26', "NSoC'26", 'pending-review']
+            });
+
+            // Thank contributor
+            const commentBody = `### Thank you for contributing, @${creator}! 🚀\n\n` +
+              `Your pull request has been received and labeled for review. ` +
+              `Maintainers will review your PR soon.\n\n` +
+              `Please ensure all CI tests pass. If you have any questions, feel free to ask here!`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: commentBody
+            });

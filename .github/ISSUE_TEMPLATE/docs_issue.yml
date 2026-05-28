@@ -1,0 +1,43 @@
+name: "📚 Documentation Issue"
+description: "Suggest improvements, fixes, or new additions to documentation"
+title: "[Docs]: "
+labels: ["documentation", "gssoc26", "NSoC'26", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping us keep our documentation accurate and friendly!
+  - type: textarea
+    id: docs-problem
+    attributes:
+      label: "What needs to be updated?"
+      description: "Explain what part of the documentation is missing, incorrect, or could be improved."
+      placeholder: "e.g., The Firebase setup guide in CONTRIBUTING.md has an outdated link for GitHub OAuth config..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-changes
+    attributes:
+      label: "Proposed Changes"
+      description: "A description of the changes you would like to make or see."
+      placeholder: "e.g., Update step 5 in the Firebase setup guide with the correct URL..."
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Screenshots/Media"
+      description: "If applicable, add screenshots showing formatting errors, typos, or proposed changes."
+      placeholder: "Drag and drop or paste images here"
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklists
+    attributes:
+      label: "Before submitting"
+      description: "Please check all of the following requirements."
+      options:
+        - label: "I have read the [Contributing Guidelines](https://github.com/indresh404/RankerHub/blob/main/docs/CONTRIBUTING.md)"
+          required: true
+        - label: "I have checked for duplicate documentation issues."
+          required: true

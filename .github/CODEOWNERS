@@ -1,0 +1,13 @@
+# CODEOWNERS
+# For more info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files:
+* @indresh404
+
+# Documentation files:
+/docs/ @indresh404
+/*.md @indresh404
+
+# GitHub Actions workflows and configs:
+/.github/workflows/ @indresh404
+/.github/ @indresh404

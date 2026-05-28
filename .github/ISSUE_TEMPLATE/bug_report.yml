@@ -1,0 +1,65 @@
+name: "🐛 Bug Report"
+description: "Report a bug to help us improve RankerHub"
+title: "[Bug]: "
+labels: ["bug", "gssoc26", "NSoC'26", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please follow the contribution guidelines and check for duplicate issues first.
+  - type: textarea
+    id: describe-bug
+    attributes:
+      label: "Describe the bug"
+      description: "A clear and concise description of what the bug is."
+      placeholder: "e.g., When clicking the login button, the app hangs..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: "Steps to reproduce"
+      description: "Explain how we can reproduce this bug. Include a code sample or link if relevant."
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: "Expected behavior"
+      description: "A clear and concise description of what you expected to happen."
+      placeholder: "e.g., The login modal should open and allow GitHub authentication."
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Screenshots/Videos"
+      description: "If applicable, add screenshots or video recordings to help explain your problem."
+      placeholder: "Drag and drop or paste images here"
+    validations:
+      required: false
+  - type: textarea
+    id: system-info
+    attributes:
+      label: "System Information"
+      description: "Operating system, browser name/version, and Node/npm version."
+      placeholder: "e.g., Windows 11, Chrome v120, Node.js v20.10.0"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklists
+    attributes:
+      label: "Before submitting"
+      description: "Please check all of the following requirements."
+      options:
+        - label: "I have read the [Contributing Guidelines](https://github.com/indresh404/RankerHub/blob/main/docs/CONTRIBUTING.md)"
+          required: true
+        - label: "I have checked for duplicate issues."
+          required: true
+        - label: "This is a bug that can be reproduced consistently."
+          required: true

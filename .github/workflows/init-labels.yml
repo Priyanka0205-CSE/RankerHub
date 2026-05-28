@@ -1,0 +1,67 @@
+name: Initialize Repository Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  issues: write
+
+jobs:
+  init-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              { name: 'good first issue', color: '7057ff', description: 'Good for newcomers' },
+              { name: 'beginner friendly', color: '0052cc', description: 'Perfect for first-time contributors' },
+              { name: 'documentation', color: '0075ca', description: 'Improvements or additions to documentation' },
+              { name: 'bug', color: 'd73a4a', description: "Something isn't working" },
+              { name: 'enhancement', color: 'a2eeef', description: 'New feature or request' },
+              { name: 'frontend', color: '5319e7', description: 'Frontend related changes (HTML/CSS/JS/React)' },
+              { name: 'backend', color: '1d76db', description: 'Backend/Firebase related changes' },
+              { name: 'urgent', color: 'e11d21', description: 'Requires immediate attention' },
+              { name: 'duplicate', color: 'cfd3d7', description: 'This issue or PR already exists' },
+              { name: 'invalid', color: 'e6e6e6', description: "This doesn't seem right" },
+              { name: 'help wanted', color: '008672', description: 'Extra attention is needed' },
+              { name: 'gssoc26', color: 'ff9900', description: 'GirlScript Summer of Code 2026' },
+              { name: "NSoC'26", color: 'ff007f', description: 'NSoC 2026' },
+              { name: 'pending-review', color: 'fbca04', description: 'PR is pending review' },
+              { name: 'needs-review', color: 'fbca04', description: 'Issue needs review' },
+              { name: 'ready-to-merge', color: '0e8a16', description: 'All checks passed, ready to be merged' }
+            ];
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+                console.log(`Created label: ${label.name}`);
+              } catch (error) {
+                if (error.status === 422) {
+                  try {
+                    await github.rest.issues.updateLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label.name,
+                      color: label.color,
+                      description: label.description
+                    });
+                    console.log(`Updated label: ${label.name}`);
+                  } catch (updateError) {
+                    console.log(`Failed to update label ${label.name}: ${updateError.message}`);
+                  }
+                } else {
+                  console.log(`Failed to create label ${label.name}: ${error.message}`);
+                }
+              }
+            }

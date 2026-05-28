@@ -2,7 +2,6 @@ name: CI Checks
 
 on:
   pull_request:
-    branches: [ main ]
   push:
     branches: [ main ]
 
@@ -66,3 +65,28 @@ jobs:
 
       - name: Build Application
         run: npm run build
+
+  mark-ready:
+    name: Mark Ready to Merge
+    needs: [lint, test, build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Add ready-to-merge label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['ready-to-merge']
+              });
+              console.log('Successfully added ready-to-merge label.');
+            } catch (error) {
+              console.log('Error adding label: ', error.message);
+            }

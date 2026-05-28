@@ -1,0 +1,33 @@
+# Labeler Configuration
+# This configuration file is used by actions/labeler to automatically apply labels to PRs based on modified files.
+# For more info: https://github.com/actions/labeler
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**'
+          - 'index.html'
+          - 'postcss.config.js'
+          - 'tailwind.config.js'
+          - 'vite.config.js'
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'firestore.rules'
+          - 'firebase.json'
+          - '.firebaserc'
+
+code:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*.js'
+          - 'src/**/*.jsx'
+          - 'src/**/*.ts'
+          - 'src/**/*.tsx'

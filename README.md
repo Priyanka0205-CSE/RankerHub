@@ -1,5 +1,13 @@
 # RankerHub 🚀
 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/indresh404/RankerHub/pulls)
+[![GSSoC 2026](https://img.shields.io/badge/GSSoC-2026-orange?style=flat-square)](https://gssoc.girlscript.tech/)
+[![NSoC 2026](https://img.shields.io/badge/NSoC-2026-blueviolet?style=flat-square)](https://nsoc.github.io/)
+[![GitHub license](https://img.shields.io/github/license/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/issues)
+[![GitHub forks](https://img.shields.io/github/forks/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/network/members)
+
 RankerHub is a developer ranking and coding platform that helps students and developers track GitHub activity, coding performance, streaks, achievements, and leaderboard rankings in one place.
 
 ---

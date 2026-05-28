@@ -1,0 +1,29 @@
+# Workflow to mark stale issues and pull requests after 20 days of inactivity and close them after 7 more days.
+# For more info: https://github.com/actions/stale
+
+name: Mark stale issues and pull requests
+
+on:
+  schedule:
+    - cron: '30 1 * * *' # Run daily
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed in 7 days if no further activity occurs. Thank you for your contributions!'
+          stale-pr-message: 'This pull request has been automatically marked as stale because it has not had recent activity. It will be closed in 7 days if no further activity occurs. Thank you for your contributions!'
+          days-before-stale: 20
+          days-before-close: 7
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          exempt-pr-labels: 'keep-open,pinned,security'
+          exempt-issue-labels: 'keep-open,pinned,security'

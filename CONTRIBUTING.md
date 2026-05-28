@@ -2,13 +2,13 @@
 
 First off, thank you for taking the time to contribute! Contributions make the open-source community an amazing place to learn, inspire, and create. Any contribution you make to RankerHub is **greatly appreciated**.
 
-This project is part of open-source programs like **GSSoC (GirlScript Summer of Code)**. Please follow the guidelines below to ensure a smooth contribution process.
+This project is part of open-source programs like **GSSoC (GirlScript Summer of Code) 2026** and **NSoC 2026**. Please follow the guidelines below to ensure a smooth contribution process.
 
 ---
 
 ## 📋 Code of Conduct
 
-Please maintain a respectful, welcoming, and inclusive environment. Be helpful to other contributors and follow standard open-source collaboration practices.
+Please maintain a respectful, welcoming, and inclusive environment. Be helpful to other contributors and follow standard open-source collaboration practices. Review our full [Code of Conduct](CODE_OF_CONDUCT.md) for more details.
 
 ---
 
@@ -16,7 +16,7 @@ Please maintain a respectful, welcoming, and inclusive environment. Be helpful t
 
 ### 1. Prerequisites
 Ensure you have the following installed on your local machine:
-- [Node.js](https://nodejs.org/) (v18.0.0 or higher recommended)
+- [Node.js](https://nodejs.org/) (v20.0.0 or higher recommended)
 - [Git](https://git-scm.com/)
 
 ### 2. Fork & Clone
@@ -97,14 +97,17 @@ Write clear and descriptive commit messages following the semantic commit patter
 
 ---
 
-## 🚀 How to Contribute (GSSoC Rules)
+## 🚀 How to Contribute (GSSoC / NSoC Rules)
 
 1. **Find an Issue**: Search the [Issues](https://github.com/indresh404/RankerHub/issues) tab for open issues.
 2. **Request Assignment**: Comment on the issue stating that you'd like to work on it. Wait for a project maintainer to assign it to you before starting work.
+   - Please do not work on issues that are already assigned to someone else.
+   - All PRs submitted without an assigned issue will not be merged.
 3. **Submit a Pull Request**:
    - Once your changes are complete, commit and push them to your fork.
    - Go to the original RankerHub repository and click **New Pull Request**.
    - Fill out the PR template completely: explain what changes you made and link the issue it resolves (e.g. `Closes #12`).
    - Ensure there are no merge conflicts and that your build passes.
+   - Be patient! Maintainers will review and merge your PR.
 
 Thank you for contributing to RankerHub! 🌟

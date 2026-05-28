@@ -1,0 +1,50 @@
+name: Welcome Contributor
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check and Welcome
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.sender.login;
+            const isIssue = !!context.payload.issue;
+            const creatorField = isIssue ? 'issue' : 'pull_request';
+            const number = context.payload[creatorField].number;
+
+            // Fetch previous contributions by the user in this repo
+            const issuesResponse = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} author:${author}`
+            });
+
+            // Since this issue/PR is already created, the count will be at least 1
+            if (issuesResponse.data.total_count === 1) {
+              let welcomeMessage = `## Welcome to RankerHub, @${author}! 🎉\n\n` +
+                `Thank you for opening your very first ${isIssue ? 'issue' : 'pull request'} in this repository! We are excited to have you in our community. \n\n` +
+                `### 🔍 Review Process:\n` +
+                `- **Issues**: A maintainer will check the description and assign it to you if appropriate. Please wait for assignment before working!\n` +
+                `- **Pull Requests**: Code checks will run automatically. Maintainers will review your changes and provide feedback shortly.\n\n` +
+                `⭐ **Love the project?** Give us a star to show your support! It means a lot to us.\n\n` +
+                `If you have any questions, feel free to ask here. Happy coding! 💻✨`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: number,
+                body: welcomeMessage
+              });
+              console.log(`Welcomed first-time contributor: ${author}`);
+            } else {
+              console.log(`Contributor ${author} is a returning contributor, skipping welcome.`);
+            }

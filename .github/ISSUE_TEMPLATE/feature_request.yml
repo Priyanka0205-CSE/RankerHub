@@ -1,0 +1,53 @@
+name: "💡 Feature Request"
+description: "Suggest a new feature or improvement for RankerHub"
+title: "[Feature]: "
+labels: ["enhancement", "gssoc26", "NSoC'26", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a great idea for RankerHub? Share it with us! Please check if the feature has already been proposed, and feel free to discuss major proposals in GitHub Discussions first.
+  - type: textarea
+    id: problem-relation
+    attributes:
+      label: "Is your feature request related to a problem?"
+      description: "A clear and concise description of what the problem is. (e.g., I'm frustrated when...)"
+      placeholder: "e.g., It is hard to find users from a specific university..."
+    validations:
+      required: false
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: "Describe the solution you'd like"
+      description: "A clear and concise description of what you want to happen."
+      placeholder: "e.g., Add a search filter on the leaderboard page to filter users by college name."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Describe alternatives you've considered"
+      description: "A clear and concise description of any alternative solutions or features you've considered."
+      placeholder: "e.g., Adding a tag next to the username instead of a filter..."
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Mockups/Screenshots"
+      description: "If applicable, add visual diagrams, mockups, or screenshots to help explain your idea."
+      placeholder: "Drag and drop or paste images here"
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklists
+    attributes:
+      label: "Before submitting"
+      description: "Please check all of the following requirements."
+      options:
+        - label: "I have read the [Contributing Guidelines](https://github.com/indresh404/RankerHub/blob/main/docs/CONTRIBUTING.md)"
+          required: true
+        - label: "I have checked for duplicate feature requests."
+          required: true
+        - label: "I have discussed this idea in [Discussions](https://github.com/indresh404/RankerHub/discussions) (especially if it is a major feature)."
+          required: false
