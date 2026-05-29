@@ -47,7 +47,7 @@ export const Home = () => {
     },
     {
       title: "RankHer",
-      description: "A specialized spotlight ranking and community to support and showcase female software engineers.",
+      description:"A spotlight ranking and community to support female software engineers.",
       icon: Sparkles,
       color: "text-pink-500 bg-pink-500/10 border-pink-500/20",
       accent: "from-pink-500/20 via-rose-500/10 to-transparent",
