@@ -1,16 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Search, Menu, X, Check, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "../ui/ThemeToggle";
 import { mockNotifications } from "../../data/activities";
 import { useAuth } from "../../context/AuthContext";
+import { searchLeaderboard } from "../../utils/searchUtils";
 
 export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   const { user, userData } = useAuth();
   const [notifications, setNotifications] = useState(mockNotifications);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchRef = useRef(null);
   const greeting = (() => {
     const hours = new Date().getHours();
     if (hours < 12) return "Good morning";
@@ -20,11 +24,26 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   const notificationRef = useRef(null);
   const navigate = useNavigate();
 
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const searchResults = useMemo(() => {
+    if (!hasSearchQuery) return [];
+    return searchLeaderboard(searchQuery).slice(0, 5);
+  }, [hasSearchQuery, searchQuery]);
+
+  const handleSearchChange = (e) => {
+    const nextQuery = e.target.value;
+    setSearchQuery(nextQuery);
+    setShowSearchResults(nextQuery.trim().length > 0);
+  };
+
   // Close notifications dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -44,14 +63,113 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Mock navigation to dashboard or search page
-      navigate(`/dashboard?search=${encodeURIComponent(searchQuery)}`);
+      setIsMobileSearchOpen(false);
+      setShowSearchResults(false);
+      // Navigate to GitRank page with search query
+      navigate(`/gitrank?search=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery("");
     }
   };
 
+  const handleSearchResultClick = (user) => {
+    setSearchQuery("");
+    setShowSearchResults(false);
+    // Navigate to user profile or GitRank with username filter
+    navigate(`/gitrank?search=${encodeURIComponent(user.username)}`);
+  };
+
   return (
-    <nav className="sticky top-0 z-30 h-16 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md shadow-sm transition-all duration-300 px-4 md:px-6 flex items-center justify-between">
+    <nav className="sticky top-0 z-30 h-16 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md shadow-sm transition-all duration-300 px-4 md:px-6 flex items-center justify-between relative">
       
+      {/* Mobile Search Overlay */}
+      <AnimatePresence>
+        {isMobileSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute inset-0 bg-white dark:bg-slate-950 px-4 flex items-center gap-3 z-50 md:hidden"
+          >
+            <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+              <Search className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search leaderboard, focus, or challenges..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                autoFocus
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
+              />
+              
+              {/* Mobile Search Results Dropdown */}
+              <AnimatePresence>
+                {showSearchResults && searchResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full mt-2 left-0 right-0 rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-50"
+                  >
+                    <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
+                      {searchResults.map((user) => (
+                        <button
+                          key={user.username}
+                          type="button"
+                          onClick={() => {
+                            handleSearchResultClick(user);
+                            setIsMobileSearchOpen(false);
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3"
+                        >
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-8 h-8 rounded-lg object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              @{user.username} • {user.language}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* View All Results */}
+                    {searchQuery.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSearchSubmit(new Event('submit'));
+                          setIsMobileSearchOpen(false);
+                        }}
+                        className="w-full px-4 py-3 text-sm text-violet-600 dark:text-violet-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold transition-colors border-t border-slate-100 dark:border-slate-800"
+                      >
+                        View all results
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileSearchOpen(false);
+                setSearchQuery("");
+              }}
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Left side: Mobile Toggle & Greeting */}
       <div className="flex items-center gap-3">
         <button
@@ -77,21 +195,78 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
       </div>
 
       {/* Middle: Search bar */}
-      <form onSubmit={handleSearchSubmit} className="max-w-xs md:max-w-md w-full mx-4 relative hidden md:block">
-        <Search className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+      <form onSubmit={handleSearchSubmit} className="max-w-xs md:max-w-md w-full mx-4 relative hidden md:block" ref={searchRef}>
+        <Search className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 z-10" />
         <input
           type="text"
           placeholder="Search leaderboard, languages or challenges..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
         />
+        
+        {/* Search Results Dropdown */}
+        <AnimatePresence>
+          {showSearchResults && searchResults.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="absolute top-full mt-2 w-full rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-50"
+            >
+              <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
+                {searchResults.map((user) => (
+                  <button
+                    key={user.username}
+                    type="button"
+                    onClick={() => handleSearchResultClick(user)}
+                    className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-3 group"
+                  >
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        @{user.username} • {user.language} • #{user.rank}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold text-violet-600 dark:text-violet-400">
+                        {user.points} pts
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* View All Results */}
+              {searchQuery.trim() && (
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="w-full px-4 py-3 text-sm text-violet-600 dark:text-violet-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold transition-colors border-t border-slate-100 dark:border-slate-800"
+                >
+                  View all results for "{searchQuery}"
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </form>
 
       {/* Right side: Actions, Theme, Notifications, Profile */}
       <div className="flex items-center gap-3">
         {/* Search toggle for small screens */}
-        <button className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition cursor-pointer">
+        <button 
+          onClick={() => setIsMobileSearchOpen(true)}
+          className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+        >
           <Search className="w-5 h-5" />
         </button>
 

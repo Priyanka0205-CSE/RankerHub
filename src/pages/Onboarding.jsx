@@ -47,6 +47,7 @@ export const Onboarding = () => {
   const [collegeSearch, setCollegeSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState("");
   const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
+  const [customCollege, setCustomCollege] = useState("");
   const filteredColleges = useMemo(() => {
     if (collegeSearch.trim() === "") {
       return collegesList;
@@ -103,6 +104,9 @@ export const Onboarding = () => {
     setCollegeSearch(college);
     setShowCollegeDropdown(false);
     setError("");
+    if (college !== "Other") {
+      setCustomCollege("");
+    }
   };
 
   const handleFormSubmit = async (e) => {
@@ -129,8 +133,31 @@ export const Onboarding = () => {
       setIsLoading(false);
       return;
     }
+
+    // Validate that DOB is in the past and user is at least 13 years old (COPPA compliance)
+    const today = new Date().toISOString().split("T")[0];
+    if (dob > today) {
+      setError("Date of birth cannot be in the future.");
+      setIsLoading(false);
+      return;
+    }
+
+    const birthDate = new Date(dob);
+    const ageLimitDate = new Date();
+    ageLimitDate.setFullYear(ageLimitDate.getFullYear() - 13);
+    if (birthDate > ageLimitDate) {
+      setError("You must be at least 13 years old to join RankerHub.");
+      setIsLoading(false);
+      return;
+    }
     if (!selectedCollege || !collegesList.includes(selectedCollege)) {
       setError("Please select a college from the searchable dropdown list.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (selectedCollege === "Other" && !customCollege.trim()) {
+      setError("Please specify your college name.");
       setIsLoading(false);
       return;
     }
@@ -215,7 +242,7 @@ export const Onboarding = () => {
           gender,
           dob,
           city: "Mumbai",
-          college: selectedCollege,
+          college: selectedCollege === "Other" ? customCollege.trim() : selectedCollege,
           linkedinUrl: linkedinUrl.trim() || "",
           instagramHandle: instagramHandle.trim().replace(/^@/, "") || "",
           referralCode: newReferralCode,
@@ -415,6 +442,7 @@ export const Onboarding = () => {
                 <input
                   type="date"
                   value={dob}
+                  max={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setDob(e.target.value)}
                   className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
                 />
@@ -491,6 +519,29 @@ export const Onboarding = () => {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Custom College Input field if "Other" is selected */}
+            <AnimatePresence>
+              {selectedCollege === "Other" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-2 overflow-hidden"
+                >
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5" /> Specify College Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter your college/university name"
+                    value={customCollege}
+                    onChange={(e) => setCustomCollege(e.target.value)}
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all placeholder:text-slate-400"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Social Links (Optional) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -35,7 +35,7 @@ export const StatsCards = () => {
 
   const totalPoints = userData?.points?.totalPoints || 0;
   const gitCommits = userData?.githubStats?.commits || 0;
-  const streak = userData?.streak || 1;
+  const streak = userData?.streak ?? 0;
 
   const stats = [
     {

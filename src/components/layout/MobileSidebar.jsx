@@ -20,6 +20,7 @@ import { Github } from "../ui/Icons";
 import { sidebarLinks } from "../../constants";
 import LogoutConfirmModal from "../ui/LogoutConfirmModal";
 import logo from "../../assets/logo.png";
+import { useAuth } from "../../context/AuthContext";
 
 const iconMap = {
   Home,
@@ -43,6 +44,7 @@ const isLinkActive = (pathname, path) => {
 };
 
 export const MobileSidebar = ({ isOpen, close }) => {
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -51,10 +53,15 @@ export const MobileSidebar = ({ isOpen, close }) => {
     setShowLogoutConfirm(true);
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     setShowLogoutConfirm(false);
     close();
-    navigate("/");
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Mobile logout failure:", error);
+    }
   };
 
   return (

@@ -1,9 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
-const RateLimitContext = createContext();
-
-export const useRateLimit = () => useContext(RateLimitContext);
+import { RateLimitContext } from './rateLimitContextValue';
 
 export const RateLimitProvider = ({ children }) => {
   const [isRateLimited, setIsRateLimited] = useState(false);

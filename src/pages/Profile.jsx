@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Toast from "../components/ui/Toast";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import {
   MapPin,
@@ -167,7 +166,7 @@ export const Profile = () => {
   const referralPoints = userData?.points?.referralPoints || 0;
   const streakPoints = userData?.points?.streakPoints || 0;
   const codingVersePoints = userData?.points?.codingVersePoints || 0;
-  const streak = userData?.streak || 1;
+  const streak = userData?.streak ?? 0;
   const pointsEngines = [
     { label: "GitRank Points", value: gitRankPoints, color: "bg-blue-500" },
     { label: "CodingVerse Points", value: codingVersePoints, color: "bg-purple-500" },
@@ -438,6 +437,15 @@ export const Profile = () => {
             ))}
           </div>
 
+            {toast && (
+            <div className={`fixed bottom-4 right-4 p-4 rounded-xl border z-50 max-w-sm ${
+            toast.type === "success" 
+           ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400" 
+            : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
+          }`}>
+    <p className="text-sm font-semibold">{toast.message}</p>
+  </div>
+)}
         </div>
 
       </Card>
@@ -599,8 +607,8 @@ export const Profile = () => {
               let unlocked = false;
               if (badge.id === "b1") unlocked = true;
               if (badge.id === "b2" && gitRankPoints >= 100) unlocked = true;
-              if (badge.id === "b3" && streak >= 5) unlocked = true;
-              if (badge.id === "b4" && referralPoints >= 100) unlocked = true;
+              if (badge.id === "b3" && streak >= 10) unlocked = true;
+              if (badge.id === "b4" && codingVersePoints >= 100) unlocked = true;
 
               return (
                 <div

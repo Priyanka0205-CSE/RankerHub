@@ -110,8 +110,8 @@ export const AuthProvider = ({ children }) => {
           email: authUser.email || "",
           avatar,
           onboardingStatus: "incomplete",
-          city: "Mumbai",
-          streak: 1,
+          city: "",
+          streak: 0,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
@@ -199,8 +199,8 @@ export const AuthProvider = ({ children }) => {
         const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${username}`, { headers });
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Commits retrieval warning, using fallback:", err);
-        commits = publicRepos * 12; 
+        console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
+        commits = 0;
       }
 
       // 4. Fetch total pull requests
@@ -209,8 +209,8 @@ export const AuthProvider = ({ children }) => {
         const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${username}+type:pr`, { headers });
         prs = prsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("PRs retrieval warning:", err);
-        prs = Math.floor(publicRepos * 1.5);
+        console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
+        prs = 0;
       }
 
       // 5. Fetch total reviews (PRs reviewed by user)
@@ -219,8 +219,8 @@ export const AuthProvider = ({ children }) => {
         const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${username}`, { headers });
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Reviews retrieval warning:", err);
-        reviews = Math.floor(prs * 0.2); // safe fallback
+        console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
+        reviews = 0;
       }
 
       // Calculate initial GitRank points securely based on real work only:
@@ -239,16 +239,18 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error("Error executing GitHub stats fetcher snapshot:", error);
-      // Clean fallback if API breaks entirely or token is invalid
+      // Return honest zeros when the API is unreachable so no fabricated
+      // points are written to Firestore. The caller can surface a
+      // "score pending" state and re-fetch on the next login.
       return {
-        commits: 5,
-        prs: 1,
+        commits: 0,
+        prs: 0,
         reviews: 0,
-        publicRepos: 3,
+        publicRepos: 0,
         stars: 0,
-        followers: 1,
+        followers: 0,
         primaryLanguage: "JavaScript",
-        gitRankPoints: 15 // safe baseline
+        gitRankPoints: 0
       };
     }
   };

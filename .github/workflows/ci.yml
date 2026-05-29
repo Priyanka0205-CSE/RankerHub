@@ -78,6 +78,7 @@ jobs:
       - name: Add ready-to-merge label
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             try {
               await github.rest.issues.addLabels({

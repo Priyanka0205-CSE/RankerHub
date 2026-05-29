@@ -14,23 +14,78 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 import { systemBadges } from "../constants";
+import { useAuth } from "../context/AuthContext";
 
 export const Achievements = () => {
+  const { userData } = useAuth();
   const [selectedBadge, setSelectedBadge] = useState(systemBadges[0]);
 
-  // Enhanced mock progress data for achievements
+  // Extract metrics dynamically from the live Firestore user document
+  const commits = userData?.githubStats?.commits || 0;
+  const streak = userData?.streak || 0;
+  const codingVersePoints = userData?.points?.codingVersePoints || 0;
+
+  // Calculate dynamic progress mapping for the 4 badges
   const badgeProgress = {
     b1: { unlocked: true, unlockedAt: "May 10, 2026", progress: 100, current: 1, target: 1, label: "First 100 users whitelist" },
-    b2: { unlocked: false, unlockedAt: null, progress: 45, current: 45, target: 100, label: "GitHub Commits Audited" },
-    b3: { unlocked: false, unlockedAt: null, progress: 80, current: 8, target: 10, label: "Daily Consistency Streaks" },
-    b4: { unlocked: false, unlockedAt: null, progress: 20, current: 1, target: 5, label: "Frontend Arenas Solved" }
+    b2: { 
+      unlocked: commits >= 100, 
+      unlockedAt: commits >= 100 ? "Verified" : null, 
+      progress: Math.min(100, Math.round((commits / 100) * 100)), 
+      current: commits, 
+      target: 100, 
+      label: "GitHub Commits Audited" 
+    },
+    b3: { 
+      unlocked: streak >= 10, 
+      unlockedAt: streak >= 10 ? "Verified" : null, 
+      progress: Math.min(100, Math.round((streak / 10) * 100)), 
+      current: streak, 
+      target: 10, 
+      label: "Daily Consistency Streaks" 
+    },
+    b4: { 
+      unlocked: codingVersePoints >= 100, 
+      unlockedAt: codingVersePoints >= 100 ? "Verified" : null, 
+      progress: Math.min(100, Math.round((codingVersePoints / 100) * 100)), 
+      current: codingVersePoints, 
+      target: 100, 
+      label: "Frontend Arenas Solved (XP)" 
+    }
   };
 
+  // Dynamically calculate daily quests completion from actual platform performance
   const dailyQuests = [
-    { id: "q1", title: "GitRank Explorer", description: "Audit commits in any public repository", xp: 50, progress: 0, target: 1, completed: false },
-    { id: "q2", title: "Consistency Streak", description: "Maintain your daily streak in CodingOwl", xp: 100, progress: 1, target: 1, completed: true },
-    { id: "q3", title: "Verse Conqueror", description: "Solve a medium-difficulty problem in CodingVerse", xp: 150, progress: 1, target: 2, completed: false }
+    { 
+      id: "q1", 
+      title: "GitRank Explorer", 
+      description: "Audit commits in any public repository", 
+      xp: 50, 
+      progress: commits > 0 ? 1 : 0, 
+      target: 1, 
+      completed: commits > 0 
+    },
+    { 
+      id: "q2", 
+      title: "Consistency Streak", 
+      description: "Maintain your daily streak in CodingOwl", 
+      xp: 100, 
+      progress: streak > 0 ? 1 : 0, 
+      target: 1, 
+      completed: streak > 0 
+    },
+    { 
+      id: "q3", 
+      title: "Verse Conqueror", 
+      description: "Solve a medium-difficulty problem in CodingVerse (40 XP each)", 
+      xp: 150, 
+      progress: Math.min(2, Math.floor(codingVersePoints / 40)), 
+      target: 2, 
+      completed: codingVersePoints >= 80 
+    }
   ];
+
+  const unlockedCount = Object.values(badgeProgress).filter((b) => b.unlocked).length;
 
   return (
     <div className="space-y-8">
@@ -67,7 +122,7 @@ export const Achievements = () => {
               Developer Badges
             </h3>
             <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800/60 px-2.5 py-1 rounded-full border border-slate-200/50 dark:border-slate-800/50">
-              1 of 4 Unlocked
+              {unlockedCount} of 4 Unlocked
             </span>
           </div>
 

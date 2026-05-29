@@ -1,7 +1,7 @@
 name: Auto Assign Reviewer
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, ready_for_review]
 
 permissions:
@@ -17,6 +17,7 @@ jobs:
       - name: Request Reviewer and Assignee
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prAuthor = context.payload.pull_request.user.login;
             const prNumber = context.payload.pull_request.number;

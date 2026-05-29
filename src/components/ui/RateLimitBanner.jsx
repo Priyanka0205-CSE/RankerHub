@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
-import { useRateLimit } from '../../context/RateLimitContext';
+import { useRateLimit } from '../../context/rateLimitContextValue';
 
 const RateLimitBanner = () => {
   const { isRateLimited, resetRateLimit } = useRateLimit();

@@ -6,10 +6,6 @@ import { useTheme } from "../../hooks/useTheme";
 export const ThemeToggle = ({ className = "" }) => {
   const { toggleTheme, isDark } = useTheme();
 
-  const handleToggle = () => {
-    toggleTheme();
-  };
-
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
