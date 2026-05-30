@@ -21,6 +21,7 @@ import { fadeUp, staggerContainer } from "../utils/motion";
 import GradientButton from "../components/ui/GradientButton";
 import Card from "../components/ui/Card";
 import logo from "../assets/logo.png";
+import GlowRingLogo from "../components/ui/GlowRingLogo";
 
 export const Home = () => {
   const featureRailRef = useRef(null);
@@ -192,12 +193,8 @@ export const Home = () => {
               </motion.div>
             </div>
 
-            <motion.div variants={fadeUp()} className="flex-shrink-0">
-              <div className="rotating-gradient-border w-48 h-48 md:w-56 md:h-56 shadow-2xl transition-transform duration-300 hover:scale-105">
-                <div className="w-[calc(100%-8px)] h-[calc(100%-8px)] rounded-full overflow-hidden flex items-center justify-center bg-white dark:bg-slate-950 z-10">
-                  <img src={logo} alt="RankerHub Big Logo" className="w-full h-full object-cover" />
-                </div>
-              </div>
+            <motion.div variants={fadeUp()} className="flex-shrink-0 relative">
+              <GlowRingLogo logoSrc={logo} type="logo" className="w-48 h-48 md:w-56 md:h-56" />
             </motion.div>
           </motion.div>
         </div>

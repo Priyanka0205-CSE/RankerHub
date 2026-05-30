@@ -13,6 +13,7 @@ import {
 import Card from "../components/ui/Card";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import logo from "../assets/logo.png";
+import GlowRingLogo from "../components/ui/GlowRingLogo";
 
 // Reusable Community & Contributors Section Components
 import TeamCard from "../components/about/TeamCard";
@@ -119,12 +120,8 @@ export const About = () => {
             </p>
           </div>
           
-          <div className="flex-shrink-0">
-            <div className="rotating-gradient-border w-48 h-48 md:w-56 md:h-56 shadow-2xl transition-transform duration-300 hover:scale-105">
-              <div className="w-[calc(100%-8px)] h-[calc(100%-8px)] rounded-full overflow-hidden flex items-center justify-center bg-white dark:bg-[#070B16] z-10">
-                <img src={logo} alt="RankerHub Big Logo" className="w-full h-full object-cover" />
-              </div>
-            </div>
+          <div className="flex-shrink-0 relative">
+            <GlowRingLogo logoSrc={logo} type="logo" className="w-48 h-48 md:w-56 md:h-56" />
           </div>
         </motion.div>
 
