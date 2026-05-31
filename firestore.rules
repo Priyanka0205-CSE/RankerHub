@@ -73,15 +73,24 @@ service cloud.firestore {
           )
         );
 
-      // RULE 3: Referrer update - Allow another user to atomically increment a referrer's referralPoints by exactly 100 points
-      // as part of the onboarding referral transaction.
-      allow update: if isAuthenticated() 
-        && request.auth.uid != uid // must be the referred user performing the write
+      // RULE 3: Referrer update - Allow the referred user to atomically increment a referrer's
+      // referralPoints by exactly 100 points as part of the onboarding referral transaction.
+      // Two additional guards close the exploit described in issue #81:
+      //   1. exists(...) confirms the referrals index document for the target user exists,
+      //      which is only created when the referrer generates a referral code.
+      //   2. request.auth.uid in get(...).data.usedBy confirms the caller is already recorded
+      //      in the referrer's usedBy list, meaning they legitimately redeemed the referral
+      //      code before this point update fires. This prevents any arbitrary authenticated
+      //      user from granting unlimited referral points to any other user.
+      allow update: if isAuthenticated()
+        && request.auth.uid != uid
         && request.resource.data.points.referralPoints == resource.data.points.referralPoints + 100
         && request.resource.data.points.totalPoints == resource.data.points.totalPoints + 100
         && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
         && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
-        && request.resource.data.points.streakPoints == resource.data.points.streakPoints;
+        && request.resource.data.points.streakPoints == resource.data.points.streakPoints
+        && exists(/databases/$(database)/documents/referrals/$(uid))
+        && request.auth.uid in get(/databases/$(database)/documents/referrals/$(uid)).data.usedBy;
     }
 
     match /referrals/{uid} {
