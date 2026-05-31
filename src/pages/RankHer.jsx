@@ -5,7 +5,6 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
-import ComingSoonCard from "../components/ui/ComingSoonCard";
 
 export const RankHer = () => {
   const { user } = useAuth();
@@ -78,6 +77,8 @@ export const RankHer = () => {
       );
     }
 
+    const topPoints = womenUsers[0]?.points?.totalPoints || 0;
+
     return (
       <>
         {/* Spotlight cards: top 2 real women engineers */}
@@ -106,7 +107,7 @@ export const RankHer = () => {
                 </div>
               </div>
 
-              <div className="flex-1 space-y-3 text-center md:text-left">
+              <div className="flex-1 space-y-3 text-center md:text-left w-full">
                 <div>
                   <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest bg-pink-500/10 dark:bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/20">
                     Rank #{u.rank}
@@ -118,6 +119,22 @@ export const RankHer = () => {
                     {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
                     {u.college && u.githubUsername ? ` • ${u.college}` : ""}
                   </span>
+                </div>
+
+                {/* Progress Bar for Spotlight User */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-pink-500">XP Progress</span>
+                    <span className="text-slate-600 dark:text-pink-400">
+                      {topPoints > 0 ? Math.round(((u.points?.totalPoints || 0) / topPoints) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%` }}
+                    />
+                  </div>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/25 dark:border-slate-800/25 relative">
@@ -147,7 +164,7 @@ export const RankHer = () => {
         </div>
 
         {/* Empowerment banner */}
-        <Card className="relative overflow-hidden p-8 text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 border-none shadow-[0_10px_35px_rgba(236,72,153,0.3)]">
+        <Card className="relative overflow-hidden p-8 text-white bg-gradient-to-r from-pink-500 via-pink-600 to-rose-500 border-none shadow-[0_10px_35px_rgba(236,72,153,0.3)]">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -z-10" />
           <div className="max-w-2xl space-y-4">
             <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight my-0">
@@ -176,7 +193,7 @@ export const RankHer = () => {
             <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
               Top Advocate Standings
             </h3>
-            <span className="text-xs font-bold text-emerald-500 uppercase">
+            <span className="text-xs font-bold bg-pink-500/10 text-pink-500 border border-pink-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               Live
             </span>
           </div>
@@ -185,14 +202,14 @@ export const RankHer = () => {
             {womenUsers.map((u) => (
               <div
                 key={u.uid}
-                className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors rounded-xl px-2"
+                className="py-4 flex items-center justify-between gap-4 hover:bg-pink-500/5 dark:hover:bg-pink-500/5 transition-colors rounded-xl px-2"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-slate-400 w-6">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-sm font-bold text-pink-500 w-6">
                     #{u.rank}
                   </span>
 
-                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
                     {u.photoURL ? (
                       <img
                         src={u.photoURL}
@@ -206,18 +223,32 @@ export const RankHer = () => {
                     )}
                   </div>
 
-                  <div>
-                    <span className="font-extrabold text-slate-900 dark:text-white block leading-tight">
-                      {u.name}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold block">
-                      {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-extrabold text-slate-900 dark:text-white block leading-tight truncate">
+                        {u.name}
+                      </span>
+                      <span className="text-[10px] text-pink-500/80 font-bold truncate hidden sm:inline">
+                        {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
+                      </span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-pink-500/80 min-w-[28px] text-right">
+                        {topPoints > 0 ? Math.round(((u.points?.totalPoints || 0) / topPoints) * 100) : 0}%
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="text-right min-w-[70px]">
-                  <span className="block font-black text-slate-900 dark:text-white leading-none">
+                <div className="text-right min-w-[75px] flex-shrink-0">
+                  <span className="block font-black text-pink-600 dark:text-pink-400 leading-none">
                     {(u.points?.totalPoints || 0).toLocaleString()}
                   </span>
                   <span className="text-[10px] font-semibold text-slate-400">
@@ -239,20 +270,6 @@ export const RankHer = () => {
         subtitle="Celebrating diversity in technology. Showcasing and spotlighting top women software engineers."
         badge="Equality Focus"
         badgeColor="bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20"
-      />
-
-      <ComingSoonCard
-        title="Women In Tech Leaderboard - Coming Soon"
-        description="Our community advocacy framework is in development. Registered female coders will be spotlighted, matched with top technical mentors, and automatically verified for active industry awards."
-        icon={Sparkles}
-        features={[
-          "Verified credentials badges & awards",
-          "Mentorship matchmaking matching engine",
-          "Highlight spotlights and developer journals",
-          "Exclusive coding challenges and workshops",
-        ]}
-        estimatedArrival="Q4 2026"
-        showHourglass={true}
       />
 
       {renderBody()}
