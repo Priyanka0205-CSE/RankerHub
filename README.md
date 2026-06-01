@@ -71,7 +71,11 @@ To set up RankerHub locally on your machine, follow these steps:
 
 ## 🌐 Live Demo
 
-[View Live Site](https://rankerhub.vercel.app)
+<p align="left">
+  <a href="https://ranker-hub-xi.vercel.app/">
+    <img src="https://github.com/user-attachments/assets/1fc4738f-ccd1-4a51-8b39-c6f06a36e47e" alt="RankerHub Live" width="150" style="vertical-align: middle;">
+  </a>
+</p>
 
 ---
 
