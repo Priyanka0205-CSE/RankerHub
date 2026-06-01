@@ -70,7 +70,48 @@ To get your own Firebase credentials for local development:
 
 ---
 
-## Git Workflow & Branching Conventions
+## GitHub OAuth Setup
+
+RankerHub uses GitHub as its primary authentication provider. To run the app locally with full functionality (including private repo sync checks), you need to register a custom GitHub OAuth App.
+
+### 1. Create a GitHub OAuth App
+
+1. Go to your GitHub [Developer Settings](https://github.com/settings/developers).
+2. Click **OAuth Apps** → **New OAuth App**.
+3. Fill in the details:
+   - **Application name**: `RankerHub Dev` (or any name you prefer)
+   - **Homepage URL**: `http://localhost:5173`
+   - **Application description**: (optional)
+   - **Authorization callback URL**: `http://localhost:5173` (this will be updated after Firebase setup)
+
+### 2. Configure Callback URL in Firebase
+
+1. Go to the [Firebase Console](https://console.firebase.google.com/), select your project.
+2. Navigate to **Authentication** → **Sign-in method** → **GitHub** (edit).
+3. Copy the **Callback URL** shown in Firebase (looks like `https://identitytoolkit.googleapis.com/...`).
+4. Go back to your GitHub OAuth App settings → paste this URL as the **Authorization callback URL**.
+5. Save the GitHub OAuth App.
+6. Copy the **Client ID** and generate a **Client Secret**.
+7. Paste both into the Firebase GitHub provider configuration and click **Save**.
+
+### 3. Request Private Repo Access Scope
+
+For the private repo sync feature to work, the OAuth App needs the `repo` scope:
+
+1. In your GitHub OAuth App settings, scroll to **Scopes**.
+2. Ensure the app requests the `repo` scope (grants read access to private repositories).
+3. For local development, you can test this by authorizing the app with a test repository.
+
+> **Note**: When you first sign in with GitHub on your local instance, you'll see a consent screen showing the requested scopes. Ensure `repo` scope is listed before authorizing.
+
+### 4. Verify the Setup
+
+1. Start the dev server (`npm run dev`).
+2. Open `http://localhost:5173` and click **Sign in with GitHub**.
+3. Complete the OAuth flow — you should be redirected back to the app authenticated.
+4. Navigate to the GitRank section to verify private repo data loads correctly.
+
+---
 
 To keep the repository history clean, please follow these branching and commit message conventions:
 
