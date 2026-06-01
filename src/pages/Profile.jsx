@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import {
   MapPin,
@@ -21,6 +22,7 @@ import { systemBadges } from "../constants";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import GradientButton from "../components/ui/GradientButton";
+import Toast from "../components/ui/Toast";
 
 export const Profile = () => {
   const { userData, user, setUserData, login } = useAuth();
@@ -459,15 +461,15 @@ export const Profile = () => {
             ))}
           </div>
 
-            {toast && (
-            <div className={`fixed bottom-4 right-4 p-4 rounded-xl border z-50 max-w-sm ${
-            toast.type === "success" 
-           ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400" 
-            : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
-          }`}>
-    <p className="text-sm font-semibold">{toast.message}</p>
-  </div>
-)}
+            <AnimatePresence>
+              {toast && (
+                <Toast
+                  message={toast.message}
+                  type={toast.type}
+                  onClose={() => setToast(null)}
+                />
+              )}
+            </AnimatePresence>
         </div>
 
       </Card>

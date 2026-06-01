@@ -15,6 +15,7 @@ import ThemeToggle from "../components/ui/ThemeToggle";
 import logo from "../assets/logo.png";
 import GlowRingLogo from "../components/ui/GlowRingLogo";
 
+
 // Reusable Community & Contributors Section Components
 import TeamCard from "../components/about/TeamCard";
 import ContributorsGrid from "../components/about/ContributorsGrid";
@@ -120,8 +121,12 @@ export const About = () => {
             </p>
           </div>
           
-          <div className="flex-shrink-0 relative">
-            <GlowRingLogo logoSrc={logo} type="logo" className="w-48 h-48 md:w-56 md:h-56" />
+          <div className="flex-shrink-0">
+            <GlowRingLogo
+              logoSrc={logo}
+              type="logo"
+              className="w-48 h-48 md:w-56 md:h-56 shadow-2xl transition-transform duration-300 hover:scale-105"
+            />
           </div>
         </motion.div>
 

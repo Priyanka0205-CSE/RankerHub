@@ -12,7 +12,7 @@ export const GradientButton = ({
   variant = "primary", // primary, secondary, outline
   ...props
 }) => {
-  const baseStyles = "relative px-6 py-3 font-semibold rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 overflow-hidden active:scale-95";
+  const baseStyles = "relative px-6 py-3 font-semibold rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 overflow-hidden active:scale-95 group";
   
   const variants = {
     primary: "text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-700 hover:via-indigo-700 hover:to-blue-700",
@@ -43,7 +43,7 @@ export const GradientButton = ({
     >
       {/* Background overlay for glossy effect */}
       {!disabled && variant === "primary" && (
-        <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:animate-[shimmer_1.5s_infinite]" />
+        <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
       )}
       {children}
     </motion.button>

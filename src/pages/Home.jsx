@@ -23,6 +23,7 @@ import Card from "../components/ui/Card";
 import logo from "../assets/logo.png";
 import GlowRingLogo from "../components/ui/GlowRingLogo";
 
+
 export const Home = () => {
   const featureRailRef = useRef(null);
   const location = useLocation(); 
@@ -193,8 +194,12 @@ export const Home = () => {
               </motion.div>
             </div>
 
-            <motion.div variants={fadeUp()} className="flex-shrink-0 relative">
-              <GlowRingLogo logoSrc={logo} type="logo" className="w-48 h-48 md:w-56 md:h-56" />
+            <motion.div variants={fadeUp()} className="flex-shrink-0">
+              <GlowRingLogo
+                logoSrc={logo}
+                type="logo"
+                className="w-48 h-48 md:w-56 md:h-56 shadow-2xl transition-transform duration-300 hover:scale-105"
+              />
             </motion.div>
           </motion.div>
         </div>
@@ -266,18 +271,20 @@ export const Home = () => {
             return (
               <Card
                 key={feature.title}
-                glow={false}
+                glow={true}
                 role="listitem"
-                className="group relative h-[340px] min-w-[82vw] snap-start overflow-hidden p-0 transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30 hover:shadow-2xl hover:shadow-violet-500/10 sm:min-w-[360px] md:min-w-[380px] lg:min-w-[400px]"
+                whileHover={{ y: -6, scale: 1.015 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="group relative h-[340px] min-w-[82vw] snap-start overflow-hidden p-0 hover:border-violet-500/30 sm:min-w-[360px] md:min-w-[380px] lg:min-w-[400px]"
               >
                 <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-br ${feature.accent}`} aria-hidden="true" />
                 <div className="relative flex h-full flex-col justify-between p-6">
                   <div className="space-y-5">
                     <div className="flex items-start justify-between gap-4">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border shadow-sm transition duration-300 group-hover:scale-105 ${feature.color}`}>
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border shadow-sm transition-all duration-500 ease-out group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-md ${feature.color}`}>
                         <Icon className="h-6 w-6" aria-hidden="true" />
                       </div>
-                      <span className="rounded-full border border-slate-200/70 bg-white/60 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/40 dark:text-slate-400">
+                      <span className="rounded-full border border-slate-200/70 bg-white/60 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-700/70 dark:bg-slate-950/40 dark:text-slate-400 transition-all duration-300 group-hover:border-violet-500/30 group-hover:text-violet-600 dark:group-hover:text-violet-400 group-hover:scale-105">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
                     </div>
@@ -295,7 +302,7 @@ export const Home = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200/70 bg-white/55 px-4 py-3 shadow-sm transition duration-300 group-hover:border-violet-500/25 dark:border-slate-800/70 dark:bg-slate-950/35">
+                  <div className="rounded-2xl border border-slate-200/70 bg-white/55 dark:bg-slate-950/35 px-4 py-3 shadow-sm transition-all duration-500 ease-out group-hover:border-violet-500/40 group-hover:bg-white/85 dark:group-hover:bg-slate-950/50 group-hover:shadow-md">
                     <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                       Built around
                     </span>
