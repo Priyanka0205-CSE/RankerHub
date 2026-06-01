@@ -39,7 +39,7 @@ export const GitRank = () => {
 
   // 1. Real-time Leaderboard Listener (Initial 50 Users)
   useEffect(() => {
-// eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingUsers(true);
 
     if (!user) {
@@ -49,10 +49,12 @@ export const GitRank = () => {
       return () => clearTimeout(timer);
     }
 
+    // Combined query: onboarding check (from your branch) + limit 50 (from main)
     const q = query(
       collection(db, "users"),
+      where("onboardingStatus", "==", "complete"),
       orderBy("points.totalPoints", "desc"),
-      limit(50)
+      limit(50) 
     );
 
     const unsubscribe = onSnapshot(
@@ -83,8 +85,7 @@ export const GitRank = () => {
     );
 
     return () => unsubscribe();
-  }, []);
-
+  }, [user]);
   // Pagination Function (Fetch next 50)
   const loadMoreUsers = async () => {
     if (!lastVisible || !hasMore || loadingMore) return;
@@ -173,7 +174,6 @@ export const GitRank = () => {
       const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
       const userRef = doc(db, "users", user.uid);
 
-      // Execute atomic transaction to prevent write-stomping points race condition
       await runTransaction(db, async (transaction) => {
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists()) {
@@ -275,7 +275,6 @@ export const GitRank = () => {
     }).reverse();
 
     if (!events.length) {
-      // Mock pattern if events are empty so user sees how it looks
       return [
         { label: "Wk 1", commits: 2, prs: 0, reviews: 0 },
         { label: "Wk 2", commits: 6, prs: 1, reviews: 0 },
