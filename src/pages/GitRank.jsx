@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2 } from "lucide-react";
-import { collection, query, where, doc, updateDoc, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction } from "firebase/firestore";
+import { collection, query, doc, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -63,6 +63,7 @@ export const GitRank = () => {
           users.push(doc.data());
         });
 
+        // Assign ranks (pre-sorted at database level)
         const ranked = users.map((u, i) => ({
           ...u,
           rank: i + 1
