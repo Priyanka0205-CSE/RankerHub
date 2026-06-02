@@ -167,18 +167,20 @@ export const Profile = () => {
   const handlePrivateSyncToggle = async () => {
     if (!user) return;
     try {
-      if (!userData?.privateRepoSyncEnabled) {
-        setToast({ message: "Redirecting to GitHub for permission...", type: "success" });
-        await login(true); 
-        setToast({ message: "Private repository sync enabled successfully!", type: "success" });
-      } else {
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, { privateRepoSyncEnabled: false });
-        if (setUserData) {
-          setUserData(prev => ({ ...prev, privateRepoSyncEnabled: false }));
-        }
-        setToast({ message: "Private repository sync disabled.", type: "success" });
+      const isEnabling = !userData?.privateRepoSyncEnabled;
+      const userRef = doc(db, "users", user.uid);
+      
+      // Seedha Firestore update, no more popup interruptions!
+      await updateDoc(userRef, { privateRepoSyncEnabled: isEnabling });
+      
+      if (setUserData) {
+        setUserData(prev => ({ ...prev, privateRepoSyncEnabled: isEnabling }));
       }
+      
+      setToast({ 
+        message: isEnabling ? "Private repository sync enabled!" : "Private repository sync disabled.", 
+        type: "success" 
+      });
     } catch (err) {
       console.error("Toggle sync error:", err);
       setToast({ message: "Failed to update sync preferences. Please try again.", type: "error" });
@@ -474,15 +476,14 @@ export const Profile = () => {
 
       </Card>
 
-      {/*   PRIVATE REPO SYNC CARD  */}
+      {/* PRIVATE REPO SYNC CARD  */}
       <Card className="mb-6 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-slate-200/50 dark:border-slate-800/50">
         <div>
           <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
             <Github className="w-5 h-5 text-slate-700 dark:text-slate-300" /> Private Repository Sync
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Enable indexing for private repositories to earn points for your private commits, PRs, and reviews. <br className="hidden sm:block"/>
-            <span className="text-xs text-violet-500">(Requires GitHub re-authentication)</span>
+            Enable indexing for private repositories to earn points for your private commits, PRs, and reviews.
           </p>
         </div>
         

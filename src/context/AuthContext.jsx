@@ -77,8 +77,8 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // Securely login with GitHub and conditionally request private repo scope
-  const login = async (requestRepoScope = false) => {
+  // Securely login with GitHub and request private repo scope by default
+  const login = async (requestRepoScope = true) => {
     setLoading(true);
     try {
       // Pass the flag to firebase service
