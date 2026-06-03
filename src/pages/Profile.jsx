@@ -14,7 +14,7 @@ import {
   Activity
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
-import { query, collection, where, getCountFromServer, doc, updateDoc, getDoc } from "firebase/firestore";
+import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import successTick from "../assets/animations/succes_tick.json";
@@ -133,7 +133,10 @@ export const Profile = () => {
       
       updateData.updatedAt = new Date().toISOString();
       
-      await updateDoc(userRef, updateData);
+      // Use Atomic Batch Write instead of updateDoc
+      const batch = writeBatch(db);
+      batch.update(userRef, updateData);
+      await batch.commit();
       
       const updatedUserDoc = await getDoc(userRef);
       const updatedData = updatedUserDoc.exists() ? updatedUserDoc.data() : null;
@@ -168,7 +171,10 @@ export const Profile = () => {
       const isEnabling = !userData?.privateRepoSyncEnabled;
       const userRef = doc(db, "users", user.uid);
       
-      await updateDoc(userRef, { privateRepoSyncEnabled: isEnabling });
+      // Use Atomic Batch Write instead of updateDoc
+      const batch = writeBatch(db);
+      batch.update(userRef, { privateRepoSyncEnabled: isEnabling });
+      await batch.commit();
       
       if (setUserData) {
         setUserData(prev => ({ ...prev, privateRepoSyncEnabled: isEnabling }));
