@@ -20,7 +20,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
-import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch } from "firebase/firestore";
+import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import successTick from "../assets/animations/succes_tick.json";
