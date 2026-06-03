@@ -8,35 +8,66 @@ export const HowItWorksModal = ({ onClose }) => {
     {
       num: "01",
       title: "Connect Your Profile",
-      desc: "Link your GitHub account or developer credentials securely in seconds. RankerHub parses public contribution events, repositories, and active timelines. We prioritize security and privacy: our engine operates on public logs and never requests write scopes or access to private source code.",
+      desc: "Link your GitHub account securely via OAuth in seconds. RankerHub reads only public contribution events — commits, pull requests, and code reviews — from the GitHub API. We never request write scopes or access to private source code.",
+      details: [
+        "OAuth login with read-only public scope",
+        "Initial GitRank score calculated on onboarding",
+        "Optional: enable private repo sync for full stats",
+        "Referral bonus: +50 XP for new user, +100 XP for referrer"
+      ],
       icon: Link2,
       color: "from-blue-600 to-cyan-500 text-blue-400"
     },
     {
       num: "02",
-      title: "Track Live Coding Metrics",
-      desc: "Our synchronization engine audits your active development metrics dynamically. We track active coding frequencies, pull requests created, code review suggestions submitted, and lines of code committed to assign your real-time global developer score.",
+      title: "Earn GitRank Points",
+      desc: "Your GitRank score is calculated using the formula: GitRank = (Commits × 2) + (PRs × 5) + (Reviews × 10). Sync your GitHub data anytime (5-min cooldown) to update your score in real time.",
+      details: [
+        "Commits: +2 XP each",
+        "Pull Requests opened: +5 XP each",
+        "Code Reviews submitted: +10 XP each",
+        "Manual sync available with a 5-minute cooldown"
+      ],
       icon: GitPullRequest,
       color: "from-violet-600 to-indigo-500 text-violet-400"
     },
     {
       num: "03",
       title: "Conquer CodingVerse Arenas",
-      desc: "Step into the interactive CodingVerse arena to solve daily algorithmic challenges across arrays, pointers, stacks, and graph traversals. Compile your code and earn problem-solving XP (Experience Points) to boost your global standing.",
+      desc: "Solve algorithmic challenges in Java and Python — output prediction, MCQ theory, and code completion. Each correct answer earns XP based on difficulty. Incorrect attempts lock the question permanently.",
+      details: [
+        "Easy problems: +100 XP",
+        "Medium problems: +150 XP",
+        "Hard problems: +200 XP",
+        "15 total questions, one attempt per question",
+        "CodingVerse rank calculated from Firestore standings"
+      ],
       icon: Terminal,
       color: "from-purple-600 to-pink-500 text-purple-400"
     },
     {
       num: "04",
       title: "Build Streaks in CodingOwl",
-      desc: "Stay dedicated and build ironclad habits with our consistency companion, Oliver the Owl. Track consecutive active days, activate timed study/focus sessions, and avoid streak freezes to maintain point multipliers.",
+      desc: "Log in daily to build consecutive-day streaks with Oliver the Owl. Each consecutive day adds +10 Streak Points to your total. Miss a day and your streak resets to 1, but accumulated streak points are kept.",
+      details: [
+        "Consecutive daily login: +10 Streak XP / day",
+        "Streak resets to 1 after missing a day",
+        "Accumulated streak points are never lost",
+        "Reach 10-day streak to unlock the Consistency badge"
+      ],
       icon: Flame,
       color: "from-orange-600 to-red-500 text-orange-400"
     },
     {
       num: "05",
       title: "Climb Leaderboards & Mint Badges",
-      desc: "Compare your ratings globally, locally, or in specialized tracks like RankHer. Unlock verified developer badges and showcase your achievements. Soon, badges builds will be minted as Polygon blockchain tokens for profile verification.",
+      desc: "Your Global Rank is determined by your Total XP — the sum of GitRank + CodingVerse + Streak + Referral points. Rankings are queried live from Firestore: your rank equals the count of users with higher Total XP, plus one.",
+      details: [
+        "Total XP = GitRank + CodingVerse + Streak + Referral",
+        "Global rank: count of users above you + 1",
+        "Language-specific and RankHer specialty leaderboards",
+        "Unlock badges at 100+ GitRank, 10-day streak, 100+ CodingVerse XP"
+      ],
       icon: Trophy,
       color: "from-amber-600 to-yellow-500 text-amber-400"
     }
@@ -106,6 +137,18 @@ export const HowItWorksModal = ({ onClose }) => {
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold max-w-2xl my-0">
                     {step.desc}
                   </p>
+
+                  {/* Point mapping details */}
+                  {step.details && (
+                    <ul className="mt-2 space-y-1 list-none p-0 m-0">
+                      {step.details.map((detail, dIdx) => (
+                        <li key={dIdx} className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          <span className="mt-1 w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             );

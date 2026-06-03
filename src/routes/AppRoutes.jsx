@@ -53,7 +53,7 @@ const ProtectedRoute = ({ children }) => {
 
 // Route Guard: Access allowed ONLY if authenticated AND onboarding is incomplete
 const OnboardingRoute = ({ children }) => {
-  const { user, loading, isOnboarding } = useAuth();
+  const { user, loading, userData, isOnboarding } = useAuth();
 
   if (loading) {
     return <LoadingScreen message="Loading Onboarding portal..." />;
@@ -63,7 +63,9 @@ const OnboardingRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isOnboarding) {
+  // Strict guard: if the user's data explicitly says they are complete, OR if isOnboarding is false, redirect.
+  // We only allow access if they are explicitly incomplete.
+  if (userData?.onboardingStatus === "complete" || !isOnboarding || (userData && userData.onboardingStatus !== "incomplete")) {
     return <Navigate to="/dashboard" replace />;
   }
 
