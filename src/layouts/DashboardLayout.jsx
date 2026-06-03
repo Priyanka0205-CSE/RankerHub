@@ -30,7 +30,7 @@ export const DashboardLayout = () => {
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-[padding-left] duration-300 ease-in-out ${
+        className={`flex-1 flex flex-col min-w-0 min-h-screen transition-[padding-left] duration-300 ease-in-out ${
           isCollapsed ? "md:pl-[76px]" : "md:pl-[260px]"
         }`}
       >
