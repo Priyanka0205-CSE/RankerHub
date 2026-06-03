@@ -19,7 +19,7 @@ export const Login = () => {
       // 1. Check window.location.search
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.has(name)) return searchParams.get(name);
-      
+
       // 2. Check hash route queries (e.g. hash router /#/login?ref=NEWCODE)
       const hash = window.location.hash;
       const qIndex = hash.indexOf("?");
@@ -41,7 +41,7 @@ export const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    
+
     try {
       const activeUser = await login();
       console.log("Logged in dynamically via context:", activeUser.email);
@@ -57,12 +57,12 @@ export const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-[#090D1A] dark:via-[#0A0F1F] dark:to-[#0B1022] text-slate-900 dark:text-slate-100 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
-      
+
       {/* Light Mode Enhanced Background Orbs */}
       <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-violet-200/40 via-purple-200/30 to-indigo-200/40 dark:from-[#2D1B4E] dark:to-[#1A1A3E] pointer-events-none animate-blob transform-gpu rounded-full blur-3xl" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-tl from-blue-200/40 via-cyan-200/30 to-teal-200/40 dark:from-[#1A2A4E] dark:to-[#0F1A2E] pointer-events-none animate-blob [animation-delay:3s] transform-gpu rounded-full blur-3xl" />
       <div className="absolute top-[40%] left-[30%] w-[40vw] h-[40vw] bg-gradient-to-r from-pink-200/30 to-rose-200/30 dark:from-[#3D1B4E] dark:to-[#2E1A3E] pointer-events-none animate-pulse-slow transform-gpu rounded-full blur-3xl" />
-      
+
       {/* Floating particles for light mode */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-violet-400/30 rounded-full animate-float" />
@@ -82,7 +82,7 @@ export const Login = () => {
         className="w-full max-w-md relative z-10"
       >
         <Card className="backdrop-blur-xl bg-white/90 dark:bg-slate-950/40 border border-white/50 dark:border-slate-800/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-2xl p-8 space-y-6 transition-all duration-300 hover:shadow-[0_12px_48px_rgba(139,92,246,0.15)] dark:hover:shadow-2xl">
-          
+
           {/* Back to Home */}
           <div className="flex justify-start -mb-2">
             <Link
@@ -92,8 +92,8 @@ export const Login = () => {
               <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
               Back to Home
             </Link>
-          </div>       
-          
+          </div>
+
           {/* GitHub Logo with glow effect */}
           <div className="text-center relative">
             <div className="absolute inset-0 flex items-center justify-center">
@@ -103,7 +103,7 @@ export const Login = () => {
               <Github className="w-10 h-10 text-white" />
             </div>
           </div>
-          
+
           {/* Heading with gradient text */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent my-0 leading-tight">
@@ -132,17 +132,17 @@ export const Login = () => {
 
           {/* Form */}
           <form onSubmit={handleGithubSignIn} className="space-y-5 pt-2">
-            
+
             {/* Error Message - Enhanced */}
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-red-50 to-rose-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
               >
                 <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-700 dark:text-red-400 font-medium flex-1">{error}</p>
-                <button 
+                <button
                   onClick={() => setError("")}
                   className="text-red-500 hover:text-red-700 dark:text-red-400 text-xs font-bold"
                 >
@@ -174,7 +174,7 @@ export const Login = () => {
                   )}
                 </GradientButton>
               </div>
-              
+
               {/* Divider with text */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -204,10 +204,9 @@ export const Login = () => {
           {/* Prompt footer - Enhanced */}
           <div className="text-center pt-4 space-y-2 border-t border-slate-200/50 dark:border-slate-800/50">
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              By continuing, you agree to RankerHub's 
-              <span className="text-violet-600 dark:text-violet-400 font-bold hover:underline cursor-pointer mx-1">Terms</span>
-              and
-              <span className="text-violet-600 dark:text-violet-400 font-bold hover:underline cursor-pointer ml-1">Privacy Policy</span>
+              By continuing, you agree to RankerHub's
+              <Link to="/terms" className="text-violet-600 dark:text-violet-400 font-bold hover:underline mx-1">Terms</Link>
+              <Link to="/privacy" className="text-violet-600 dark:text-violet-400 font-bold hover:underline ml-1">Privacy Policy</Link>
             </p>
             <p className="text-[10px] text-slate-500 dark:text-slate-500">
               🔒 Your GitHub data is never stored. Only your public profile is used.

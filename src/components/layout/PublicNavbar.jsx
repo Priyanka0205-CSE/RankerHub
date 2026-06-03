@@ -8,9 +8,8 @@ import logo from "../../assets/logo.png";
 const getInitialIndex = (location) => {
   const path = location.pathname;
   const hash = location.hash;
-  const search = location.search;
 
-  if (search.includes("modal=how-it-works")) return 2;
+  if (hash === "#how-it-works") return 2;
   if (hash === "#features") return 1;
   if (path === "/about") return 3;
   return 0; // Default to Home
@@ -114,7 +113,7 @@ export const PublicNavbar = () => {
   const navItems = [
     { label: "Home", path: "/" },
     { label: "Features", path: "/", hash: "features" },
-    { label: "How it Works", path: "?modal=how-it-works", modal: true },
+    { label: "How it Works", path: "/", hash: "how-it-works" },
     { label: "About Us", path: "/about" },
   ];
 

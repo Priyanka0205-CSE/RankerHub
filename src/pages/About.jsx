@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -22,6 +22,16 @@ import ContributorsGrid from "../components/about/ContributorsGrid";
 import ContributionCTA from "../components/about/ContributionCTA";
 
 export const About = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate(user ? "/dashboard" : "/");
+    }
+  };
 
   const coreModules = [
     {
@@ -89,12 +99,12 @@ export const About = () => {
         <div className="flex items-center gap-4">
           <ThemeToggle />
 
-          <Link
-            to="/"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition duration-200 text-xs font-bold"
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition duration-200 text-xs font-bold cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
-          </Link>
+            <ArrowLeft className="w-3.5 h-3.5" /> Close
+          </button>
         </div>
       </header>
 

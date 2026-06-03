@@ -12,16 +12,28 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == uid;
     }
 
-    // Helper: Check if update only affects social fields
-    function isOnlySocialUpdate() {
+    // Helper: Check if update only affects profile fields
+    function isOnlyProfileUpdate() {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
-      let socialFields = ['linkedinUrl', 'instagramHandle', 'discordUsername', 'updatedAt'];
-      return affected.hasOnly(socialFields);
+      let profileFields = ['name', 'avatar', 'gender', 'dob', 'city', 'college', 'linkedinUrl', 'instagramHandle', 'discordUsername', 'updatedAt'];
+      return affected.hasOnly(profileFields);
+    }
+
+    // Helper: Check if update is a legitimate streak check-in write from checkAndUpdateStreak.
+    // Whitelists the exact fields touched: streak, longestStreak, lastLogin,
+    // points.streakPoints, points.totalPoints. longestStreak must never decrease.
+    function isStreakUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let streakFields = ['streak', 'longestStreak', 'lastLogin', 'points'];
+      return affected.hasOnly(streakFields)
+        && request.resource.data.longestStreak >= resource.data.longestStreak
+        && request.resource.data.streak >= 0
+        && request.resource.data.points.streakPoints >= resource.data.points.streakPoints;
     }
 
     match /users/{uid} {
-      // Leaderboard requires anyone logged in to view profiles
-      allow read: if isAuthenticated();
+      // Leaderboard requires public access to view user standings
+      allow read: if true;
 
       // Creation: A logged in user can provision a skeletal profile or onboarding document.
       // The city field is not restricted to any specific value so users from all cities
@@ -29,11 +41,15 @@ service cloud.firestore {
       allow create: if isOwner(uid)
         && (request.resource.data.onboardingStatus == "incomplete" || request.resource.data.onboardingStatus == "complete");
 
-      // RULE 1: Allow social profile updates (LinkedIn, Instagram, Discord) ANYTIME
-      // This bypasses the strict onboarding/points rules for social links only
-      allow update: if isOwner(uid) && isOnlySocialUpdate();
+      // RULE 1: Allow profile updates (Name, Avatar, Gender, DOB, City, College, LinkedIn, Instagram, Discord) ANYTIME
+      // This bypasses the strict onboarding/points rules for profile information updates only
+      allow update: if isOwner(uid) && isOnlyProfileUpdate();
 
-      // RULE 2: Original strict rules for onboarding and points updates
+      // RULE 2: Allow streak check-in writes that touch only streak-related fields.
+      // longestStreak is enforced as monotonically non-decreasing by the helper.
+      allow update: if isOwner(uid) && isStreakUpdate();
+
+      // RULE 3: Original strict rules for onboarding and points updates
       allow update: if isOwner(uid) 
         // 1. If they were already onboarded (onboardingStatus == "complete"), they cannot change immutable onboarding fields
         && (resource.data.onboardingStatus != "complete" || (
@@ -107,6 +123,12 @@ service cloud.firestore {
       );
     }
     
+    match /follows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.followerId == request.auth.uid;
+    }
+
     // Global lock for other collections
     match /{document=**} {
       allow read, write: if false;

@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   onSnapshot,
   writeBatch
 } from "firebase/firestore";
@@ -17,6 +18,51 @@ import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 const AuthContext = createContext({});
 
 export const useAuth = () => useContext(AuthContext);
+
+const checkAndUpdateStreak = async (data, docRef) => {
+  if (!data || data.onboardingStatus !== "complete") return;
+  const now = new Date();
+  const lastLoginDate = data.lastLogin ? new Date(data.lastLogin) : null;
+  
+  if (!lastLoginDate || lastLoginDate.toDateString() !== now.toDateString()) {
+    let newStreak = data.streak || 1;
+    let newStreakPoints = data.points?.streakPoints || 0;
+    
+    if (lastLoginDate) {
+      const diffTime = Math.abs(now - lastLoginDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        newStreak += 1;
+        newStreakPoints += 10;
+      } else if (diffDays > 1) {
+        newStreak = 1;
+      }
+    } else {
+      newStreak = 1;
+    }
+    
+    const newTotalPoints = (data.points?.gitRankPoints || 0) + 
+                           (data.points?.referralPoints || 0) + 
+                           (data.points?.codingVersePoints || 0) + 
+                           newStreakPoints;
+                           
+    const newLongestStreak = Math.max(data.longestStreak || 0, newStreak);
+
+    try {
+      await updateDoc(docRef, {
+        streak: newStreak,
+        longestStreak: newLongestStreak,
+        lastLogin: now.toISOString(),
+        "points.streakPoints": newStreakPoints,
+        "points.totalPoints": newTotalPoints
+      });
+      console.log("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
+    } catch (err) {
+      console.error("Failed to update streak:", err);
+    }
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -52,6 +98,7 @@ export const AuthProvider = ({ children }) => {
             setUserData(data);
             setIsOnboarding(data.onboardingStatus === "incomplete");
             setLoading(false);
+            checkAndUpdateStreak(data, userDocRef);
           } else {
             setUserData(null);
             setIsOnboarding(true);
@@ -82,7 +129,7 @@ export const AuthProvider = ({ children }) => {
       const { user: authUser, accessToken, result } = await signInWithGitHub(requestRepoScope);
 
       const additionalInfo = getAdditionalUserInfo(result);
-      const githubUsername = additionalInfo?.username || authUser.displayName || "";
+      const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();
       const githubId = additionalInfo?.profile?.id || null;
       const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
@@ -106,6 +153,7 @@ export const AuthProvider = ({ children }) => {
           privateRepoSyncEnabled: requestRepoScope,
           city: "",
           streak: 0,
+          longestStreak: 0,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
@@ -290,7 +338,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken }}>
+<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
       {children}
     </AuthContext.Provider>
   );

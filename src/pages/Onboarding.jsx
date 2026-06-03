@@ -181,7 +181,7 @@ export const Onboarding = () => {
 
     try {
       const activeUid = user.uid;
-      const githubUsername = userData?.githubUsername || user.reloadUserInfo?.screenName || "";
+      const githubUsername = (userData?.githubUsername || user.reloadUserInfo?.screenName || "").trim();
 
       if (!githubUsername) {
         throw new Error("Unable to identify your GitHub username from this session. Please log in again.");

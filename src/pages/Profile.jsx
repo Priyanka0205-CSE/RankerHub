@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import {
   MapPin,
@@ -11,7 +11,13 @@ import {
   X,
   Save,
   Plus,
-  Activity
+  Activity,
+  User,
+  Building2,
+  HelpCircle,
+  Search,
+  Image,
+  AlertCircle
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch } from "firebase/firestore";
@@ -24,6 +30,7 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import GradientButton from "../components/ui/GradientButton";
 import Toast from "../components/ui/Toast";
+import collegesList from "../data/colleges.json";
 
 export const Profile = () => {
   const { userData, user, setUserData, syncGitHubData } = useAuth();
@@ -34,6 +41,156 @@ export const Profile = () => {
   const [editValue, setEditValue] = useState("");
   const [updating, setUpdating] = useState(false);
   
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const [editGender, setEditGender] = useState("");
+  const [editDob, setEditDob] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editCollege, setEditCollege] = useState("");
+  const [collegeSearch, setCollegeSearch] = useState("");
+  const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
+  const [customCollege, setCustomCollege] = useState("");
+  const [editError, setEditError] = useState("");
+
+  const editDropdownRef = useRef(null);
+
+  const filteredColleges = useMemo(() => {
+    if (collegeSearch.trim() === "" || collegeSearch === "Other") {
+      return collegesList;
+    }
+
+    const searchLower = collegeSearch.toLowerCase();
+    return collegesList.filter((col) => col.toLowerCase().includes(searchLower));
+  }, [collegeSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (editDropdownRef.current && !editDropdownRef.current.contains(event.target)) {
+        setShowCollegeDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleOpenEditModal = () => {
+    setEditName(userData?.name || "");
+    setEditAvatar(userData?.avatar || user?.photoURL || "");
+    setEditGender(userData?.gender || "");
+    setEditDob(userData?.dob || "");
+    setEditCity(userData?.city || "");
+    
+    const collegeVal = userData?.college || "";
+    const isCustom = collegeVal && !collegesList.includes(collegeVal);
+    if (isCustom) {
+      setEditCollege("Other");
+      setCustomCollege(collegeVal);
+      setCollegeSearch("Other");
+    } else {
+      setEditCollege(collegeVal);
+      setCollegeSearch(collegeVal);
+      setCustomCollege("");
+    }
+    
+    setEditError("");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setUpdating(true);
+    setEditError("");
+    
+    const finalName = editName.trim();
+    const finalCity = editCity.trim();
+    let finalCollege = editCollege;
+
+    if (!finalName) {
+      setEditError("Full name is required.");
+      setUpdating(false);
+      return;
+    }
+    if (!editGender) {
+      setEditError("Please select your gender.");
+      setUpdating(false);
+      return;
+    }
+    if (!editDob) {
+      setEditError("Please select your date of birth.");
+      setUpdating(false);
+      return;
+    }
+
+    // Age validation (13+ years and not in the future)
+    const today = new Date().toISOString().split("T")[0];
+    if (editDob > today) {
+      setEditError("Date of birth cannot be in the future.");
+      setUpdating(false);
+      return;
+    }
+
+    const birthDate = new Date(editDob);
+    const ageLimitDate = new Date();
+    ageLimitDate.setFullYear(ageLimitDate.getFullYear() - 13);
+    if (birthDate > ageLimitDate) {
+      setEditError("You must be at least 13 years old.");
+      setUpdating(false);
+      return;
+    }
+
+    if (!finalCity) {
+      setEditError("City is required.");
+      setUpdating(false);
+      return;
+    }
+
+    if (editCollege === "Other") {
+      finalCollege = customCollege.trim();
+      if (!finalCollege) {
+        setEditError("Please specify your college name.");
+        setUpdating(false);
+        return;
+      }
+    } else if (!editCollege) {
+      setEditError("Please select a college.");
+      setUpdating(false);
+      return;
+    }
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const updateData = {
+        name: finalName,
+        avatar: editAvatar.trim(),
+        gender: editGender,
+        dob: editDob,
+        city: finalCity,
+        college: finalCollege,
+        updatedAt: new Date().toISOString()
+      };
+
+      await updateDoc(userRef, updateData);
+
+      if (setUserData) {
+        setUserData(prev => ({
+          ...prev,
+          ...updateData
+        }));
+      }
+
+      setToast({ message: "Profile updated successfully!", type: "success" });
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setEditError("Failed to update profile. Please try again.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const [localSocialLinks, setLocalSocialLinks] = useState({
     linkedinUrl: userData?.linkedinUrl || null,
     instagramHandle: userData?.instagramHandle || null,
@@ -440,6 +597,9 @@ export const Profile = () => {
         badge="Verified Account"
         badgeColor="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
       >
+        <GradientButton onClick={handleOpenEditModal} variant="secondary" className="py-2.5 px-4 text-xs">
+          Edit Profile
+        </GradientButton>
         <GradientButton onClick={handleShareProfile} className="py-2.5 px-4 text-xs">
           {copied ? "Code Copied!" : "Copy Referral Code"}
         </GradientButton>
@@ -481,7 +641,9 @@ export const Profile = () => {
           </p>
 
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 text-xs font-bold text-slate-400">
-            <span className="flex items-center gap-1"><MapPin className="w-4 h-4 text-slate-400" /> Mumbai, India</span>
+            <span className="flex items-center gap-1">
+              <MapPin className="w-4 h-4 text-slate-400" /> {userData?.city || "Mumbai"}, India
+            </span>
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4 text-slate-400" /> Joined {userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString(undefined, {month: 'long', year: 'numeric'}) : "May 2026"}
             </span>
@@ -575,10 +737,10 @@ export const Profile = () => {
 
         <div className="mt-6 flex flex-col items-start min-w-max">
           <div className="flex gap-1">
-            <div className="flex flex-col gap-1 pr-2 pt-5 text-[9px] font-bold text-slate-400 h-full justify-between">
-              <span className="h-3 leading-3">Mon</span>
-              <span className="h-3 leading-3">Wed</span>
-              <span className="h-3 leading-3">Fri</span>
+            <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
+              <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">Mon</span>
+              <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">Wed</span>
+              <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">Fri</span>
             </div>
 
             <div className="flex gap-1">
@@ -807,6 +969,246 @@ export const Profile = () => {
         </Card>
 
       </div>
+
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!updating) setIsEditModalOpen(false);
+              }}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl bg-slate-900/90 dark:bg-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+                disabled={updating}
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Header */}
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white my-0 flex items-center gap-2">
+                  <User className="w-5 h-5 text-violet-500" /> Edit Developer Profile
+                </h3>
+                <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                  Update your display name, profile avatar, education, and onboarding details.
+                </p>
+              </div>
+
+              {/* Edit Form */}
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                {editError && (
+                  <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span className="flex-1">{editError}</span>
+                  </div>
+                )}
+
+                {/* Grid for Name & Avatar URL */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <User className="w-3 h-3" /> Full Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter your name"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
+                    />
+                  </div>
+
+                  {/* Avatar URL */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Image className="w-3 h-3" /> Avatar Image URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Avatar image URL"
+                      value={editAvatar}
+                      onChange={(e) => setEditAvatar(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Grid for Gender & DOB */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Gender */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <HelpCircle className="w-3 h-3" /> Gender
+                    </label>
+                    <select
+                      value={editGender}
+                      onChange={(e) => setEditGender(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
+                    >
+                      <option value="" disabled className="bg-slate-900">Select gender</option>
+                      <option value="male" className="bg-slate-900">Male</option>
+                      <option value="female" className="bg-slate-900">Female</option>
+                      <option value="non-binary" className="bg-slate-900">Non-Binary</option>
+                      <option value="prefer-not-to-say" className="bg-slate-900">Prefer not to say</option>
+                    </select>
+                  </div>
+
+                  {/* DOB */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      value={editDob}
+                      max={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setEditDob(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Grid for City & College Select */}
+                <div className="space-y-4">
+                  {/* City */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> City
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter your city"
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
+                    />
+                  </div>
+
+                  {/* Searchable College Dropdown */}
+                  <div className="space-y-1.5 relative" ref={editDropdownRef}>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Building2 className="w-3 h-3" /> Mumbai College
+                    </label>
+                    
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Type to filter Mumbai colleges..."
+                        value={collegeSearch}
+                        onFocus={() => setShowCollegeDropdown(true)}
+                        onChange={(e) => {
+                          setCollegeSearch(e.target.value);
+                          setShowCollegeDropdown(true);
+                        }}
+                        className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all ${
+                          editCollege && editCollege !== "Other"
+                            ? "border-violet-500 bg-violet-950/20 text-violet-400 font-semibold"
+                            : "border-slate-800 bg-slate-950/40 text-white"
+                        }`}
+                      />
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {showCollegeDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 8 }}
+                          className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900 shadow-xl divide-y divide-slate-800"
+                        >
+                          {filteredColleges.length > 0 ? (
+                            filteredColleges.map((col) => (
+                              <div
+                                key={col}
+                                onClick={() => {
+                                  setEditCollege(col);
+                                  setCollegeSearch(col);
+                                  setShowCollegeDropdown(false);
+                                  if (col !== "Other") {
+                                    setCustomCollege("");
+                                  }
+                                }}
+                                className="px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 cursor-pointer font-medium transition-colors"
+                              >
+                                {col}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-xs text-slate-500 text-center font-bold">
+                              No colleges match search filter.
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Custom College Input if Other is selected */}
+                  <AnimatePresence>
+                    {editCollege === "Other" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-1.5"
+                      >
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Specify College Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter your college name"
+                          value={customCollege}
+                          onChange={(e) => setCustomCollege(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Submit & Cancel Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="flex-1 py-2.5 text-xs font-bold rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                    disabled={updating}
+                  >
+                    Cancel
+                  </button>
+                  <GradientButton
+                    type="submit"
+                    disabled={updating}
+                    className="flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2"
+                  >
+                    {updating ? "Saving..." : "Save Changes"}
+                  </GradientButton>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

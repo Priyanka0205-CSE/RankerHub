@@ -29,7 +29,7 @@ const getActiveTab = (pathname) => {
 export const Friends = () => {
   const location = useLocation();
   const activeTab = getActiveTab(location.pathname);
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
   const [developers, setDevelopers] = useState([]);
   const [loading, setLoading] = useState(true);

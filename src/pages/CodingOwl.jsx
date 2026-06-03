@@ -1,11 +1,65 @@
-import React from "react";
-import { BookOpen, Timer, Plus, Check } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Timer, Plus, Check } from "lucide-react";
 import { habitCards, weeklyHeatmap } from "../data/streaks";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
-import ComingSoonCard from "../components/ui/ComingSoonCard";
+import { useAuth } from "../context/AuthContext";
 
 export const CodingOwl = () => {
+  const { userData } = useAuth();
+  const userName = userData?.name || "Developer";
+  const userStreak = userData?.streak || 0;
+  const [habits, setHabits] = useState(habitCards);
+  const [timeLeft, setTimeLeft] = useState(1500); // 25:00 in seconds
+  const [timerActive, setTimerActive] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (timerActive) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            setTimerActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [timerActive]);
+
+  const toggleTimer = () => {
+    setTimerActive(!timerActive);
+  };
+
+  const resetTimer = () => {
+    setTimerActive(false);
+    setTimeLeft(1500);
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  const toggleHabitComplete = (id) => {
+    setHabits(prev => prev.map(habit => {
+      if (habit.id === id) {
+        const newProgress = habit.progress === 100 ? 0 : 100;
+        const newStreak = newProgress === 100 ? habit.streak + 1 : Math.max(0, habit.streak - 1);
+        return { ...habit, progress: newProgress, streak: newStreak };
+      }
+      return habit;
+    }));
+  };
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -14,20 +68,6 @@ export const CodingOwl = () => {
         subtitle="Stay consistent, build ironclad coding habits, and earn points with our companion owl."
         badge="Consistency mascot"
         badgeColor="bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20"
-      />
-
-      <ComingSoonCard
-        title="Consistency Tracking Engine - Coming Soon"
-        description="Our browser habit auditing engine is under active evaluation. Automatic verification of daily commits and IDE focus sessions will be available in our production release. Current logs represent simulated streak progress."
-        icon={BookOpen}
-        features={[
-          "Mascot mood evolution levels",
-          "Automatic GitHub commit tracking audits",
-          "Focus mode timer analytics sync",
-          "Streak multiplier score multipliers"
-        ]}
-        estimatedArrival="Q3 2026"
-        showHourglass={true}
       />
 
       {/* Mascot & Streak Highlight */}
@@ -46,7 +86,7 @@ export const CodingOwl = () => {
             </h3>
             
             <div className="bg-white/80 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/45 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-semibold italic relative">
-              "Whoo-whoo! You've logged code for 12 consecutive days, Indresh. Oliver is proud! Maintain your streak today to earn a 1.5x points multiplier."
+              "Whoo-whoo! You've logged code for {userStreak} consecutive days, {userName}. Oliver is proud! Maintain your streak today to earn a 1.5x points multiplier."
             </div>
             
             <div className="flex justify-center sm:justify-start items-center gap-4 text-xs font-bold text-slate-400">
@@ -70,21 +110,33 @@ export const CodingOwl = () => {
           </div>
 
           {/* Timer visualization */}
-          <div className="my-6 text-center">
+          <div className="my-6 text-center flex flex-col items-center justify-center">
             <span className="text-4xl font-black text-slate-900 dark:text-white tracking-widest block font-mono">
-              25:00
+              {formatTime(timeLeft)}
             </span>
             <span className="text-[10px] text-slate-400 uppercase font-bold mt-1.5 block">
               Pomodoro Interval
             </span>
           </div>
 
-          <button
-            disabled
-            className="w-full py-2.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300/10 cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Timer className="w-4 h-4" /> Start Focus
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTimer}
+              className={`flex-1 py-2.5 rounded-xl font-bold border text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                timerActive 
+                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" 
+                  : "bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white border-orange-500"
+              }`}
+            >
+              <Timer className="w-4 h-4" /> {timerActive ? "Pause Focus" : "Start Focus"}
+            </button>
+            <button
+              onClick={resetTimer}
+              className="px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-350 hover:bg-slate-200 transition-all text-sm cursor-pointer"
+            >
+              Reset
+            </button>
+          </div>
         </Card>
 
       </div>
@@ -96,7 +148,7 @@ export const CodingOwl = () => {
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {habitCards.map((habit) => (
+          {habits.map((habit) => (
             <Card key={habit.id} className="p-5 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50 hover:border-orange-500/25 transition-all">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -128,10 +180,22 @@ export const CodingOwl = () => {
                 </div>
                 
                 <button
-                  disabled
-                  className="w-full py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300/5 cursor-not-allowed flex items-center justify-center gap-1"
+                  onClick={() => toggleHabitComplete(habit.id)}
+                  className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    habit.progress === 100
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 border border-slate-200/50 dark:border-slate-750"
+                  }`}
                 >
-                  {habit.progress === 100 ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />} Mark Complete
+                  {habit.progress === 100 ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3px]" /> Completed
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" /> Mark Complete
+                    </>
+                  )}
                 </button>
               </div>
             </Card>

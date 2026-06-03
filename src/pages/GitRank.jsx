@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2 } from "lucide-react";
 import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
+import { TableVirtuoso } from "react-virtuoso"; // <-- VIRTUALIZATION IMPORT ADDED
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
@@ -11,9 +12,24 @@ import axios from "axios";
 
 export const GitRank = () => {
   const { user, userData, fetchGitHubStats, login } = useAuth();
-  const [searchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
-  const [selectedLanguage, setSelectedLanguage] = useState("All");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get("search") || "";
+  const selectedLanguage = searchParams.get("lang") || "All";
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    const newParams = new URLSearchParams(searchParams);
+    if (val) newParams.set("search", val);
+    else newParams.delete("search");
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const handleLanguageChange = (lang) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (lang !== "All") newParams.set("lang", lang);
+    else newParams.delete("lang");
+    setSearchParams(newParams);
+  };
   
   // Pagination States
   const [lastVisible, setLastVisible] = useState(null); 
@@ -43,10 +59,12 @@ export const GitRank = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingUsers(true);
 
-    // Build the query dynamically based on language selection and strict sorting
+// Build the query dynamically based on language selection and strict sorting
     const constraints = [
       where("onboardingStatus", "==", "complete"),
-      orderBy("points.gitRankPoints", "desc")
+      orderBy("points.gitRankPoints", "desc"),
+      orderBy("githubStats.commits", "desc"),
+      orderBy("githubUsername", "asc")
     ];
 
     // DB level language filter
@@ -86,8 +104,7 @@ export const GitRank = () => {
     );
 
     return () => unsubscribe();
-  }, [selectedLanguage]); // Removed 'user' dependency to allow guest fetching
-
+}, [selectedLanguage]); // Removed 'user' dependency to allow guest fetching
   // Pagination Function (Fetch next 50)
   const loadMoreUsers = async () => {
     if (!lastVisible || !hasMore || loadingMore) return;
@@ -96,7 +113,9 @@ export const GitRank = () => {
     try {
       const constraints = [
         where("onboardingStatus", "==", "complete"),
-        orderBy("points.gitRankPoints", "desc")
+        orderBy("points.gitRankPoints", "desc"),
+        orderBy("githubStats.commits", "desc"),
+        orderBy("githubUsername", "asc")
       ];
 
       // Maintain server-side language filter during pagination
@@ -139,7 +158,7 @@ export const GitRank = () => {
     }
   };
 
-  // 2. Fetch GitHub Events/Repos for Charts (Authenticated Only)
+// 2. Fetch GitHub Events/Repos for Charts (Authenticated Only)
   useEffect(() => {
     if (!userData?.githubUsername) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -870,7 +889,7 @@ export const GitRank = () => {
               type="text"
               placeholder="Search user..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
             />
           </div>
@@ -882,7 +901,7 @@ export const GitRank = () => {
               {languages.map((lang) => (
                 <button
                   key={lang}
-                  onClick={() => setSelectedLanguage(lang)}
+                  onClick={() => handleLanguageChange(lang)}
                   className={`
                     px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer whitespace-nowrap
                     ${
@@ -899,17 +918,27 @@ export const GitRank = () => {
           </div>
         </div>
 
-        {/* Responsive Table UI */}
-        <div className="overflow-x-auto">
+        {/* ========================================== */}
+        {/* VIRTUALIZED TABLE IMPLEMENTATION           */}
+        {/* ========================================== */}
+        <div className="overflow-x-auto overflow-y-hidden w-full">
           {loadingUsers ? (
             <div className="py-20 text-center text-slate-400">
               <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
               <p className="text-sm font-bold">Synchronizing Live Standings...</p>
             </div>
-          ) : (
-            <table className="w-full text-left mt-4 border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800/80 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          ) : filteredData.length > 0 ? (
+            <TableVirtuoso
+              useWindowScroll
+              data={filteredData}
+              components={{
+                Table: (props) => <table {...props} className="w-full text-left mt-4 border-collapse min-w-[800px]" />,
+                TableHead: React.forwardRef((props, ref) => <thead {...props} ref={ref} />),
+                TableRow: (props) => <tr {...props} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors group" />,
+                TableBody: React.forwardRef((props, ref) => <tbody {...props} ref={ref} className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm" />),
+              }}
+              fixedHeaderContent={() => (
+                <tr className="border-b border-slate-100 dark:border-slate-800/80 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white dark:bg-slate-950 z-10 relative shadow-sm">
                   <th className="py-3 px-4">Rank</th>
                   <th className="py-3 px-4">Developer</th>
                   <th className="py-3 px-4">Focus Language</th>
@@ -918,94 +947,45 @@ export const GitRank = () => {
                   <th className="py-3 px-4 text-center">Reviews</th>
                   <th className="py-3 px-4 text-right">Git Points</th>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm">
-                {filteredData.length > 0 ? (
-                  filteredData.map((u) => (
-                    <tr
-                      key={u.uid}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors group"
-                    >
-                      {/* Rank cell */}
-                      <td className="py-4 px-4 font-bold text-slate-500">#{u.rank}</td>
-
-                      {/* Developer profile cell */}
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0">
-                            <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <span className="font-extrabold text-slate-900 dark:text-white block group-hover:text-violet-500 transition-colors">
-                              {u.name}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-semibold block">
-                              @{u.githubUsername}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Language tag cell */}
-                      <td className="py-4 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/10 dark:border-slate-800/10">
-                          {u.githubStats?.primaryLanguage || "JavaScript"}
-                        </span>
-                      </td>
-
-                      {/* Commits count cell */}
-                      <td className="py-4 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
-                        {u.githubStats?.commits || 0}
-                      </td>
-
-                      {/* PRs count cell */}
-                      <td className="py-4 px-4 text-center font-bold text-violet-600 dark:text-violet-400">
-                        {u.githubStats?.prs || 0}
-                      </td>
-
-                      {/* Reviews count cell */}
-                      <td className="py-4 px-4 text-center font-bold text-pink-600 dark:text-pink-400">
-                        {u.githubStats?.reviews || 0}
-                      </td>
-
-                      {/* Points cell */}
-                      <td className="py-4 px-4 text-right font-black text-slate-900 dark:text-white">
-                        {u.points?.gitRankPoints?.toLocaleString() || 0}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="py-12 text-center text-slate-400 dark:text-slate-500">
-                      <p className="text-sm font-bold">No results found</p>
-                      <p className="text-xs mt-1">
-                        Try adjusting your search criteria or filtering by a different language
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              )}
+              itemContent={(index, u) => (
+                <>
+                  <td className="py-4 px-4 font-bold text-slate-500">#{u.rank}</td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-slate-900 dark:text-white block group-hover:text-violet-500 transition-colors">{u.name}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold block">@{u.githubUsername}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/10 dark:border-slate-800/10">{u.githubStats?.primaryLanguage || "JavaScript"}</span>
+                  </td>
+                  <td className="py-4 px-4 text-center font-bold text-slate-800 dark:text-slate-200">{u.githubStats?.commits || 0}</td>
+                  <td className="py-4 px-4 text-center font-bold text-violet-600 dark:text-violet-400">{u.githubStats?.prs || 0}</td>
+                  <td className="py-4 px-4 text-center font-bold text-pink-600 dark:text-pink-400">{u.githubStats?.reviews || 0}</td>
+                  <td className="py-4 px-4 text-right font-black text-slate-900 dark:text-white">{u.points?.gitRankPoints?.toLocaleString() || 0}</td>
+                </>
+              )}
+            />
+          ) : (
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+              <p className="text-sm font-bold">No results found</p>
+              <p className="text-xs mt-1">Try adjusting your search criteria or filtering by a different language</p>
+            </div>
           )}
         </div>
       </Card>
 
-      {/* PAGINATION CONTROLS ADDED HERE  */}
+      {/* Pagination Controls */}
       {hasMore && (
         <div className="flex justify-center w-full mt-8 mb-4">
-          <button
-            onClick={loadMoreUsers}
-            disabled={loadingMore}
-            className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-violet-500/30 flex items-center gap-2"
-          >
-            {loadingMore ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Loading...
-              </>
-            ) : (
-              "Load More Developers"
-            )}
+          <button onClick={loadMoreUsers} disabled={loadingMore} className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-violet-500/30 flex items-center gap-2">
+            {loadingMore ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Loading...</> : "Load More Developers"}
           </button>
         </div>
       )}
@@ -1015,7 +995,6 @@ export const GitRank = () => {
           You've reached the end of the leaderboard! 🏆
         </div>
       )}
-
     </div>
   );
 };

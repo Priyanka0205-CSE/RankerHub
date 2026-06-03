@@ -1,13 +1,69 @@
 import React from "react";
 import { Flame, Check } from "lucide-react";
-import { streakHistory, focusStats } from "../../data/streaks";
+import { useAuth } from "../../context/AuthContext";
 import Card from "../ui/Card";
 
 export const StreakCard = () => {
-  const percentComplete = Math.min(
-    100,
-    Math.round((focusStats.dailyProgressMins / focusStats.dailyGoalMins) * 100)
-  );
+  const { userData } = useAuth();
+  
+  const activeStreak = userData?.streak || 0;
+  const longestStreak = Math.max(userData?.longestStreak || 0, activeStreak);
+  
+  // Calculate today's status
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const lastLogin = userData?.lastLogin ? new Date(userData?.lastLogin) : null;
+  const loggedInToday = lastLogin && lastLogin.toDateString() === todayStr;
+  
+  const dailyProgressMins = loggedInToday ? 60 : 0;
+  const dailyGoalMins = 60;
+  const percentComplete = loggedInToday ? 100 : 0;
+
+  // Generate dynamic streak history for the current week (Monday - Sunday)
+  const getDynamicStreakHistory = () => {
+    const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    // Get Monday of current week
+    const currentDay = now.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
+    
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - daysSinceMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const history = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + i);
+      dayDate.setHours(0, 0, 0, 0);
+
+      const dayStr = daysOfWeek[i];
+      const dateLabel = dayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      
+      let status = "pending";
+      const diffTime = now.getTime() - dayDate.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      if (dayDate.toDateString() === todayStr) {
+        status = loggedInToday ? "completed" : "current";
+      } else if (dayDate < now) {
+        // Past day
+        const maxCompletedDiff = loggedInToday ? activeStreak - 1 : activeStreak;
+        if (diffDays >= 0 && diffDays <= maxCompletedDiff) {
+          status = "completed";
+        }
+      }
+
+      history.push({
+        day: dayStr,
+        status,
+        date: dateLabel
+      });
+    }
+    return history;
+  };
+
+  const streakHistory = getDynamicStreakHistory();
 
   return (
     <Card className="flex flex-col h-full overflow-hidden relative">
@@ -22,7 +78,7 @@ export const StreakCard = () => {
         </div>
         <div className="flex items-center gap-1 text-orange-500 dark:text-orange-400 font-extrabold text-sm animate-pulse">
           <Flame className="w-5 h-5 fill-orange-500/20" />
-          <span>{focusStats.activeStreak} Days</span>
+          <span>{activeStreak} Days</span>
         </div>
       </div>
 
@@ -33,7 +89,7 @@ export const StreakCard = () => {
         <div className="flex-1 w-full space-y-3">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500">
             <span>Today's Progress</span>
-            <span>{focusStats.dailyProgressMins} / {focusStats.dailyGoalMins} mins</span>
+            <span>{dailyProgressMins} / {dailyGoalMins} mins</span>
           </div>
 
           {/* Bar track */}
@@ -45,7 +101,9 @@ export const StreakCard = () => {
           </div>
 
           <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-            Spend 15 more minutes coding today to extend your streak.
+            {loggedInToday 
+              ? "Streak extended for today! Keep up the amazing work." 
+              : "Check-in or log code today to keep your daily streak active."}
           </div>
         </div>
 
@@ -55,7 +113,7 @@ export const StreakCard = () => {
             Longest Streak
           </span>
           <span className="block text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
-            {focusStats.longestStreak} Days
+            {longestStreak} Days
           </span>
           <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
             Personal Record

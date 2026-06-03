@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Sparkles, Quote, Star, Loader2, Users } from "lucide-react";
+import { Sparkles, Quote, Star, Loader2 } from "lucide-react";
 import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -15,7 +15,6 @@ export const RankHer = () => {
   const [womenUsers, setWomenUsers] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
 
     const q = query(
       collection(db, "users"),
@@ -44,16 +43,6 @@ export const RankHer = () => {
   }, [user]);
 
   const renderBody = () => {
-    if (!user) {
-      return (
-        <Card className="p-8 text-center">
-          <Users className="w-10 h-10 text-pink-400 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Sign in to see the live RankHer standings.
-          </p>
-        </Card>
-      );
-    }
 
     if (womenUsers === null) {
       return (
@@ -90,9 +79,9 @@ export const RankHer = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
 
               <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
-                {u.photoURL ? (
+                {(u.avatar || u.photoURL) ? (
                   <img
-                    src={u.photoURL}
+                    src={u.avatar || u.photoURL}
                     alt={u.name}
                     className="w-full h-full object-cover"
                   />
@@ -209,9 +198,9 @@ export const RankHer = () => {
                   </span>
 
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
-                    {u.photoURL ? (
+                    {(u.avatar || u.photoURL) ? (
                       <img
-                        src={u.photoURL}
+                        src={u.avatar || u.photoURL}
                         alt={u.name}
                         className="w-full h-full object-cover"
                       />
