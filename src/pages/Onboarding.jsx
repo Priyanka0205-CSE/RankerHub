@@ -321,12 +321,17 @@ export const Onboarding = () => {
               totalEarned: currentTotalEarned + 100
             });
           } else {
-            // Safe fallback if index doc doesn't exist
-            transaction.set(referrerIndexRef, {
-              referralCode: referrerCodeClean,
-              usedBy: [activeUid],
-              totalEarned: 100
-            });
+            // Only create fallback if referrer user doc exists to prevent orphaned records
+            if (referrerDocSnap.exists()) {
+              transaction.set(referrerIndexRef, {
+                referralCode: referrerCodeClean,
+                usedBy: [activeUid],
+                totalEarned: 100
+              });
+            } else {
+              // Referrer user no longer exists, fail the transaction
+              throw new Error("Referrer user not found, unable to process referral");
+            }
           }
         }
 
