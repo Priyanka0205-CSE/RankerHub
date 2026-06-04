@@ -7,16 +7,57 @@ import {
   Zap,
   Star,
   Target,
-  Sparkles
+  Sparkles,
+  Share2
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { systemBadges } from "../constants";
 import { useAuth } from "../context/AuthContext";
 
+const Twitter = ({ className }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const Linkedin = ({ className }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+  </svg>
+);
+
 export const Achievements = () => {
   const { userData } = useAuth();
   const [selectedBadge, setSelectedBadge] = useState(systemBadges[0]);
+
+  const shareBadge = (platform, badgeName) => {
+    const profileLink = window.location.origin + `/profile/${userData?.uid || ""}`;
+    const text = `I just unlocked the ${badgeName} on RankerHub! Check out my rank here: ${profileLink}`;
+    const encodedText = encodeURIComponent(text);
+    const encodedUrl = encodeURIComponent(profileLink);
+
+    let url = "";
+    if (platform === "twitter") {
+      url = `https://twitter.com/intent/tweet?text=${encodedText}`;
+    } else if (platform === "linkedin") {
+      url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+    } else if (platform === "whatsapp") {
+      url = `https://api.whatsapp.com/send?text=${encodedText}`;
+    }
+
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
 
   // Extract metrics dynamically from the live Firestore user document
   const commits = userData?.githubStats?.commits || 0;
@@ -166,6 +207,33 @@ export const Achievements = () => {
                         style={{ width: `${info.progress}%` }}
                       />
                     </div>
+
+                    {/* Share action buttons row */}
+                    {info.unlocked && (
+                      <div className="flex gap-2 pt-1 mt-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => shareBadge("twitter", badge.name)}
+                          className="p-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/20 hover:scale-105 transition-all cursor-pointer"
+                          title="Share on Twitter"
+                        >
+                          <Twitter className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => shareBadge("linkedin", badge.name)}
+                          className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 hover:scale-105 transition-all cursor-pointer"
+                          title="Share on LinkedIn"
+                        >
+                          <Linkedin className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => shareBadge("whatsapp", badge.name)}
+                          className="p-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 hover:scale-105 transition-all cursor-pointer"
+                          title="Share on WhatsApp"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </Card>
               );
@@ -286,9 +354,38 @@ export const Achievements = () => {
                     </div>
 
                     {badgeProgress[selectedBadge.id]?.unlocked ? (
-                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold justify-center">
-                        <Star className="w-4 h-4 fill-current" />
-                        Unlocked on {badgeProgress[selectedBadge.id]?.unlockedAt}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold justify-center">
+                          <Star className="w-4 h-4 fill-current" />
+                          Unlocked on {badgeProgress[selectedBadge.id]?.unlockedAt}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Share Achievement</span>
+                          <div className="flex justify-center gap-2.5">
+                            <button
+                              onClick={() => shareBadge("twitter", selectedBadge.name)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/20 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              <Twitter className="w-3.5 h-3.5" />
+                              Twitter
+                            </button>
+                            <button
+                              onClick={() => shareBadge("linkedin", selectedBadge.name)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              <Linkedin className="w-3.5 h-3.5" />
+                              LinkedIn
+                            </button>
+                            <button
+                              onClick={() => shareBadge("whatsapp", selectedBadge.name)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                              WhatsApp
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-200/40 dark:bg-slate-800/40 border border-slate-300/10 text-slate-400 dark:text-slate-500 text-xs font-semibold justify-center cursor-not-allowed">
