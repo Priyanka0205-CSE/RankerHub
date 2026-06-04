@@ -17,7 +17,8 @@ import {
   HelpCircle,
   Search,
   Image,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
@@ -55,8 +56,8 @@ export const Profile = () => {
 
   const editDropdownRef = useRef(null);
 
-  // 1. Profile Real Heatmap State (Issue #205 Fix)
-  const [heatmap, setHeatmap] = useState({
+  // GitHub Real Heatmap State
+  const [githubHeatmap, setGithubHeatmap] = useState({
     grid: Array.from({ length: 16 }, () => Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 })),
     total: 0
   });
@@ -65,7 +66,6 @@ export const Profile = () => {
     if (collegeSearch.trim() === "" || collegeSearch === "Other") {
       return collegesList;
     }
-
     const searchLower = collegeSearch.toLowerCase();
     return collegesList.filter((col) => col.toLowerCase().includes(searchLower));
   }, [collegeSearch]);
@@ -242,9 +242,9 @@ export const Profile = () => {
     fetchRank();
   }, [userData]);
 
-  // Fetch REAL Profile Heatmap Data replacing the old useMemo fake math (Issue #205)
+  // Fetch REAL Profile Heatmap Data for GitHub
   useEffect(() => {
-    const fetchProfileHeatmap = async () => {
+    const fetchGithubHeatmap = async () => {
       const username = userData?.githubUsername;
       if (!username) return;
 
@@ -255,7 +255,6 @@ export const Profile = () => {
         const data = await res.json();
         const contributions = data.contributions || [];
 
-        // We need exactly 112 days to form 16 weeks * 7 days
         const last112 = contributions.slice(-112);
         let totalActivity = 0;
         const grid = [];
@@ -281,7 +280,6 @@ export const Profile = () => {
           }
         });
 
-        // Pad if account has fewer than 112 days of history
         if (grid.length < 16) {
           const diff = 16 - grid.length;
           const padWeek = Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 });
@@ -289,19 +287,62 @@ export const Profile = () => {
           grid.unshift(...padGrid);
         }
 
-        setHeatmap({ grid, total: totalActivity });
+        setGithubHeatmap({ grid, total: totalActivity });
       } catch (err) {
         console.error("Profile heatmap fetch error:", err);
-        // Fallback to strict zeros
-        setHeatmap({
+        setGithubHeatmap({
           grid: Array.from({ length: 16 }, () => Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 })),
           total: 0
         });
       }
     };
 
-    fetchProfileHeatmap();
+    fetchGithubHeatmap();
   }, [userData?.githubUsername]);
+
+  // Issue #204: RankerHub Platform Activity Heatmap Logic
+  const platformHeatmap = useMemo(() => {
+    const logs = userData?.platformActivityLogs || [];
+    const weeks = 16;
+    const daysPerWeek = 7;
+    const data = [];
+    let activityTotal = 0;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Map timestamps to frequency counts
+    const activityMap = {};
+    logs.forEach(log => {
+       const d = new Date(log);
+       d.setHours(0,0,0,0);
+       const key = d.getTime();
+       activityMap[key] = (activityMap[key] || 0) + 1;
+    });
+
+    for (let w = 0; w < weeks; w++) {
+      const weekData = [];
+      for (let d = 0; d < daysPerWeek; d++) {
+        const daysAgo = ((weeks - 1 - w) * daysPerWeek) + (daysPerWeek - 1 - d);
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() - daysAgo);
+        const key = targetDate.getTime();
+        
+        const count = activityMap[key] || 0;
+        activityTotal += count;
+        
+        let intensity = 0;
+        if (count > 0 && count <= 2) intensity = 1;
+        else if (count > 2 && count <= 5) intensity = 2;
+        else if (count > 5 && count <= 9) intensity = 3;
+        else if (count > 9) intensity = 4;
+
+        weekData.push({ intensity, daysAgo, count });
+      }
+      data.push(weekData);
+    }
+    return { grid: data, total: activityTotal };
+  }, [userData?.platformActivityLogs]);
 
   const handleShareProfile = () => {
     const code = userData?.referralCode || "NEWCODE";
@@ -312,14 +353,11 @@ export const Profile = () => {
 
   const getDiscordProfileUrl = (discordValue) => {
     if (!discordValue) return null;
-
     const value = discordValue.trim();
     if (!value) return null;
-
     if (/^https?:\/\//i.test(value)) {
       return value;
     }
-
     const userId = value.replace(/^@/, "");
     return `https://discord.com/users/${encodeURIComponent(userId)}`;
   };
@@ -422,7 +460,19 @@ export const Profile = () => {
   ];
   const earnedPointsTotal = pointsEngines.reduce((sum, engine) => sum + Math.max(engine.value, 0), 0);
 
-  const getIntensityColor = (intensity) => {
+  // GitHub Heatmap Colors (Green/Emerald mapping)
+  const getGithubIntensityColor = (intensity) => {
+    switch(intensity) {
+      case 4: return "bg-emerald-600 dark:bg-emerald-500";
+      case 3: return "bg-emerald-500/80 dark:bg-emerald-500/80";
+      case 2: return "bg-emerald-400/60 dark:bg-emerald-400/60";
+      case 1: return "bg-emerald-300/40 dark:bg-emerald-300/40";
+      default: return "bg-slate-100 dark:bg-slate-800/50";
+    }
+  };
+
+  // RankerHub Heatmap Colors (Violet/Indigo mapping)
+  const getPlatformIntensityColor = (intensity) => {
     switch(intensity) {
       case 4: return "bg-violet-600 dark:bg-violet-500";
       case 3: return "bg-violet-500/80 dark:bg-violet-500/80";
@@ -683,7 +733,6 @@ export const Profile = () => {
               </div>
             ))}
           </div>
-          {/* Toast Stack */}
           <div className="fixed bottom-6 right-5 z-50 flex flex-col gap-2 w-80">
             <AnimatePresence>
               {toasts.map((toast) => (
@@ -742,62 +791,126 @@ export const Profile = () => {
         ))}
       </div>
 
-      <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
-          <div>
-            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-violet-500" /> Contribution Activity
-            </h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-              Verified GitHub commits mapped chronologically over the last 16 weeks.
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="block text-xl font-black text-slate-900 dark:text-white leading-none">
-              {heatmap.total.toLocaleString()}
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
-              Total Contributions
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col items-start min-w-max">
-          <div className="flex gap-1">
-            <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
-              <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">Mon</span>
-              <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">Wed</span>
-              <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">Fri</span>
+      {/* NEW SECTION: Two Heatmaps Side-by-Side */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        
+        {/* 1. GitHub Contributions Heatmap */}
+        <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
+            <div>
+              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
+                <Github className="w-5 h-5 text-emerald-500" /> GitHub Activity
+              </h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                Verified repository commits over the last 16 weeks.
+              </p>
             </div>
+            <div className="text-right">
+              <span className="block text-xl font-black text-slate-900 dark:text-white leading-none">
+                {githubHeatmap.total.toLocaleString()}
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
+                Total Commits
+              </span>
+            </div>
+          </div>
 
+          <div className="mt-6 flex flex-col items-start min-w-max flex-1">
             <div className="flex gap-1">
-              {heatmap.grid.map((week, wIdx) => (
-                <div key={wIdx} className="flex flex-col gap-1">
-                  {week.map((day, dIdx) => (
-                    <div
-                      key={`${wIdx}-${dIdx}`}
-                      className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                      title={`${day.count > 0 ? day.count : "No"} contributions ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
-                    />
-                  ))}
-                </div>
-              ))}
+              <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
+                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">Mon</span>
+                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">Wed</span>
+                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">Fri</span>
+              </div>
+
+              <div className="flex gap-1">
+                {githubHeatmap.grid.map((week, wIdx) => (
+                  <div key={`gh-${wIdx}`} className="flex flex-col gap-1">
+                    {week.map((day, dIdx) => (
+                      <div
+                        key={`gh-${wIdx}-${dIdx}`}
+                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getGithubIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
+                        title={`${day.count > 0 ? day.count : "No"} commits ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-auto pt-4 flex items-center justify-end w-full gap-2 text-[10px] font-bold text-slate-400">
+              <span>Less</span>
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-sm bg-slate-100 dark:bg-slate-800/50" />
+                <div className="w-3 h-3 rounded-sm bg-emerald-300/40 dark:bg-emerald-300/40" />
+                <div className="w-3 h-3 rounded-sm bg-emerald-400/60 dark:bg-emerald-400/60" />
+                <div className="w-3 h-3 rounded-sm bg-emerald-500/80 dark:bg-emerald-500/80" />
+                <div className="w-3 h-3 rounded-sm bg-emerald-600 dark:bg-emerald-500" />
+              </div>
+              <span>More</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 2. RankerHub Internal Platform Heatmap */}
+        <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
+            <div>
+              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-violet-500" /> Platform Activity
+              </h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                Internal interactions, check-ins, and CodingVerse solves.
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="block text-xl font-black text-slate-900 dark:text-white leading-none">
+                {platformHeatmap.total.toLocaleString()}
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
+                Platform Events
+              </span>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-end w-full gap-2 text-[10px] font-bold text-slate-400">
-            <span>Less</span>
+          <div className="mt-6 flex flex-col items-start min-w-max flex-1">
             <div className="flex gap-1">
-              <div className="w-3 h-3 rounded-sm bg-slate-100 dark:bg-slate-800/50" />
-              <div className="w-3 h-3 rounded-sm bg-violet-300/40 dark:bg-violet-300/40" />
-              <div className="w-3 h-3 rounded-sm bg-violet-400/60 dark:bg-violet-400/60" />
-              <div className="w-3 h-3 rounded-sm bg-violet-500/80 dark:bg-violet-500/80" />
-              <div className="w-3 h-3 rounded-sm bg-violet-600 dark:bg-violet-500" />
+              <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
+                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">Mon</span>
+                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">Wed</span>
+                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">Fri</span>
+              </div>
+
+              <div className="flex gap-1">
+                {platformHeatmap.grid.map((week, wIdx) => (
+                  <div key={`plat-${wIdx}`} className="flex flex-col gap-1">
+                    {week.map((day, dIdx) => (
+                      <div
+                        key={`plat-${wIdx}-${dIdx}`}
+                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getPlatformIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
+                        title={`${day.count > 0 ? day.count : "No"} interactions ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
-            <span>More</span>
+
+            <div className="mt-auto pt-4 flex items-center justify-end w-full gap-2 text-[10px] font-bold text-slate-400">
+              <span>Less</span>
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-sm bg-slate-100 dark:bg-slate-800/50" />
+                <div className="w-3 h-3 rounded-sm bg-violet-300/40 dark:bg-violet-300/40" />
+                <div className="w-3 h-3 rounded-sm bg-violet-400/60 dark:bg-violet-400/60" />
+                <div className="w-3 h-3 rounded-sm bg-violet-500/80 dark:bg-violet-500/80" />
+                <div className="w-3 h-3 rounded-sm bg-violet-600 dark:bg-violet-500" />
+              </div>
+              <span>More</span>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
@@ -935,6 +1048,7 @@ export const Profile = () => {
               if (badge.id === "b2" && gitRankPoints >= 100) unlocked = true;
               if (badge.id === "b3" && streak >= 10) unlocked = true;
               if (badge.id === "b4" && codingVersePoints >= 100) unlocked = true;
+              if (badge.id === "b5" && referralPoints >= 1000) unlocked = true;
 
               return (
                 <div
