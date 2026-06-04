@@ -23,21 +23,32 @@ const heatmapColors = [
 export const Dashboard = () => {
   const { userData } = useAuth();
   const [rank, setRank] = useState("Loading...");
+  
+  // Initialize with 168 empty cells (24 weeks * 7 days)
   const [heatmapCells, setHeatmapCells] = useState(
     Array.from({ length: 168 }, () => 0)
   );
 
+  // 1. Fetch REAL GitHub Contributions for Heatmap
   useEffect(() => {
     const fetchHeatmap = async () => {
       const username = userData?.githubUsername;
       if (!username) return;
+      
       try {
         const res = await fetch(
           `https://github-contributions-api.jogruber.de/v4/${username}?y=last`
         );
+        
+        if (!res.ok) throw new Error("API Limit or Network Error");
+        
         const data = await res.json();
         const contributions = data.contributions || [];
+        
+        // Take the last 168 days of real data
         const last168 = contributions.slice(-168);
+        
+        // Map raw commit counts to intensity levels (0-4)
         const cells = last168.map((day) => {
           const c = day.count;
           if (c === 0) return 0;
@@ -46,14 +57,26 @@ export const Dashboard = () => {
           if (c <= 9) return 3;
           return 4;
         });
-        setHeatmapCells(cells);
+        
+        // Ensure we always have exactly 168 cells for UI consistency
+        if (cells.length < 168) {
+          const padding = Array.from({ length: 168 - cells.length }, () => 0);
+          setHeatmapCells([...padding, ...cells]);
+        } else {
+          setHeatmapCells(cells);
+        }
+        
       } catch (err) {
-        console.error("Heatmap fetch error:", err);
+        console.error("Heatmap fetch error (Falling back to empty grid):", err);
+        // Fallback to empty grid if API fails (prevents fake data from rendering)
+        setHeatmapCells(Array.from({ length: 168 }, () => 0));
       }
     };
+    
     fetchHeatmap();
   }, [userData?.githubUsername]);
 
+  // 2. Fetch Dynamic Leaderboard Rank
   useEffect(() => {
     if (!userData || !userData.points) return;
     const fetchRank = async () => {
@@ -193,7 +216,7 @@ export const Dashboard = () => {
               <div
                 key={idx}
                 className={`w-3.5 h-3.5 rounded-sm border border-slate-200/5 dark:border-slate-800/5 hover:ring-2 hover:ring-violet-500/40 transition-all duration-150 ${heatmapColors[val]}`}
-                title={`Level: ${val}`}
+                title={`Activity Level: ${val}`}
               />
             ))}
           </div>

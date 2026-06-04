@@ -306,13 +306,46 @@ export const CodingVerse = () => {
     let newSolvedQuestions = [...answeredQuestions];
     let newCodingVersePoints = userData?.points?.codingVersePoints || 0;
     let newTotalPoints = userData?.points?.totalPoints || 0;
+    
+    // CodingVerse Streak Implementation (Issue #201)
+    let newCodingVerseStreak = userData?.codingVerseStreak || 0;
+    let newStreakPoints = userData?.points?.streakPoints || 0;
+    let newLastCodingVerseSolveDate = userData?.lastCodingVerseSolveDate || null;
+    let earnedStreakPoints = 0;
 
     if (isCorrect) {
       newSolvedQuestions = [...answeredQuestions, qId];
       newCodingVersePoints += earnedPoints;
+
+      // Ensure timezone-agnostic boundaries using strict UTC Date strings
+      const today = new Date();
+      const todayUTCStr = today.toISOString().split('T')[0];
+      const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+
+      if (newLastCodingVerseSolveDate) {
+        if (todayUTCStr !== newLastCodingVerseSolveDate) {
+          const lastDateParts = newLastCodingVerseSolveDate.split('-');
+          const lastUTC = Date.UTC(parseInt(lastDateParts[0]), parseInt(lastDateParts[1]) - 1, parseInt(lastDateParts[2]));
+          const diffDays = Math.floor((todayUTC - lastUTC) / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            newCodingVerseStreak += 1; // Maintained consecutive sequence
+          } else if (diffDays > 1) {
+            newCodingVerseStreak = 1; // Broken streak, reset
+          }
+          earnedStreakPoints = 5; // +5 XP for each new active solving day
+          newLastCodingVerseSolveDate = todayUTCStr;
+        }
+      } else {
+        newCodingVerseStreak = 1;
+        earnedStreakPoints = 5;
+        newLastCodingVerseSolveDate = todayUTCStr;
+      }
+
+      newStreakPoints += earnedStreakPoints;
       newTotalPoints = (userData?.points?.gitRankPoints || 0) + 
                        (userData?.points?.referralPoints || 0) + 
-                       (userData?.points?.streakPoints || 0) + 
+                       newStreakPoints + 
                        newCodingVersePoints;
     }
 
@@ -321,14 +354,23 @@ export const CodingVerse = () => {
     if (user && userData) {
       const userRef = doc(db, "users", user.uid);
       try {
-        await updateDoc(userRef, {
+        const updatePayload = {
           "points.codingVersePoints": newCodingVersePoints,
           "points.totalPoints": newTotalPoints,
           "solvedCodingVerseQuestions": newSolvedQuestions,
           "attemptedCodingVerseQuestions": newAttemptedQuestions,
           "codingVerseAnswers": newAnswersState
-        });
-        console.log(`Submitted answer for ${qId}. Correct: ${isCorrect}. Points earned: ${isCorrect ? earnedPoints : 0}.`);
+        };
+
+        // Only update streak data if they successfully answered and progressed
+        if (isCorrect) {
+          updatePayload["points.streakPoints"] = newStreakPoints;
+          updatePayload["codingVerseStreak"] = newCodingVerseStreak;
+          updatePayload["lastCodingVerseSolveDate"] = newLastCodingVerseSolveDate;
+        }
+
+        await updateDoc(userRef, updatePayload);
+        console.log(`Submitted answer for ${qId}. Correct: ${isCorrect}. Arena Points: ${isCorrect ? earnedPoints : 0}. Streak Points: ${earnedStreakPoints}`);
       } catch (err) {
         console.error("Failed to update points in database:", err);
       }
@@ -342,7 +384,7 @@ export const CodingVerse = () => {
     }
   };
 
-  // Calculate total XP gained from solved questions dynamically (for sidebar & mobile views)
+  // Calculate total XP gained from solved questions dynamically
   const codingVerseXPGained = answeredQuestions.reduce((sum, qId) => {
     const q = theoryQuestions.find(item => item.id === qId);
     if (!q) return sum;
@@ -390,7 +432,6 @@ export const CodingVerse = () => {
                 {/* 1. Mascot Post Header */}
                 <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
                   <div className="flex items-center gap-3">
-                    {/* Mascot profile photo with Instagram-style colored story ring */}
                     <div className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 flex items-center justify-center shadow-md">
                       <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-lg select-none">
                         🦉
@@ -435,12 +476,10 @@ export const CodingVerse = () => {
                   onDoubleClick={() => handleDoubleTap(q.id)}
                   className="relative bg-slate-950 p-6 min-h-[160px] flex flex-col justify-center border-b border-slate-100 dark:border-slate-800 select-none group cursor-pointer"
                 >
-                  {/* Floating instructions overlay on hover */}
                   <div className="absolute top-2 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[9px] font-bold text-slate-500 tracking-wide flex items-center gap-1">
                     <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-800">Double-tap to like</span>
                   </div>
 
-                  {/* Popout Heart Animation */}
                   <AnimatePresence>
                     {showHeartAnimation[q.id] && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -457,18 +496,16 @@ export const CodingVerse = () => {
                     )}
                   </AnimatePresence>
 
-                  {/* Question snippet title */}
                   <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1">
                     <Terminal className="w-3.5 h-3.5 text-emerald-500" /> SOURCE_CODE.{q.language === "Python" ? "py" : "java"}
                   </div>
 
-                  {/* Code block */}
                   <div className="font-mono text-xs text-emerald-400 overflow-x-auto leading-relaxed select-text whitespace-pre bg-black/30 p-4 rounded-xl border border-slate-900">
                     {q.code}
                   </div>
                 </div>
 
-                {/* 3. Action bar (Like only - removed comment, share, bookmark) */}
+                {/* 3. Action bar */}
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -481,7 +518,6 @@ export const CodingVerse = () => {
                     </div>
                   </div>
 
-                  {/* Like statistics */}
                   <div className="text-xs font-bold text-slate-700 dark:text-slate-350 select-none">
                     Liked by <span className="hover:underline cursor-pointer font-black text-slate-900 dark:text-white">git_wizard</span> and{" "}
                     <span className="hover:underline cursor-pointer font-black text-slate-900 dark:text-white">
@@ -489,7 +525,6 @@ export const CodingVerse = () => {
                     </span>
                   </div>
 
-                  {/* Post caption (Question) */}
                   <div className="text-xs leading-relaxed">
                     <span className="font-extrabold text-slate-900 dark:text-white mr-1.5 hover:underline cursor-pointer">
                       oliver_mascot
@@ -650,11 +685,6 @@ export const CodingVerse = () => {
                             </span>
                             {q.explanation}
                           </p>
-                          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
-                            <span>Just now</span>
-                            <button className="hover:text-slate-200 transition">Like</button>
-                            <button className="hover:text-slate-200 transition">Reply</button>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -677,7 +707,6 @@ export const CodingVerse = () => {
               </span>
               
               <div className="flex items-center gap-3">
-                {/* Real User Profile picture instead of random gender emojis */}
                 <img 
                   src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"} 
                   alt="Profile Avatar"
@@ -709,6 +738,13 @@ export const CodingVerse = () => {
                   <span className="text-slate-400">CodingVerse XP Gained</span>
                   <span className="text-emerald-500 font-extrabold">+{codingVerseXPGained} XP</span>
                 </div>
+                
+                {/* NEW LOGIC UI: Live CodingVerse Streak Display */}
+                <div className="flex justify-between items-center text-xs font-bold pt-1 border-b border-slate-100 dark:border-slate-800/50 pb-2">
+                  <span className="text-slate-400">Arena Streak</span>
+                  <span className="text-orange-500 font-extrabold">🔥 {userData?.codingVerseStreak || 0} Days</span>
+                </div>
+
                 {/* Displaying CodingVerse global leaderboard rank */}
                 <div className="flex justify-between items-center text-xs font-bold pt-1">
                   <span className="text-slate-400">CodingVerse Rank</span>
