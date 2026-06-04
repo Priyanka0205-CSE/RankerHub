@@ -57,7 +57,7 @@ export const Profile = () => {
 
   // GitHub Real Heatmap State
   const [githubHeatmap, setGithubHeatmap] = useState({
-    grid: Array.from({ length: 16 }, () => Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 })),
+    grid: Array.from({ length: 16 }, () => Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 }))),
     total: 0
   });
 
@@ -259,19 +259,28 @@ export const Profile = () => {
         const grid = [];
         let currentWeek = [];
 
+        const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const todayMs = Date.now();
+
         last112.forEach((day, index) => {
           const c = day.count;
           totalActivity += c;
           let intensity = 0;
           
-          if (c > 0 && c <= 2) intensity = 1;
-          else if (c > 2 && c <= 5) intensity = 2;
-          else if (c > 5 && c <= 9) intensity = 3;
-          else if (c > 9) intensity = 4;
+          if (c > 9) intensity = 4;
+          else if (c > 5) intensity = 3;
+          else if (c > 2) intensity = 2;
+          else if (c > 0) intensity = 1;
 
-          const daysAgo = 111 - index; 
+          let dateStr;
+          if (day.date) {
+            dateStr = dateFormatter.format(new Date(day.date));
+          } else {
+            const daysAgo = 111 - index;
+            dateStr = dateFormatter.format(todayMs - (daysAgo * 86400000));
+          }
 
-          currentWeek.push({ intensity, daysAgo, count: c });
+          currentWeek.push({ intensity, date: dateStr, count: c });
 
           if (currentWeek.length === 7) {
             grid.push(currentWeek);
@@ -281,16 +290,16 @@ export const Profile = () => {
 
         if (grid.length < 16) {
           const diff = 16 - grid.length;
-          const padWeek = Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 });
-          const padGrid = Array(diff).fill(padWeek);
-          grid.unshift(...padGrid);
+          for (let i = 0; i < diff; i++) {
+            grid.unshift(Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 })));
+          }
         }
 
         setGithubHeatmap({ grid, total: totalActivity });
       } catch (err) {
         console.error("Profile heatmap fetch error:", err);
         setGithubHeatmap({
-          grid: Array.from({ length: 16 }, () => Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 })),
+          grid: Array.from({ length: 16 }, () => Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 }))),
           total: 0
         });
       }
@@ -319,24 +328,25 @@ export const Profile = () => {
        activityMap[key] = (activityMap[key] || 0) + 1;
     });
 
+    const todayMs = today.getTime();
+    const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
     for (let w = 0; w < weeks; w++) {
       const weekData = [];
       for (let d = 0; d < daysPerWeek; d++) {
         const daysAgo = ((weeks - 1 - w) * daysPerWeek) + (daysPerWeek - 1 - d);
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() - daysAgo);
-        const key = targetDate.getTime();
+        const targetTime = todayMs - (daysAgo * 86400000);
         
-        const count = activityMap[key] || 0;
+        const count = activityMap[targetTime] || 0;
         activityTotal += count;
         
         let intensity = 0;
-        if (count > 0 && count <= 2) intensity = 1;
-        else if (count > 2 && count <= 5) intensity = 2;
-        else if (count > 5 && count <= 9) intensity = 3;
-        else if (count > 9) intensity = 4;
+        if (count > 9) intensity = 4;
+        else if (count > 5) intensity = 3;
+        else if (count > 2) intensity = 2;
+        else if (count > 0) intensity = 1;
 
-        weekData.push({ intensity, daysAgo, count });
+        weekData.push({ intensity, date: dateFormatter.format(targetTime), count });
       }
       data.push(weekData);
     }
@@ -844,7 +854,7 @@ export const Profile = () => {
                       <div
                         key={`gh-${wIdx}-${dIdx}`}
                         className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getGithubIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                        title={`${day.count > 0 ? day.count : "No"} commits ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
+                        title={`${day.count > 0 ? day.count : "No"} commits${day.date ? ` on ${day.date}` : ""}`}
                       />
                     ))}
                   </div>
@@ -902,7 +912,7 @@ export const Profile = () => {
                       <div
                         key={`plat-${wIdx}-${dIdx}`}
                         className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getPlatformIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                        title={`${day.count > 0 ? day.count : "No"} interactions ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
+                        title={`${day.count > 0 ? day.count : "No"} interactions${day.date ? ` on ${day.date}` : ""}`}
                       />
                     ))}
                   </div>
