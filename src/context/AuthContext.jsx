@@ -15,6 +15,7 @@ import {
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 import { validateUserData } from "../utils/inputValidation";
+import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
 
 const AuthContext = createContext({});
 
@@ -30,13 +31,17 @@ const checkAndUpdateStreak = async (data, docRef) => {
     let newStreakPoints = data.points?.streakPoints || 0;
     
     if (lastLoginDate) {
-      const diffTime = Math.abs(now - lastLoginDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const lastLoginDateStr = lastLoginDate.toDateString();
+      const todayStr = now.toDateString();
+      const yesterdayStr = yesterday.toDateString();
+
+      if (lastLoginDateStr === yesterdayStr) {
         newStreak += 1;
         newStreakPoints += 10;
-      } else if (diffDays > 1) {
+      } else if (lastLoginDateStr !== todayStr) {
         newStreak = 1;
       }
     } else {
@@ -68,14 +73,21 @@ const checkAndUpdateStreak = async (data, docRef) => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(auth ? true : false);
   const [isOnboarding, setIsOnboarding] = useState(false);
-  // GitHub OAuth access token persisted in sessionStorage to survive page refreshes
-  const [ghAccessToken, setGhAccessToken] = useState(() => {
-    return sessionStorage.getItem("gh_access_token") || null;
-  });
+  // GitHub OAuth access token stored only in memory, not persisted to storage
+  // Firebase Auth handles session persistence securely via HTTP-only cookies
+  const [ghAccessToken, setGhAccessToken] = useState(null);
 
   useEffect(() => {
+    // If Firebase wasn't configured (app === null), `auth` will be null.
+    // Avoid calling `onAuthStateChanged` with a null auth instance which
+    // causes a runtime error in the browser bundle.
+    if (!auth) {
+      console.warn("Firebase auth is not initialized; auth listener skipped.");
+      return undefined;
+    }
+
     let unsubscribeSnapshot = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
@@ -86,27 +98,47 @@ export const AuthProvider = ({ children }) => {
 
       if (currentUser) {
         setUser(currentUser);
-        const token = sessionStorage.getItem(`gh_token_${currentUser.uid}`) || sessionStorage.getItem("gh_access_token");
-        if (token) {
-          setGhAccessToken(token);
-        }
-        
+        // Token is only available during the current session in memory
+        // It will be null on page refresh, requiring fresh authentication
+        // This is the secure default behavior
+
         const userDocRef = doc(db, "users", currentUser.uid);
         
+        // Try to load from cache first to reduce initial load time
+        const docPath = `users/${currentUser.uid}`;
+        const cachedData = userDataCache.get(docPath);
+        if (cachedData) {
+          setUserData(cachedData);
+          setIsOnboarding(cachedData.onboardingStatus === "incomplete");
+          setLoading(false);
+        }
+
+        // Subscribe to real-time updates with debouncing to reduce re-renders
         unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setUserData(data);
-            setIsOnboarding(data.onboardingStatus === "incomplete");
-            setLoading(false);
+
+            // Update cache immediately for fast subsequent reads
+            userDataCache.set(docPath, data);
+
+            // Debounce state updates to prevent excessive re-renders from rapid changes
+            listenerOptimizer.debounce(currentUser.uid, (userData) => {
+              setUserData(userData);
+              setIsOnboarding(userData.onboardingStatus === "incomplete");
+              setLoading(false);
+            }, data);
+
+            // Update streak asynchronously
             checkAndUpdateStreak(data, userDocRef);
           } else {
-            setUserData(null);
-            setIsOnboarding(true);
-            setLoading(false);
+            userDataCache.delete(docPath);
+            listenerOptimizer.debounce(currentUser.uid, () => {
+              setUserData(null);
+              setIsOnboarding(true);
+              setLoading(false);
+            }, null);
           }
         }, (error) => {
-          console.error("Real-time profile listener error:", error);
           setLoading(false);
         });
 
@@ -146,9 +178,9 @@ export const AuthProvider = ({ children }) => {
       const sanitizedUserData = validation.sanitized;
       const githubId = additionalInfo?.profile?.id || null;
 
-      // Save the token to sessionStorage and state to keep user authenticated across refreshes
-      sessionStorage.setItem("gh_access_token", accessToken);
-      sessionStorage.setItem(`gh_token_${authUser.uid}`, accessToken);
+      // Store token only in memory for current session
+      // Firebase Auth handles persistent session via secure HTTP-only cookies
+      // Token is not persisted to localStorage or sessionStorage to prevent XSS theft
       setGhAccessToken(accessToken);
 
       const userDocRef = doc(db, "users", authUser.uid);
@@ -197,10 +229,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setLoading(true);
     try {
-      if (user) {
-        sessionStorage.removeItem(`gh_token_${user.uid}`);
-      }
-      sessionStorage.removeItem("gh_access_token");
+      // No need to remove from storage since token is only in memory
+      // Firebase Auth session will be cleared by signOutUser()
       await signOutUser();
       setUser(null);
       setUserData(null);

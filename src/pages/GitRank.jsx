@@ -20,8 +20,8 @@ export const GitRank = () => {
   const searchTerm = searchParams.get("search") || "";
   const selectedLanguage = searchParams.get("lang") || "All";
 
-  // Active Tab for Referral Leaderboard (Issue #214)
-  const [activeTab, setActiveTab] = useState("gitrank"); // "gitrank" | "referrals"
+  // Active Tab for Referral Leaderboard (Issue #310) - Now synced with URL
+  const activeTab = searchParams.get("tab") || "gitrank";
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -36,6 +36,12 @@ export const GitRank = () => {
     const newParams = new URLSearchParams(searchParams);
     if (lang !== "All") newParams.set("lang", lang);
     else newParams.delete("lang");
+    setSearchParams(newParams);
+  };
+
+  const handleTabChange = (tabName) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tab", tabName);
     setSearchParams(newParams);
   };
   
@@ -186,11 +192,35 @@ export const GitRank = () => {
       setChartRateLimitError("");
       const token = sessionStorage.getItem(`gh_token_${user?.uid}`);
       const headers = token ? { Authorization: `token ${token}` } : {};
+      const now = Date.now();
+      const fifteenMinutes = 15 * 60 * 1000;
 
       const isRateLimited = (err) => {
         const status = err?.response?.status;
         return status === 403 || status === 429;
       };
+
+      const getFromCache = (key) => {
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+        try {
+          const entry = JSON.parse(cached);
+          const age = now - entry.timestamp;
+          return age < fifteenMinutes ? entry.data : null;
+        } catch {
+          return null;
+        }
+      };
+
+      const saveToCache = (key, data) => {
+        try {
+          localStorage.setItem(key, JSON.stringify({ data, timestamp: now }));
+        } catch {
+          console.warn("Failed to save to localStorage");
+        }
+      };
+
+      let hasRateLimitError = false;
 
       try {
         const eventsRes = await axios.get(
@@ -198,15 +228,24 @@ export const GitRank = () => {
           { headers }
         );
         setEvents(eventsRes.data || []);
+        saveToCache(`events_${userData.githubUsername}`, eventsRes.data);
       } catch (err) {
         if (isRateLimited(err)) {
-          setChartRateLimitError(
-            "GitHub API rate limit reached. Chart data is temporarily unavailable. Please wait a few minutes and reload the page."
-          );
-          setLoadingCharts(false);
-          return;
+          hasRateLimitError = true;
+          const cached = getFromCache(`events_${userData.githubUsername}`);
+          if (cached) {
+            setEvents(cached);
+            console.log("Using cached events data");
+          } else {
+            setEvents([]);
+          }
+        } else {
+          console.warn("Failed to fetch events for charts:", err);
+          const cached = getFromCache(`events_${userData.githubUsername}`);
+          if (cached) {
+            setEvents(cached);
+          }
         }
-        console.warn("Failed to fetch events for charts:", err);
       }
 
       try {
@@ -215,16 +254,32 @@ export const GitRank = () => {
           { headers }
         );
         setRepos(reposRes.data || []);
+        saveToCache(`repos_${userData.githubUsername}`, reposRes.data);
       } catch (err) {
         if (isRateLimited(err)) {
-          setChartRateLimitError(
-            "GitHub API rate limit reached. Chart data is temporarily unavailable. Please wait a few minutes and reload the page."
-          );
-          setLoadingCharts(false);
-          return;
+          hasRateLimitError = true;
+          const cached = getFromCache(`repos_${userData.githubUsername}`);
+          if (cached) {
+            setRepos(cached);
+            console.log("Using cached repos data");
+          } else {
+            setRepos([]);
+          }
+        } else {
+          console.warn("Failed to fetch repos for charts:", err);
+          const cached = getFromCache(`repos_${userData.githubUsername}`);
+          if (cached) {
+            setRepos(cached);
+          }
         }
-        console.warn("Failed to fetch repos for charts:", err);
       }
+
+      if (hasRateLimitError) {
+        setChartRateLimitError(
+          "GitHub API rate limit reached. Displaying cached data. Please wait a few minutes and reload the page for fresh data."
+        );
+      }
+
       setLoadingCharts(false);
     };
 
@@ -818,7 +873,12 @@ export const GitRank = () => {
       {/* 2. Top 3 Contributors Grid (Dynamically adjust based on active tab) */}
       {!loadingUsers && topContributors.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {topContributors.map((u, idx) => (
+          {topContributors.map((u, idx) => {
+            const isCurrentUser = user && u.uid === user.uid;
+            const displayName = isCurrentUser ? (userData?.name || u.name) : u.name;
+            const displayAvatar = isCurrentUser ? (userData?.avatar || user?.photoURL || u.avatar) : u.avatar;
+
+            return (
             <Card
               key={u.uid}
               className={`
@@ -842,12 +902,12 @@ export const GitRank = () => {
                 </span>
 
                 <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-violet-500/10 shadow-md">
-                  <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                  <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
                 </div>
 
                 <div>
                   <h4 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                    {u.name}
+                    {displayName}
                   </h4>
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                     @{u.githubUsername}
@@ -895,7 +955,8 @@ export const GitRank = () => {
                 )}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -905,7 +966,7 @@ export const GitRank = () => {
         {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
         <div className="flex items-center gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
           <button
-            onClick={() => setActiveTab("gitrank")}
+            onClick={() => handleTabChange("gitrank")}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
               activeTab === "gitrank"
                 ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
@@ -916,7 +977,7 @@ export const GitRank = () => {
             GitRank Leaderboard
           </button>
           <button
-            onClick={() => setActiveTab("referrals")}
+            onClick={() => handleTabChange("referrals")}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
               activeTab === "referrals"
                 ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
@@ -1002,16 +1063,21 @@ export const GitRank = () => {
                   )}
                 </tr>
               )}
-              itemContent={(index, u) => (
+              itemContent={(index, u) => {
+                const isCurrentUser = user && u.uid === user.uid;
+                const displayName = isCurrentUser ? (userData?.name || u.name) : u.name;
+                const displayAvatar = isCurrentUser ? (userData?.avatar || user?.photoURL || u.avatar) : u.avatar;
+
+                return (
                 <>
                   <td className="py-3 sm:py-4 px-2 sm:px-4 font-bold text-slate-500">#{u.rank}</td>
                   <td className="py-3 sm:py-4 px-2 sm:px-4">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                        <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
                       </div>
                       <div className="min-w-0">
-                        <span className="font-extrabold text-slate-900 dark:text-white block group-hover:text-violet-500 transition-colors truncate text-xs sm:text-sm">{u.name}</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white block group-hover:text-violet-500 transition-colors truncate text-xs sm:text-sm">{displayName}</span>
                         <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold block truncate">@{u.githubUsername}</span>
                       </div>
                     </div>
@@ -1044,7 +1110,8 @@ export const GitRank = () => {
                     </>
                   )}
                 </>
-              )}
+                );
+              }}
             />
           ) : (
             <div className="py-12 text-center text-slate-400 dark:text-slate-500">

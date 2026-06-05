@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import domtoimage from 'dom-to-image-more';
 import { AnimatePresence, motion } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import {
@@ -34,6 +35,16 @@ import collegesList from "../data/colleges.json";
 
 export const Profile = () => {
   const { userData, user, setUserData, syncGitHubData } = useAuth();
+  // Utility to escape text for embedding in XML/SVG
+  const escapeXml = (unsafe) => {
+    if (unsafe == null) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
   const [copied, setCopied] = useState(false);
   const [rank, setRank] = useState("Loading...");
   const [toasts, setToasts] = useState([]);
@@ -54,10 +65,11 @@ export const Profile = () => {
   const [editError, setEditError] = useState("");
 
   const editDropdownRef = useRef(null);
+  const profileCardRef = useRef(null);
 
   // GitHub Real Heatmap State
   const [githubHeatmap, setGithubHeatmap] = useState({
-    grid: Array.from({ length: 16 }, () => Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 })),
+    grid: Array.from({ length: 16 }, () => Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 }))),
     total: 0
   });
 
@@ -259,19 +271,28 @@ export const Profile = () => {
         const grid = [];
         let currentWeek = [];
 
+        const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const todayMs = Date.now();
+
         last112.forEach((day, index) => {
           const c = day.count;
           totalActivity += c;
           let intensity = 0;
           
-          if (c > 0 && c <= 2) intensity = 1;
-          else if (c > 2 && c <= 5) intensity = 2;
-          else if (c > 5 && c <= 9) intensity = 3;
-          else if (c > 9) intensity = 4;
+          if (c > 9) intensity = 4;
+          else if (c > 5) intensity = 3;
+          else if (c > 2) intensity = 2;
+          else if (c > 0) intensity = 1;
 
-          const daysAgo = 111 - index; 
+          let dateStr;
+          if (day.date) {
+            dateStr = dateFormatter.format(new Date(day.date));
+          } else {
+            const daysAgo = 111 - index;
+            dateStr = dateFormatter.format(todayMs - (daysAgo * 86400000));
+          }
 
-          currentWeek.push({ intensity, daysAgo, count: c });
+          currentWeek.push({ intensity, date: dateStr, count: c });
 
           if (currentWeek.length === 7) {
             grid.push(currentWeek);
@@ -281,16 +302,16 @@ export const Profile = () => {
 
         if (grid.length < 16) {
           const diff = 16 - grid.length;
-          const padWeek = Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 });
-          const padGrid = Array(diff).fill(padWeek);
-          grid.unshift(...padGrid);
+          for (let i = 0; i < diff; i++) {
+            grid.unshift(Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 })));
+          }
         }
 
         setGithubHeatmap({ grid, total: totalActivity });
       } catch (err) {
         console.error("Profile heatmap fetch error:", err);
         setGithubHeatmap({
-          grid: Array.from({ length: 16 }, () => Array(7).fill({ intensity: 0, daysAgo: 0, count: 0 })),
+          grid: Array.from({ length: 16 }, () => Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 }))),
           total: 0
         });
       }
@@ -319,35 +340,356 @@ export const Profile = () => {
        activityMap[key] = (activityMap[key] || 0) + 1;
     });
 
+    const todayMs = today.getTime();
+    const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
     for (let w = 0; w < weeks; w++) {
       const weekData = [];
       for (let d = 0; d < daysPerWeek; d++) {
         const daysAgo = ((weeks - 1 - w) * daysPerWeek) + (daysPerWeek - 1 - d);
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() - daysAgo);
-        const key = targetDate.getTime();
+        const targetTime = todayMs - (daysAgo * 86400000);
         
-        const count = activityMap[key] || 0;
+        const count = activityMap[targetTime] || 0;
         activityTotal += count;
         
         let intensity = 0;
-        if (count > 0 && count <= 2) intensity = 1;
-        else if (count > 2 && count <= 5) intensity = 2;
-        else if (count > 5 && count <= 9) intensity = 3;
-        else if (count > 9) intensity = 4;
+        if (count > 9) intensity = 4;
+        else if (count > 5) intensity = 3;
+        else if (count > 2) intensity = 2;
+        else if (count > 0) intensity = 1;
 
-        weekData.push({ intensity, daysAgo, count });
+        weekData.push({ intensity, date: dateFormatter.format(targetTime), count });
       }
       data.push(weekData);
     }
     return { grid: data, total: activityTotal };
   }, [userData?.platformActivityLogs]);
 
-  const handleShareProfile = () => {
+  const handleShareProfile = async () => {
     const code = userData?.referralCode || "NEWCODE";
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const profileUrl = `${window.location.origin}${window.location.pathname}`;
+
+    // Prefer native share on supporting devices (mobile/secure contexts)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${userData?.name || user?.displayName || 'RankerHub User'}`,
+          text: `Join RankerHub with my referral code: ${code}`,
+          url: profileUrl
+        });
+        setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Shared successfully.', type: 'success' }]);
+        return;
+      } catch (err) {
+        // user may have cancelled; fall through to clipboard fallback
+        console.debug('Native share canceled or failed', err);
+      }
+    }
+
+    // Clipboard fallback
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        // legacy fallback
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+
+      setCopied(true);
+      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Referral code copied to clipboard.', type: 'success' }]);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Share/copy failed', err);
+      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Failed to copy referral code.', type: 'error' }]);
+    }
+  };
+
+  const handleDownloadProfileCard = async () => {
+    if (!profileCardRef.current) {
+      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile card not available for export.", type: "error" }]);
+      return;
+    }
+
+    try {
+      // Create a sanitized clone to avoid capturing dynamic overlays and animations.
+      const original = profileCardRef.current;
+      const clone = original.cloneNode(true);
+
+      // Remove pointer-only overlays that interfere with rendering
+      clone.querySelectorAll('.pointer-events-none').forEach(n => n.remove());
+
+      // Helper to copy computed styles from source element to target element
+      const copyComputedStyles = (sourceEl, targetEl) => {
+        const computed = window.getComputedStyle(sourceEl);
+        let cssText = '';
+        for (let i = 0; i < computed.length; i++) {
+          const prop = computed[i];
+          try {
+            cssText += `${prop}: ${computed.getPropertyValue(prop)}; `;
+          } catch {
+            // ignore inaccessible properties
+          }
+        }
+        targetEl.style.cssText = cssText;
+      };
+
+      // Recursively inline computed styles for the clone using the original DOM structure
+      const inlineAllStyles = (srcRoot, tgtRoot) => {
+        copyComputedStyles(srcRoot, tgtRoot);
+        const srcChildren = Array.from(srcRoot.children || []);
+        const tgtChildren = Array.from(tgtRoot.children || []);
+        for (let i = 0; i < srcChildren.length; i++) {
+          if (tgtChildren[i]) inlineAllStyles(srcChildren[i], tgtChildren[i]);
+        }
+      };
+
+      try {
+        inlineAllStyles(original, clone);
+      } catch (e) {
+        console.warn('Inline styles fallback:', e);
+      }
+
+      // Ensure fonts are loaded for accurate measurement
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      // Size and place clone offscreen
+      const rect = original.getBoundingClientRect();
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = `${Math.round(rect.width)}px`;
+      clone.style.height = `${Math.round(rect.height)}px`;
+      clone.style.boxSizing = 'border-box';
+
+      // If dev bypass is enabled, open an in-page preview so you can inspect the clone
+      const isDev = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
+      if (isDev) {
+        // Create an in-page overlay so the cloned node renders with the same CSS/fonts
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.8);z-index:999999;padding:24px;`;
+
+        const container = document.createElement('div');
+        container.style.cssText = `position:relative;max-width:calc(100% - 48px);max-height:calc(100% - 48px);overflow:auto;padding:18px;border-radius:12px;`;
+
+        // Debug banner
+        const dbg = document.createElement('div');
+        dbg.style.cssText = 'position:absolute;left:12px;top:12px;padding:6px 10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:6px;font-size:12px;z-index:100000';
+        dbg.textContent = `Preview nodes: ${clone.getElementsByTagName('*').length}`;
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close Preview';
+        closeBtn.style.cssText = 'position:absolute;right:12px;top:12px;padding:6px 10px;background:#111827;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000';
+        closeBtn.onclick = () => {
+          if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        };
+
+        // Download button for the preview — use SVG foreignObject -> canvas rasterization for better fidelity
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download Preview as PNG';
+        downloadBtn.style.cssText = 'position:absolute;right:140px;top:12px;padding:6px 10px;background:#7c3aed;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000';
+        downloadBtn.onclick = async () => {
+          try {
+            const width = 1200;
+            const height = 630;
+
+            // Helper: fetch image and convert to data URL
+            const imgToDataUrl = async (url) => {
+              try {
+                const res = await fetch(url, { mode: 'cors' });
+                const blob = await res.blob();
+                return await new Promise((resolve, reject) => {
+                  const fr = new FileReader();
+                  fr.onload = () => resolve(fr.result);
+                  fr.onerror = reject;
+                  fr.readAsDataURL(blob);
+                });
+              } catch (e) {
+                console.warn('Avatar fetch failed, using blank:', e);
+                return null;
+              }
+            };
+
+            const avatarUrl = (userData && (userData.avatar || user?.photoURL)) || 'https://avatars.githubusercontent.com/u/9919?v=4';
+            const avatarData = await imgToDataUrl(avatarUrl);
+
+            // Construct a simple SVG that mirrors the preview layout
+            const svgParts = [];
+            svgParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+            svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
+            svgParts.push(`<defs>`);
+            svgParts.push(`<style><![CDATA[
+              .title{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;fill:#ffffff;font-weight:800}
+              .meta{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:#93c5fd}
+              .body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:rgba(255,255,255,0.85)}
+            ]]></style>`);
+            // background gradient (define inside defs before use to avoid ordering issues)
+            svgParts.push(`<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`);
+            svgParts.push(`</defs>`);
+            svgParts.push(`<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`);
+            svgParts.push(`<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`);
+
+            // Avatar
+            const avatarX = 48;
+            const avatarY = 48;
+            const avatarSize = 160;
+            if (avatarData) {
+              svgParts.push(`<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`);
+            } else {
+              svgParts.push(`<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`);
+            }
+
+            // Text block
+            const textX = avatarX + avatarSize + 36;
+            const textY = avatarY + 36;
+            const displayName = (userData && userData.name) || (user && user.displayName) || 'Developer';
+            const usernameHandle = (userData && userData.githubUsername) || 'developer';
+            const collegeName = (userData && userData.college) || 'Mumbai College';
+            const referralCode = (userData && userData.referralCode) || 'N/A';
+
+            svgParts.push(`<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`);
+            svgParts.push(`<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`);
+            // Description: avoid foreignObject (taints canvas). Use simple SVG text lines with basic wrapping.
+            const description = 'Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges. ☕';
+            const wrapTextLines = (text, maxChars) => {
+              const words = text.split(' ');
+              const lines = [];
+              let cur = '';
+              for (const w of words) {
+                if ((cur + ' ' + w).trim().length <= maxChars) {
+                  cur = (cur + ' ' + w).trim();
+                } else {
+                  if (cur) lines.push(cur);
+                  cur = w;
+                }
+              }
+              if (cur) lines.push(cur);
+              return lines;
+            };
+            const descLines = wrapTextLines(description, 56);
+            for (let i = 0; i < descLines.length; i++) {
+              const line = descLines[i];
+              const y = textY + 56 + (i * 20);
+              svgParts.push(`<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`);
+            }
+
+            // Right column
+            svgParts.push(`<g transform="translate(${width - 260},${avatarY})">`);
+            svgParts.push(`<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`);
+            svgParts.push(`<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`);
+            svgParts.push(`<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`);
+            svgParts.push(`<text x="12" y="105" class="meta" font-size="12">Referral</text>`);
+            svgParts.push(`<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`);
+            svgParts.push(`</g>`);
+
+            svgParts.push(`</svg>`);
+
+            const svgString = svgParts.join('\n');
+            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            await new Promise((resolve, reject) => {
+              const img = new window.Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => {
+                try {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#0b1220';
+                  ctx.fillRect(0, 0, width, height);
+                  ctx.drawImage(img, 0, 0, width, height);
+                  const dataUrl = canvas.toDataURL('image/png');
+                  const link = document.createElement('a');
+                  link.download = `${(userData?.githubUsername || userData?.name || 'profile')}-rankerhub.png`;
+                  link.href = dataUrl;
+                  link.click();
+                  URL.revokeObjectURL(url);
+                  resolve();
+                } catch (err) {
+                  URL.revokeObjectURL(url);
+                  reject(err);
+                }
+              };
+              img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+              img.src = url;
+            });
+          } catch (err) {
+            console.error('SVG export failed', err);
+            setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'SVG export failed.', type: 'error' }]);
+          }
+        };
+
+        // Build a simple self-contained preview (fallback) so it always renders
+        try {
+          const avatarUrl = (userData && (userData.avatar || user?.photoURL)) || "https://avatars.githubusercontent.com/u/9919?v=4";
+          const displayName = (userData && (userData.name)) || (user && user.displayName) || "Developer";
+          const usernameHandle = (userData && userData.githubUsername) || "developer";
+          const collegeName = (userData && userData.college) || "Mumbai College";
+          const referralCode = (userData && userData.referralCode) || "N/A";
+          const simpleHtml = `
+            <div style="width:100%;max-width:980px;border-radius:12px;overflow:hidden;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background:linear-gradient(135deg,#0f172a,#0b1220);color:#fff;box-shadow:0 10px 30px rgba(2,6,23,0.6);">
+              <div style="display:flex;gap:20px;align-items:center;padding:28px;">
+                <div style="width:120px;height:120px;border-radius:16px;overflow:hidden;flex-shrink:0;border:4px solid rgba(255,255,255,0.06);">
+                  <img src="${avatarUrl}" alt="avatar" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:36px;font-weight:800;margin-bottom:6px">${displayName}</div>
+                  <div style="color:#93c5fd;font-size:14px">@${usernameHandle} • ${collegeName}</div>
+                  <p style="color:rgba(255,255,255,0.8);margin-top:12px;max-width:820px;font-size:14px">Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges. ☕</p>
+                </div>
+                <div style="width:220px;text-align:right;padding-left:8px;">
+                  <div style="color:#9ca3af;font-size:13px">RankerHub</div>
+                  <div style="font-size:16px;font-weight:700;margin-top:8px">Shareable Profile Card</div>
+                  <div style="margin-top:18px;background:rgba(255,255,255,0.04);padding:10px;border-radius:10px;">
+                    <div style="font-size:12px;color:#9ca3af">Referral</div>
+                    <div style="font-weight:800">${referralCode}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          container.innerHTML = simpleHtml;
+        } catch {
+          // Fallback: append clone directly
+          try { container.appendChild(clone); } catch { container.innerHTML = clone.outerHTML; }
+        }
+
+        overlay.appendChild(container);
+        overlay.appendChild(dbg);
+        overlay.appendChild(closeBtn);
+        overlay.appendChild(downloadBtn);
+        document.body.appendChild(overlay);
+
+        // Do not proceed with export so you can inspect the preview first
+        return;
+      }
+
+      document.body.appendChild(clone);
+
+      const dataUrl = await domtoimage.toPng(clone, { cacheBust: true, bgcolor: null });
+
+      // Cleanup
+      document.body.removeChild(clone);
+
+      const link = document.createElement('a');
+      link.download = `${(userData?.githubUsername || userData?.name || 'profile')}-rankerhub.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Export error', err);
+      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Failed to export profile card.", type: "error" }]);
+    }
   };
 
   const getDiscordProfileUrl = (discordValue) => {
@@ -691,9 +1033,12 @@ export const Profile = () => {
         <GradientButton onClick={handleShareProfile} className="py-2.5 px-4 text-xs">
           {copied ? "Code Copied!" : "Copy Referral Code"}
         </GradientButton>
+        <GradientButton onClick={handleDownloadProfileCard} className="py-2.5 px-4 text-xs">
+          Download Profile Card
+        </GradientButton>
       </SectionHeader>
 
-      <Card className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50">
+      <Card ref={profileCardRef} className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50">
         <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative w-32 h-32 flex-shrink-0">
@@ -844,7 +1189,7 @@ export const Profile = () => {
                       <div
                         key={`gh-${wIdx}-${dIdx}`}
                         className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getGithubIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                        title={`${day.count > 0 ? day.count : "No"} commits ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
+                        title={`${day.count > 0 ? day.count : "No"} commits${day.date ? ` on ${day.date}` : ""}`}
                       />
                     ))}
                   </div>
@@ -902,7 +1247,7 @@ export const Profile = () => {
                       <div
                         key={`plat-${wIdx}-${dIdx}`}
                         className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getPlatformIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                        title={`${day.count > 0 ? day.count : "No"} interactions ${day.daysAgo === 0 ? "today" : `${day.daysAgo} days ago`}`}
+                        title={`${day.count > 0 ? day.count : "No"} interactions${day.date ? ` on ${day.date}` : ""}`}
                       />
                     ))}
                   </div>
