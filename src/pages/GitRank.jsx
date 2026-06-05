@@ -186,11 +186,35 @@ export const GitRank = () => {
       setChartRateLimitError("");
       const token = sessionStorage.getItem(`gh_token_${user?.uid}`);
       const headers = token ? { Authorization: `token ${token}` } : {};
+      const now = Date.now();
+      const fifteenMinutes = 15 * 60 * 1000;
 
       const isRateLimited = (err) => {
         const status = err?.response?.status;
         return status === 403 || status === 429;
       };
+
+      const getFromCache = (key) => {
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+        try {
+          const entry = JSON.parse(cached);
+          const age = now - entry.timestamp;
+          return age < fifteenMinutes ? entry.data : null;
+        } catch {
+          return null;
+        }
+      };
+
+      const saveToCache = (key, data) => {
+        try {
+          localStorage.setItem(key, JSON.stringify({ data, timestamp: now }));
+        } catch {
+          console.warn("Failed to save to localStorage");
+        }
+      };
+
+      let hasRateLimitError = false;
 
       try {
         const eventsRes = await axios.get(
@@ -198,15 +222,24 @@ export const GitRank = () => {
           { headers }
         );
         setEvents(eventsRes.data || []);
+        saveToCache(`events_${userData.githubUsername}`, eventsRes.data);
       } catch (err) {
         if (isRateLimited(err)) {
-          setChartRateLimitError(
-            "GitHub API rate limit reached. Chart data is temporarily unavailable. Please wait a few minutes and reload the page."
-          );
-          setLoadingCharts(false);
-          return;
+          hasRateLimitError = true;
+          const cached = getFromCache(`events_${userData.githubUsername}`);
+          if (cached) {
+            setEvents(cached);
+            console.log("Using cached events data");
+          } else {
+            setEvents([]);
+          }
+        } else {
+          console.warn("Failed to fetch events for charts:", err);
+          const cached = getFromCache(`events_${userData.githubUsername}`);
+          if (cached) {
+            setEvents(cached);
+          }
         }
-        console.warn("Failed to fetch events for charts:", err);
       }
 
       try {
@@ -215,16 +248,32 @@ export const GitRank = () => {
           { headers }
         );
         setRepos(reposRes.data || []);
+        saveToCache(`repos_${userData.githubUsername}`, reposRes.data);
       } catch (err) {
         if (isRateLimited(err)) {
-          setChartRateLimitError(
-            "GitHub API rate limit reached. Chart data is temporarily unavailable. Please wait a few minutes and reload the page."
-          );
-          setLoadingCharts(false);
-          return;
+          hasRateLimitError = true;
+          const cached = getFromCache(`repos_${userData.githubUsername}`);
+          if (cached) {
+            setRepos(cached);
+            console.log("Using cached repos data");
+          } else {
+            setRepos([]);
+          }
+        } else {
+          console.warn("Failed to fetch repos for charts:", err);
+          const cached = getFromCache(`repos_${userData.githubUsername}`);
+          if (cached) {
+            setRepos(cached);
+          }
         }
-        console.warn("Failed to fetch repos for charts:", err);
       }
+
+      if (hasRateLimitError) {
+        setChartRateLimitError(
+          "GitHub API rate limit reached. Displaying cached data. Please wait a few minutes and reload the page for fresh data."
+        );
+      }
+
       setLoadingCharts(false);
     };
 

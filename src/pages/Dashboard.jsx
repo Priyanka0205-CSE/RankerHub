@@ -29,26 +29,53 @@ export const Dashboard = () => {
     Array.from({ length: 168 }, () => 0)
   );
 
-  // 1. Fetch REAL GitHub Contributions for Heatmap
+  // 1. Fetch REAL GitHub Contributions for Heatmap with Caching
   useEffect(() => {
     const fetchHeatmap = async () => {
       const username = userData?.githubUsername;
       if (!username) return;
-      
+
+      const cacheKey = `heatmap_${username}`;
+      const cached = localStorage.getItem(cacheKey);
+      const now = Date.now();
+
+      let data = null;
+
       try {
         const res = await fetch(
           `https://github-contributions-api.jogruber.de/v4/${username}?y=last`
         );
-        
-        if (!res.ok) throw new Error("API Limit or Network Error");
-        
-        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(`API Error: ${res.status}`);
+        }
+
+        data = await res.json();
+        const cacheEntry = { data, timestamp: now };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
+      } catch (err) {
+        if (cached) {
+          const cacheEntry = JSON.parse(cached);
+          const cacheAge = now - cacheEntry.timestamp;
+          const fifteenMinutes = 15 * 60 * 1000;
+
+          if (cacheAge < fifteenMinutes || err.message.includes("API")) {
+            data = cacheEntry.data;
+            console.log("Using cached heatmap data");
+          }
+        }
+
+        if (!data) {
+          console.error("Heatmap fetch error (Falling back to empty grid):", err);
+          setHeatmapCells(Array.from({ length: 168 }, () => 0));
+          return;
+        }
+      }
+
+      if (data) {
         const contributions = data.contributions || [];
-        
-        // Take the last 168 days of real data
         const last168 = contributions.slice(-168);
-        
-        // Map raw commit counts to intensity levels (0-4)
+
         const cells = last168.map((day) => {
           const c = day.count;
           if (c === 0) return 0;
@@ -57,22 +84,16 @@ export const Dashboard = () => {
           if (c <= 9) return 3;
           return 4;
         });
-        
-        // Ensure we always have exactly 168 cells for UI consistency
+
         if (cells.length < 168) {
           const padding = Array.from({ length: 168 - cells.length }, () => 0);
           setHeatmapCells([...padding, ...cells]);
         } else {
           setHeatmapCells(cells);
         }
-        
-      } catch (err) {
-        console.error("Heatmap fetch error (Falling back to empty grid):", err);
-        // Fallback to empty grid if API fails (prevents fake data from rendering)
-        setHeatmapCells(Array.from({ length: 168 }, () => 0));
       }
     };
-    
+
     fetchHeatmap();
   }, [userData?.githubUsername]);
 
