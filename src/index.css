@@ -273,8 +273,20 @@
   position: relative;
   height: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.55s ease;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.55s ease, background 0.4s ease;
+  
+  /* Light Mode Base Styling (Matches Community Contributors) */
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.8) 0%, rgba(241, 245, 249, 0.9) 55%, rgba(226, 232, 240, 1) 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow:
+    rgba(0, 10, 40, 0) 40px 50px 25px -40px,
+    rgba(0, 10, 40, 0.08) 0 25px 25px -5px;
+}
+
+/* Dark Mode Overrides for the Card */
+.dark .team-card-3d {
   background: linear-gradient(160deg, #0d1117 0%, #111827 55%, #1e1b4b 100%) !important;
+  border: 1px solid transparent;
   box-shadow:
     rgba(0, 10, 40, 0) 40px 50px 25px -40px,
     rgba(0, 10, 40, 0.3) 0 25px 25px -5px;
