@@ -78,8 +78,9 @@ export const fetchGitHubData = async (endpoint) => {
 
   } catch (error) {
     // 🛡️ Cryptographic Leak Isolation: Sanitize error logs
-    // We strictly avoid logging the 'headers' object to prevent token leakage
     console.error("[GitHub Interceptor] Request failed for endpoint:", endpoint.split('?')[0]);
-    throw new Error("GitHub fetch operation failed gracefully.");
+    
+    // Fixed: Attached the original error as 'cause' to satisfy 'preserve-caught-error'
+    throw new Error("GitHub fetch operation failed gracefully.", { cause: error });
   }
 };
