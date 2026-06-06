@@ -36,22 +36,18 @@ service cloud.firestore {
       allow read: if true;
 
       // Creation: A logged in user can provision a skeletal profile or onboarding document.
-      // The city field is not restricted to any specific value so users from all cities
-      // can create their profile during onboarding.
       allow create: if isOwner(uid)
         && (request.resource.data.onboardingStatus == "incomplete" || request.resource.data.onboardingStatus == "complete");
 
-      // RULE 1: Allow profile updates (Name, Avatar, Gender, DOB, City, College, LinkedIn, Instagram, Discord) ANYTIME
-      // This bypasses the strict onboarding/points rules for profile information updates only
+      // RULE 1: Allow profile updates ANYTIME
       allow update: if isOwner(uid) && isOnlyProfileUpdate();
 
       // RULE 2: Allow streak check-in writes that touch only streak-related fields.
-      // longestStreak is enforced as monotonically non-decreasing by the helper.
       allow update: if isOwner(uid) && isStreakUpdate();
 
       // RULE 3: Original strict rules for onboarding and points updates
       allow update: if isOwner(uid) 
-        // 1. If they were already onboarded (onboardingStatus == "complete"), they cannot change immutable onboarding fields
+        // 1. Immutable onboarding fields check
         && (resource.data.onboardingStatus != "complete" || (
              request.resource.data.gender == resource.data.gender &&
              request.resource.data.dob == resource.data.dob &&
@@ -64,12 +60,10 @@ service cloud.firestore {
 
         // 3. Prevent arbitrary point spikes during normal client writes:
         && (
-          // Either they are transitioning from incomplete -> complete onboarding, or setting up their initial gitRankPoints
           (resource.data.onboardingStatus == "incomplete" && request.resource.data.onboardingStatus == "complete") ||
-          // Or points are unchanged or incremented by small, legitimate amounts (like a streak login +2, codingverse easy +5)
           (request.resource.data.points.totalPoints == resource.data.points.totalPoints) ||
-          (request.resource.data.points.totalPoints > resource.data.points.totalPoints && request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 100) ||
-          // Or they are updating their GitHub stats, and the GitRank points matches the formula, and other points are unchanged:
+          // FIXED: Cap changed to 200 for CodingVerse Hard challenges
+          (request.resource.data.points.totalPoints > resource.data.points.totalPoints && request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 200) ||
           (
             request.resource.data.points.gitRankPoints == (
               request.resource.data.githubStats.commits * 2 +
@@ -82,19 +76,14 @@ service cloud.firestore {
           )
         );
 
-      // RULE 3: Referrer update - Allow the referred user to atomically increment a referrer's
-      // referralPoints by exactly 100 points as part of the onboarding referral transaction.
-      // Two additional guards close the exploit described in issue #81:
-      //   1. exists(...) confirms the referrals index document for the target user exists,
-      //      which is only created when the referrer generates a referral code.
-      //   2. request.auth.uid in get(...).data.usedBy confirms the caller is already recorded
-      //      in the referrer's usedBy list, meaning they legitimately redeemed the referral
-      //      code before this point update fires. This prevents any arbitrary authenticated
-      //      user from granting unlimited referral points to any other user.
+      // RULE 4: Referrer update - Prevent multi-write inflation exploit (Issue #306)
+      // Locks referralPoints to the actual totalEarned value in the referrals index.
       allow update: if isAuthenticated()
         && request.auth.uid != uid
-        && request.resource.data.points.referralPoints == resource.data.points.referralPoints + 100
-        && request.resource.data.points.totalPoints == resource.data.points.totalPoints + 100
+        // FIX: Sync referralPoints directly with the referrals index document's totalEarned counter
+        && request.resource.data.points.referralPoints == get(/databases/$(database)/documents/referrals/$(uid)).data.totalEarned
+        // FIX: Total points must reflect the exact growth in referral points
+        && request.resource.data.points.totalPoints == resource.data.points.totalPoints + (request.resource.data.points.referralPoints - resource.data.points.referralPoints)
         && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
         && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
         && request.resource.data.points.streakPoints == resource.data.points.streakPoints
@@ -108,12 +97,7 @@ service cloud.firestore {
       // Let the owner create their own referrals index document
       allow create: if isOwner(uid);
 
-      // Allow either the owner to write, OR a referred user to atomically append their UID to
-      // 'usedBy' and increment totalEarned by 100.
-      // The uniqueness guard (!(request.auth.uid in resource.data.usedBy)) ensures that the same
-      // caller cannot append their UID a second time. Without it, a user could submit
-      // ["user_A", "user_A"] and satisfy both the size-growth check and the last-element check,
-      // farming unlimited referral points against the same referrer.
+      // Allow either the owner to write, OR a referred user to atomically append their UID
       allow update: if isOwner(uid) || (
         isAuthenticated()
         && !(request.auth.uid in resource.data.usedBy)
