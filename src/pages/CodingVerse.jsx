@@ -222,18 +222,30 @@ export const CodingVerse = () => {
       setLoadingLeaderboard(true);
       setLeaderboardError("");
       try {
+        // Alternative Solution: 
+        // Fetch all completed users without 'orderBy' to avoid the composite index requirement.
+        // Then sort the array client-side.
         const q = query(
           collection(db, "users"),
-          where("onboardingStatus", "==", "complete"),
-          orderBy("points.codingVersePoints", "desc"),
-          limit(20)
+          where("onboardingStatus", "==", "complete")
         );
         const snapshot = await getDocs(q);
         const users = snapshot.docs.map((doc) => ({
           uid: doc.id,
           ...doc.data(),
         }));
-        setLeaderboardUsers(users);
+        
+        // Client-side sort and limit
+        const sortedUsers = users
+          .filter(u => (u.points?.codingVersePoints || 0) > 0) // Optional: only show users with >0 points
+          .sort((a, b) => {
+            const pointsA = a.points?.codingVersePoints || 0;
+            const pointsB = b.points?.codingVersePoints || 0;
+            return pointsB - pointsA; // Descending order
+          })
+          .slice(0, 20); // Limit to top 20
+          
+        setLeaderboardUsers(sortedUsers);
       } catch (err) {
         console.error("Error fetching CodingVerse leaderboard:", err);
         setLeaderboardError(err.message);
