@@ -2,7 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   onAuthStateChanged,
-  getAdditionalUserInfo
+  getAdditionalUserInfo,
+  getRedirectResult,
+  GithubAuthProvider
 } from "firebase/auth";
 import {
   doc,
@@ -89,6 +91,61 @@ export const AuthProvider = ({ children }) => {
 
     let unsubscribeSnapshot = null;
 
+    // Handle redirect result if user was redirected back
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          const authUser = result.user;
+          const credential = GithubAuthProvider.credentialFromResult(result);
+          const accessToken = credential?.accessToken || null;
+          if (accessToken) {
+            setGhAccessToken(accessToken);
+          }
+
+          const additionalInfo = getAdditionalUserInfo(result);
+          const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();
+          const githubId = additionalInfo?.profile?.id || null;
+          const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
+
+          const userDocRef = doc(db, "users", authUser.uid);
+          const docSnap = await getDoc(userDocRef);
+
+          if (!docSnap.exists()) {
+            const skeletalUser = {
+              uid: authUser.uid,
+              githubUsername,
+              githubId,
+              name: authUser.displayName || githubUsername || "Developer",
+              email: authUser.email || "",
+              avatar,
+              onboardingStatus: "incomplete",
+              privateRepoSyncEnabled: true,
+              city: "",
+              streak: 0,
+              longestStreak: 0,
+              githubStreak: 0,
+              lastLogin: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              points: {
+                gitRankPoints: 0,
+                codingVersePoints: 0,
+                streakPoints: 0,
+                referralPoints: 0,
+                totalPoints: 0
+              }
+            };
+            await setDoc(userDocRef, skeletalUser);
+          } else {
+            await setDoc(userDocRef, {
+              lastLogin: new Date().toISOString(),
+            }, { merge: true });
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect sign-in resolution failure:", error);
+      });
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();
@@ -158,7 +215,12 @@ export const AuthProvider = ({ children }) => {
   const login = async (requestRepoScope = true) => {
     setLoading(true);
     try {
-      const { user: authUser, accessToken, result } = await signInWithGitHub(requestRepoScope);
+      const response = await signInWithGitHub(requestRepoScope);
+      if (!response) {
+        // Fallback redirect flow triggered, page will unload shortly
+        return null;
+      }
+      const { user: authUser, accessToken, result } = response;
 
       const additionalInfo = getAdditionalUserInfo(result);
       const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();

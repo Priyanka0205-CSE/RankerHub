@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, GithubAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { connectAuthEmulator, getAuth, GithubAuthProvider, signInWithPopup, signInWithRedirect, signOut } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
@@ -89,15 +89,15 @@ export const signInWithGitHub = async (requestRepoScope = false) => {
     throw new Error("Firebase is not configured. Add the required VITE_FIREBASE_* values before signing in.");
   }
 
-  try {
-    const dynamicProvider = new GithubAuthProvider();
-    dynamicProvider.addScope('read:user');
-    dynamicProvider.addScope('user:email');
-    
-    if (requestRepoScope) {
-      dynamicProvider.addScope('repo');
-    }
+  const dynamicProvider = new GithubAuthProvider();
+  dynamicProvider.addScope('read:user');
+  dynamicProvider.addScope('user:email');
+  
+  if (requestRepoScope) {
+    dynamicProvider.addScope('repo');
+  }
 
+  try {
     const result = await signInWithPopup(auth, dynamicProvider);
     const user = result.user;
     
@@ -119,6 +119,11 @@ export const signInWithGitHub = async (requestRepoScope = false) => {
     return { user, accessToken, userData, result }; 
   } catch (error) {
     console.error("GitHub sign-in error:", error);
+    if (error.code === 'auth/popup-blocked') {
+      console.log("Popup blocked. Falling back to redirect...");
+      await signInWithRedirect(auth, dynamicProvider);
+      return null;
+    }
     if (error.code === 'auth/account-exists-with-different-credential') {
       throw new Error('An account already exists with the same email address.', { cause: error });
     }
