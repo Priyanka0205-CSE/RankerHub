@@ -16,7 +16,7 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
-import { doc, updateDoc, query, collection, where, getCountFromServer } from "firebase/firestore";
+import { doc, updateDoc, query, collection, where, getCountFromServer, getDocs, orderBy, limit } from "firebase/firestore";
 
 // --- Language Definitions ---
 const LANGUAGES = [
@@ -208,6 +208,53 @@ export const CodingVerse = () => {
 
   // Dynamic CodingVerse leaderboards rank state
   const [codingVerseRank, setCodingVerseRank] = useState("Loading...");
+
+  // Global Standings State (Issue #302)
+  const [activeSidebarTab, setActiveSidebarTab] = useState("stats"); // "stats" | "leaderboard"
+  const [leaderboardUsers, setLeaderboardUsers] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState("");
+
+  // Fetch CodingVerse Global Leaderboard (Issue #302)
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      if (activeSidebarTab !== "leaderboard") return;
+      setLoadingLeaderboard(true);
+      setLeaderboardError("");
+      try {
+        // Alternative Solution: 
+        // Fetch all completed users without 'orderBy' to avoid the composite index requirement.
+        // Then sort the array client-side.
+        const q = query(
+          collection(db, "users"),
+          where("onboardingStatus", "==", "complete")
+        );
+        const snapshot = await getDocs(q);
+        const users = snapshot.docs.map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        }));
+        
+        // Client-side sort and limit
+        const sortedUsers = users
+          .filter(u => (u.points?.codingVersePoints || 0) > 0) // Optional: only show users with >0 points
+          .sort((a, b) => {
+            const pointsA = a.points?.codingVersePoints || 0;
+            const pointsB = b.points?.codingVersePoints || 0;
+            return pointsB - pointsA; // Descending order
+          })
+          .slice(0, 20); // Limit to top 20
+          
+        setLeaderboardUsers(sortedUsers);
+      } catch (err) {
+        console.error("Error fetching CodingVerse leaderboard:", err);
+        setLeaderboardError(err.message);
+      } finally {
+        setLoadingLeaderboard(false);
+      }
+    };
+    fetchLeaderboard();
+  }, [activeSidebarTab]);
 
   const theoryQuestions = [
     {
@@ -1015,8 +1062,43 @@ export const CodingVerse = () => {
         {/* Right Column: Sticky Stats Panel */}
         <div className="lg:sticky lg:top-6 space-y-6">
           
-          {/* User Progress Stats Card */}
-          <Card className="p-6 border-purple-500/15 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 select-none">
+          {/* Sidebar Tab Switcher (Issue #302) */}
+          <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl">
+            <button
+              onClick={() => setActiveSidebarTab("stats")}
+              className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeSidebarTab === "stats"
+                  ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              }`}
+            >
+              <Target className="w-3 h-3" />
+              My Progress
+            </button>
+            <button
+              onClick={() => setActiveSidebarTab("leaderboard")}
+              className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeSidebarTab === "leaderboard"
+                  ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              }`}
+            >
+              <Award className="w-3 h-3" />
+              Standings
+            </button>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {activeSidebarTab === "stats" ? (
+              <motion.div
+                key="stats"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="space-y-6"
+              >
+                {/* User Progress Stats Card */}
+                <Card className="p-6 border-purple-500/15 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 select-none">
             <div className="space-y-4">
               <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 uppercase tracking-wider">
                 Arena Progress
@@ -1129,26 +1211,95 @@ export const CodingVerse = () => {
               ))}
             </div>
           </Card>
-
-          {/* Oliver Mascot Daily Tip Card */}
-          <Card className="p-5 border-slate-200/50 dark:border-slate-800/50 select-none bg-slate-50/20 dark:bg-slate-950/20">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl mt-0.5">🦉</div>
-              <div className="space-y-1">
+          </motion.div>
+        ) : (
+          <motion.div
+            key="leaderboard"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+          >
+            {/* CodingVerse Leaderboard Card (Issue #302) */}
+            <Card className="p-0 overflow-hidden border-purple-500/15">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-purple-500/5 to-transparent">
                 <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
-                  Oliver's Arena Pro-Tip
+                  Global Standings
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
-                  Always inspect scope evaluation and reference comparisons closely! In Java, check cached values; in Python, track shared default argument references. Speed is nice, but precision builds streaks.
+              </div>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/40 max-h-[440px] overflow-y-auto">
+                {loadingLeaderboard ? (
+                  <div className="p-8 flex flex-col items-center justify-center gap-2 text-slate-400">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Loading...</span>
+                  </div>
+                ) : leaderboardError ? (
+                  <div className="p-8 text-center text-red-500">
+                    <p className="text-[10px] font-bold uppercase mb-2">Error Loading Leaderboard</p>
+                    <p className="text-[9px]">{leaderboardError}</p>
+                  </div>
+                ) : leaderboardUsers.length > 0 ? (
+                  leaderboardUsers.map((u, idx) => (
+                    <div key={u.uid} className="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-[10px] font-black w-4 ${idx < 3 ? "text-purple-600 dark:text-purple-400" : "text-slate-400"}`}>
+                          {idx + 1}
+                        </span>
+                        <img 
+                          src={u.avatar || u.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"} 
+                          alt={u.name}
+                          className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-800"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
+                            {u.name || "Anonymous"}
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
+                            {u.githubUsername ? `@${u.githubUsername}` : "Developer"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] font-black text-emerald-500">
+                          {u.points?.codingVersePoints?.toLocaleString() || 0}
+                        </p>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase">XP</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-slate-400">
+                    <p className="text-[10px] font-bold uppercase">No data found</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-wider">
+                  Top 20 CodingVerse Engineers
                 </p>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      {/* Oliver Mascot Daily Tip Card */}
+      <Card className="p-5 border-slate-200/50 dark:border-slate-800/50 select-none bg-slate-50/20 dark:bg-slate-950/20">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl mt-0.5">🦉</div>
+          <div className="space-y-1">
+            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
+              Oliver's Arena Pro-Tip
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
+              Always inspect scope evaluation and reference comparisons closely! In Java, check cached values; in Python, track shared default argument references. Speed is nice, but precision builds streaks.
+            </p>
+          </div>
         </div>
+      </Card>
 
       </div>
     </div>
+  </div>
   );
 };
 

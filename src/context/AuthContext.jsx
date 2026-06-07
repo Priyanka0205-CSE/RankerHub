@@ -12,7 +12,8 @@ import {
   setDoc,
   updateDoc,
   onSnapshot,
-  writeBatch
+  writeBatch,
+  serverTimestamp
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
@@ -194,7 +195,7 @@ export const AuthProvider = ({ children }) => {
               setLoading(false);
             }, null);
           }
-        }, () => {
+        }, (_error) => {
           setLoading(false);
         });
 
@@ -448,7 +449,13 @@ export const AuthProvider = ({ children }) => {
     if (!user || !userData?.githubUsername) return;
 
     if (userData.lastSync) {
-      const lastSyncTime = new Date(userData.lastSync).getTime();
+      const getTimestamp = (val) => {
+        if (!val) return 0;
+        if (val.toMillis) return val.toMillis();
+        if (val.seconds) return val.seconds * 1000;
+        return new Date(val).getTime();
+      };
+      const lastSyncTime = getTimestamp(userData.lastSync);
       const cooldownMs = 5 * 60 * 1000;
       if (Date.now() - lastSyncTime < cooldownMs) {
         console.log("Background GitHub sync skipped: Cooldown active.");
@@ -488,7 +495,7 @@ export const AuthProvider = ({ children }) => {
         "githubStreak": ghStats.githubStreak, // Syncs live streak to Firestore
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
-        "lastSync": new Date().toISOString()
+        "lastSync": serverTimestamp()
       });
 
       // Execute atomic transaction

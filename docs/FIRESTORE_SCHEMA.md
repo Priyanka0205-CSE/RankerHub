@@ -30,7 +30,7 @@ Our security rules enforce strict checks to ensure data consistency, prevent arb
 
 * `isAuthenticated()`: Ensures the incoming request has a valid authentication token.
 * `isOwner(uid)`: Ensures the authenticated user's ID matches the requested document ID.
-* `isOnlySocialUpdate()`: A specialized check allowing users to update non-critical profile fields (e.g., LinkedIn, Instagram, Discord) without triggering strict onboarding checks.
+* `isOnlyProfileUpdate()`: A specialized check allowing users to update non-critical profile fields (e.g., LinkedIn, Instagram, Discord) without triggering strict onboarding checks.
 
 ### A. Users Rules (`/users/{uid}`)
 
@@ -39,20 +39,20 @@ Our security rules enforce strict checks to ensure data consistency, prevent arb
 
 **Update Rules (The Core Logic):**
 
-* **Social Links Bypass (RULE 1):** Users can freely update their social URLs (LinkedIn, Instagram, Discord) and the `updatedAt` timestamp at any time, bypassing strict checks.
-* **Immutable Onboarding Fields (RULE 2.1):** Once a user is onboarded (`onboardingStatus == "complete"`), they cannot modify critical profile metadata like gender, DOB, city, college, or createdAt.
-* **Points Integrity (RULE 2.2 & 2.3):**
+* **Profile Updates Bypass (RULE 1):** Users can freely update their profile fields and the `updatedAt` timestamp at any time, bypassing strict checks.
+* **Immutable Onboarding Fields (RULE 3):** Once a user is onboarded (`onboardingStatus == "complete"`), they cannot modify critical profile metadata like gender, DOB, city, college, or createdAt.
+* **Points Integrity (RULE 3):**
   * *Total Points Equation:* `totalPoints` must always equal the sum of `gitRankPoints + codingVersePoints + streakPoints + referralPoints`.
   * *Controlled Spikes:* Users cannot arbitrarily inflate points. Valid scenarios for points updates include:
     * Transitioning from incomplete to complete onboarding.
-    * Minor incremental updates (e.g., streak login +2, codingVerse +5, capped at +100 total change per request).
+    * Minor incremental updates (e.g., streak login +10, codingVerse up to +200). **This is strictly capped at +200 total change per request** to accommodate Hard challenge bounties while preventing massive point inflation exploits.
     * GitRank Updates: The `gitRankPoints` must strictly align with the formula. Other points categories must remain unchanged during this specific update.
-* **Referral Rewards (RULE 3 - Exploit Prevention):**
+* **Referral Rewards (RULE 4 - Exploit Prevention):**
   * This rule governs how a *referred user* updates the *referrer's* document.
-  * The referred user can add exactly **100 points** to the referrer's `referralPoints` and `totalPoints`.
+  * The referrer's `referralPoints` must exactly synchronize with the `totalEarned` counter from the `referrals` index document. `totalPoints` increments precisely by the growth in referral points.
   * **Guards:**
     * The referrer's document in the `referrals` collection must exist.
-    * The referred user's `uid` *must already be present* in the referrer's `usedBy` array (verified via a `get()` call). This confirms the code was legitimately redeemed before points are granted, closing the vulnerability outlined in Issue #81.
+    * The referred user's `uid` *must already be present* in the referrer's `usedBy` array (verified via a `get()` call). This confirms the code was legitimately redeemed before points are granted, closing the vulnerabilities outlined in Issue #81 and the multi-write inflation exploit from Issue #306.
 
 ### B. Referrals Rules (`/referrals/{uid}`)
 

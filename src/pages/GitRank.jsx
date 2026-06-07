@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal } from "lucide-react";
-import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction } from "firebase/firestore";
+import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { TableVirtuoso } from "react-virtuoso"; 
 import { db } from "../lib/firebase";
@@ -321,7 +321,7 @@ export const GitRank = () => {
           "githubStats.primaryLanguage": ghStats.primaryLanguage,
           "points.gitRankPoints": newGitRankPoints,
           "points.totalPoints": newTotalPoints,
-          "lastSync": new Date().toISOString()
+          "lastSync": serverTimestamp()
         });
       });
 
@@ -341,7 +341,14 @@ export const GitRank = () => {
     if (!userData?.lastSync) return;
 
     const checkCooldown = () => {
-      const lastSyncTime = new Date(userData.lastSync).getTime();
+      const getTimestamp = (val) => {
+        if (!val) return 0;
+        if (val.toMillis) return val.toMillis();
+        if (val.seconds) return val.seconds * 1000;
+        return new Date(val).getTime();
+      };
+      
+      const lastSyncTime = getTimestamp(userData.lastSync);
       const now = Date.now();
       const cooldownMs = 5 * 60 * 1000; // 5 minutes
       const elapsed = now - lastSyncTime;
@@ -604,7 +611,7 @@ export const GitRank = () => {
 
                 {userData?.lastSync && (
                   <span className="text-[10px] sm:text-xs text-slate-400 font-medium">
-                    Last sync: {new Date(userData.lastSync).toLocaleString()}
+                    Last sync: {new Date(userData.lastSync.toMillis ? userData.lastSync.toMillis() : (userData.lastSync.seconds ? userData.lastSync.seconds * 1000 : userData.lastSync)).toLocaleString()}
                   </span>
                 )}
               </div>

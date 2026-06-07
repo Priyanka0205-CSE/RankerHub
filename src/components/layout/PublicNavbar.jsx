@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Github } from "../ui/Icons";
 import ThemeToggle from "../ui/ThemeToggle";
@@ -19,8 +19,16 @@ export const PublicNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const activeIndex = getInitialIndex(location);
+  // Compute activeIndex from location, but allow scroll observer to override
+  const locationBasedIndex = useMemo(() => getInitialIndex(location), [location]);
+  const [scrollBasedIndex, setScrollBasedIndex] = useState(null);
+  
+  // Use scroll-based index if available, otherwise use location-based
+  const activeIndex = scrollBasedIndex !== null ? scrollBasedIndex : locationBasedIndex;
+  
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const isScrollingRef = useRef(false);
+  const prevPathnameRef = useRef(location.pathname);
 
   const buttonRefs = useRef([]);
   const activePillRef = useRef(null);
@@ -46,12 +54,68 @@ export const PublicNavbar = () => {
 
   // Recalculate pill on activeIndex change
   useEffect(() => {
+    // Reset scroll-based tracking when leaving home page
+    if (prevPathnameRef.current === "/" && location.pathname !== "/") {
+      setScrollBasedIndex(null);
+    }
+    prevPathnameRef.current = location.pathname;
+
     // Small timeout to allow layout stability (fonts, etc.)
     const timer = setTimeout(() => {
       updatePill(activeIndex, true);
     }, 50);
     return () => clearTimeout(timer);
-  }, [activeIndex]);
+  }, [activeIndex, location.pathname]);
+
+  // Intersection Observer to track visible sections on scroll
+  useEffect(() => {
+    // Only observe on home page
+    if (location.pathname !== "/") return;
+
+    const sections = [
+      { id: "features", index: 1 },
+      { id: "how-it-works", index: 2 },
+    ];
+
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px", // Trigger when section is in upper portion of viewport
+      threshold: 0,
+    };
+
+    const observerCallback = (entries) => {
+      // Only update if not programmatically scrolling
+      if (isScrollingRef.current) return;
+
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const section = sections.find((s) => s.id === entry.target.id);
+          if (section) {
+            setScrollBasedIndex(section.index);
+            // Update URL hash without triggering navigation
+            window.history.replaceState(null, null, `#${section.id}`);
+          }
+        }
+      });
+
+      // Handle when scrolled to top (no sections intersecting)
+      const anyIntersecting = entries.some((entry) => entry.isIntersecting);
+      if (!anyIntersecting && window.scrollY < 100) {
+        setScrollBasedIndex(0);
+        window.history.replaceState(null, null, "/");
+      }
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    // Observe all sections
+    sections.forEach(({ id }) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [location.pathname]);
 
   // Handle window resizing
   useEffect(() => {
@@ -83,7 +147,15 @@ export const PublicNavbar = () => {
   const handleScrollToSection = (elementId) => {
     const element = document.getElementById(elementId);
     if (element) {
+      // Set flag to prevent intersection observer from interfering
+      isScrollingRef.current = true;
+      
       element.scrollIntoView({ behavior: "smooth" });
+      
+      // Clear flag after scroll completes
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 1000);
     }
   };
 
@@ -92,6 +164,11 @@ export const PublicNavbar = () => {
 
     if (item.hash) {
       if (location.pathname === "/") {
+        // Update URL hash first
+        window.history.pushState(null, null, `#${item.hash}`);
+        // Update scroll-based index
+        setScrollBasedIndex(index);
+        // Then scroll
         handleScrollToSection(item.hash);
       } else {
         navigate(`/#${item.hash}`);
@@ -100,6 +177,9 @@ export const PublicNavbar = () => {
       navigate(item.path);
     } else if (item.path === "/") {
       if (location.pathname === "/") {
+        // Clear hash and scroll to top
+        window.history.pushState(null, null, "/");
+        setScrollBasedIndex(0);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         navigate("/");

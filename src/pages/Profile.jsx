@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import domtoimage from 'dom-to-image-more';
+import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import {
@@ -21,7 +22,7 @@ import {
   Zap
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
-import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
+import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import successTick from "../assets/animations/succes_tick.json";
@@ -29,12 +30,19 @@ import trophyAnimation from "../assets/animations/trophy.json";
 import { systemBadges } from "../constants";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
+import Loader from "../components/ui/Loader";
 import GradientButton from "../components/ui/GradientButton";
 import Toast from "../components/ui/Toast";
 import collegesList from "../data/colleges.json";
 
 export const Profile = () => {
-  const { userData, user, setUserData, syncGitHubData } = useAuth();
+  const { userData: authUserData, user, setUserData, syncGitHubData } = useAuth();
+  const { username } = useParams();
+  const [publicProfile, setPublicProfile] = useState(null);
+  const [loadingPublicProfile, setLoadingPublicProfile] = useState(!!username);
+
+  const isOwnProfile = !username || username === authUserData?.githubUsername || username === user?.uid;
+  
   // Utility to escape text for embedding in XML/SVG
   const escapeXml = (unsafe) => {
     if (unsafe == null) return '';
@@ -45,6 +53,41 @@ export const Profile = () => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
   };
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (isOwnProfile) {
+        setPublicProfile(null);
+        setLoadingPublicProfile(false);
+        return;
+      }
+      setLoadingPublicProfile(true);
+      try {
+        const q1 = query(collection(db, "users"), where("githubUsername", "==", username));
+        const snapshot1 = await getDocs(q1);
+        if (!snapshot1.empty) {
+          setPublicProfile(snapshot1.docs[0].data());
+        } else {
+          const docRef = doc(db, "users", username);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setPublicProfile(docSnap.data());
+          } else {
+            setPublicProfile(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching public profile:", error);
+        setPublicProfile(null);
+      }
+      setLoadingPublicProfile(false);
+    };
+    if (username && (authUserData || !user)) {
+       fetchProfile();
+    }
+  }, [username, isOwnProfile, authUserData, user]);
+
+  const userData = isOwnProfile ? authUserData : publicProfile;
   const [copied, setCopied] = useState(false);
   const [rank, setRank] = useState("Loading...");
   const [toasts, setToasts] = useState([]);
@@ -991,19 +1034,23 @@ export const Profile = () => {
               <span className="text-xs font-medium hidden sm:inline">{social.name}</span>
             </div>
           )}
-          <button
-            onClick={() => {
-              setEditingSocial(social.id);
-              setEditValue(displayValue || "");
-            }}
-            className="absolute -top-1 -right-1 p-0.5 rounded-full bg-violet-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-            title={`Edit ${social.name}`}
-          >
-            <Edit2 className="w-2.5 h-2.5" />
-          </button>
+          {isOwnProfile && (
+            <button
+              onClick={() => {
+                setEditingSocial(social.id);
+                setEditValue(displayValue || "");
+              }}
+              className="absolute -top-1 -right-1 p-0.5 rounded-full bg-violet-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+              title={`Edit ${social.name}`}
+            >
+              <Edit2 className="w-2.5 h-2.5" />
+            </button>
+          )}
         </div>
       );
     }
+
+    if (!isOwnProfile) return null;
 
     return (
       <button
@@ -1019,23 +1066,44 @@ export const Profile = () => {
     );
   };
 
+  if (loadingPublicProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader />
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Profile not found</h2>
+        <p className="text-slate-500 mt-2">The developer you are looking for does not exist.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <SectionHeader
-        title="Developer Profile"
-        subtitle="Manage your public links, view achievements, and review earned badges."
+        title={isOwnProfile ? "Developer Profile" : `${userData?.name || "Developer"}'s Profile`}
+        subtitle={isOwnProfile ? "Manage your public links, view achievements, and review earned badges." : `View ${userData?.name || "this developer"}'s achievements and badges.`}
         badge="Verified Account"
         badgeColor="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
       >
-        <GradientButton onClick={handleOpenEditModal} variant="secondary" className="py-2.5 px-4 text-xs">
-          Edit Profile
-        </GradientButton>
-        <GradientButton onClick={handleShareProfile} className="py-2.5 px-4 text-xs">
-          {copied ? "Code Copied!" : "Copy Referral Code"}
-        </GradientButton>
-        <GradientButton onClick={handleDownloadProfileCard} className="py-2.5 px-4 text-xs">
-          Download Profile Card
-        </GradientButton>
+        {isOwnProfile && (
+          <>
+            <GradientButton onClick={handleOpenEditModal} variant="secondary" className="py-2.5 px-4 text-xs">
+              Edit Profile
+            </GradientButton>
+            <GradientButton onClick={handleShareProfile} className="py-2.5 px-4 text-xs">
+              {copied ? "Code Copied!" : "Copy Referral Code"}
+            </GradientButton>
+            <GradientButton onClick={handleDownloadProfileCard} className="py-2.5 px-4 text-xs">
+              Download Profile Card
+            </GradientButton>
+          </>
+        )}
       </SectionHeader>
 
       <Card ref={profileCardRef} className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50">
@@ -1080,9 +1148,11 @@ export const Profile = () => {
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4 text-slate-400" /> Joined {userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString(undefined, {month: 'long', year: 'numeric'}) : "May 2026"}
             </span>
-            <span className="flex items-center gap-1 text-violet-500">
-              🎫 Referral Code: <span className="font-extrabold bg-violet-500/10 px-2 py-0.5 rounded-full select-all">{userData?.referralCode || "N/A"}</span>
-            </span>
+            {isOwnProfile && (
+              <span className="flex items-center gap-1 text-violet-500">
+                🎫 Referral Code: <span className="font-extrabold bg-violet-500/10 px-2 py-0.5 rounded-full select-all">{userData?.referralCode || "N/A"}</span>
+              </span>
+            )}
           </div>
 
           <div className="flex justify-center md:justify-start items-center gap-3 pt-2 flex-wrap">
@@ -1107,32 +1177,34 @@ export const Profile = () => {
         </div>
       </Card>
 
-      <Card className="mb-6 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-slate-200/50 dark:border-slate-800/50">
-        <div>
-          <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-            <Github className="w-5 h-5 text-slate-700 dark:text-slate-300" /> Private Repository Sync
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Enable indexing for private repositories to earn points for your private commits, PRs, and reviews.
-          </p>
-        </div>
-        
-        <button
-          onClick={handlePrivateSyncToggle}
-          className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 flex-shrink-0 ${
-            userData?.privateRepoSyncEnabled ? 'bg-violet-500' : 'bg-slate-300 dark:bg-slate-700'
-          }`}
-          role="switch"
-          aria-checked={userData?.privateRepoSyncEnabled}
-        >
-          <span className="sr-only">Enable Private Repo Sync</span>
-          <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-              userData?.privateRepoSyncEnabled ? 'translate-x-8' : 'translate-x-1'
+      {isOwnProfile && (
+        <Card className="mb-6 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-slate-200/50 dark:border-slate-800/50">
+          <div>
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
+              <Github className="w-5 h-5 text-slate-700 dark:text-slate-300" /> Private Repository Sync
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+              Enable indexing for private repositories to earn points for your private commits, PRs, and reviews.
+            </p>
+          </div>
+          
+          <button
+            onClick={handlePrivateSyncToggle}
+            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 flex-shrink-0 ${
+              userData?.privateRepoSyncEnabled ? 'bg-violet-500' : 'bg-slate-300 dark:bg-slate-700'
             }`}
-          />
-        </button>
-      </Card>
+            role="switch"
+            aria-checked={userData?.privateRepoSyncEnabled}
+          >
+            <span className="sr-only">Enable Private Repo Sync</span>
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                userData?.privateRepoSyncEnabled ? 'translate-x-8' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {profileStats.map((stat, idx) => (

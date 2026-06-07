@@ -25,4 +25,8 @@ dist-ssr
 
 .env
 .firebase
-.agents
+.agentsvenv/
+
+venv/
+
+venv/

@@ -11,6 +11,14 @@
         {
           "fieldPath": "points.gitRankPoints",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubStats.commits",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubUsername",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -29,6 +37,14 @@
         {
           "fieldPath": "points.gitRankPoints",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubStats.commits",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubUsername",
+          "order": "ASCENDING"
         }
       ]
     },

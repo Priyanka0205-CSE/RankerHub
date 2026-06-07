@@ -34,6 +34,6 @@ Growing the community grants a flat bounty.
 To protect the integrity of the leaderboard and prevent point hacking, our `firestore.rules` strictly enforce limits on single-client writes.
 
 ### Write Limits & Validation
-* **Maximum Delta per Request:** A single client payload cannot increase a user's total score by an unrealistic margin. For example, a single document update cannot increment the `totalXP` field by more than the maximum possible bounty (e.g., +200 XP for a Hard challenge).
+* **Maximum Delta per Request:** A single client payload cannot increase a user's total score by an unrealistic margin. For example, a single document update cannot increment the `totalXP` field by more than the maximum possible bounty (**strictly capped at +200 XP** for a Hard CodingVerse challenge).
 * **Backend Authority:** Complex aggregations (like massive GitPoint dumps) are processed via secure backend Cloud Functions, bypassing client-side write access entirely.
 * **Validation:** Client requests attempting to spoof an XP increment that does not match the documented formulas above will be rejected by Firestore with a `permission-denied` error.

@@ -146,6 +146,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/codingowl" element={<CodingOwl />} />
           <Route path="/dashboard/matchmaker" element={<Matchmaker />} />
           <Route path="/dashboard/friends" element={<Friends />} />
+          <Route path="/dashboard/friends/leaderboard" element={<Friends />} />
           <Route path="/dashboard/friends/followers" element={<Friends />} />
           <Route path="/dashboard/friends/following" element={<Friends />} />
           <Route path="/dashboard/profile" element={<Profile />} />

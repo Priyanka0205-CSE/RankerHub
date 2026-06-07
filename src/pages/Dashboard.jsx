@@ -12,7 +12,15 @@ import StreakCard from "../components/dashboard/StreakCard";
 import RankPreview from "../components/dashboard/RankPreview";
 import ActivityFeed from "../components/dashboard/ActivityFeed";
 
-const heatmapColors = [
+const githubColors = [
+  "bg-slate-100 dark:bg-slate-800/40",
+  "bg-emerald-200 dark:bg-emerald-900/40",
+  "bg-emerald-400 dark:bg-emerald-700/60",
+  "bg-emerald-500 dark:bg-emerald-500/80",
+  "bg-emerald-600 dark:bg-emerald-400"
+];
+
+const platformColors = [
   "bg-slate-100 dark:bg-slate-800/40",
   "bg-violet-500/10 dark:bg-violet-500/10",
   "bg-violet-500/30 dark:bg-violet-500/30",
@@ -25,15 +33,53 @@ export const Dashboard = () => {
   const [rank, setRank] = useState("Loading...");
   
   // Initialize with 168 empty cells (24 weeks * 7 days)
-  const [heatmapCells, setHeatmapCells] = useState(
+  const [heatmapType, setHeatmapType] = useState("github"); // "github" | "platform"
+  const [githubHeatmapCells, setGithubHeatmapCells] = useState(
     Array.from({ length: 168 }, () => 0)
   );
+
+  // Platform Heatmap Logic
+  const platformHeatmapCells = React.useMemo(() => {
+    const logs = userData?.platformActivityLogs || [];
+    const totalCells = 168;
+    const cells = Array.from({ length: totalCells }, () => 0);
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const todayMs = today.getTime();
+
+    const activityMap = {};
+    logs.forEach(log => {
+       const d = new Date(log);
+       d.setHours(0,0,0,0);
+       const key = d.getTime();
+       activityMap[key] = (activityMap[key] || 0) + 1;
+    });
+
+    for (let i = 0; i < totalCells; i++) {
+      const daysAgo = totalCells - 1 - i;
+      const targetTime = todayMs - (daysAgo * 86400000);
+      const count = activityMap[targetTime] || 0;
+      
+      let intensity = 0;
+      if (count > 9) intensity = 4;
+      else if (count > 5) intensity = 3;
+      else if (count > 2) intensity = 2;
+      else if (count > 0) intensity = 1;
+
+      cells[i] = intensity;
+    }
+    return cells;
+  }, [userData?.platformActivityLogs]);
 
   // 1. Fetch REAL GitHub Contributions for Heatmap with Caching
   useEffect(() => {
     const fetchHeatmap = async () => {
       const username = userData?.githubUsername;
-      if (!username) return;
+      if (!username) {
+        setHeatmapType("platform");
+        return;
+      }
 
       const cacheKey = `heatmap_${username}`;
       const cached = localStorage.getItem(cacheKey);
@@ -66,8 +112,9 @@ export const Dashboard = () => {
         }
 
         if (!data) {
-          console.error("Heatmap fetch error (Falling back to empty grid):", err);
-          setHeatmapCells(Array.from({ length: 168 }, () => 0));
+          console.error("Heatmap fetch error (Falling back to platform):", err);
+          setGithubHeatmapCells(Array.from({ length: 168 }, () => 0));
+          setHeatmapType("platform");
           return;
         }
       }
@@ -75,6 +122,11 @@ export const Dashboard = () => {
       if (data) {
         const contributions = data.contributions || [];
         const last168 = contributions.slice(-168);
+        const totalCommits = last168.reduce((sum, day) => sum + day.count, 0);
+
+        if (totalCommits === 0) {
+          setHeatmapType("platform");
+        }
 
         const cells = last168.map((day) => {
           const c = day.count;
@@ -87,9 +139,9 @@ export const Dashboard = () => {
 
         if (cells.length < 168) {
           const padding = Array.from({ length: 168 - cells.length }, () => 0);
-          setHeatmapCells([...padding, ...cells]);
+          setGithubHeatmapCells([...padding, ...cells]);
         } else {
-          setHeatmapCells(cells);
+          setGithubHeatmapCells(cells);
         }
       }
     };
@@ -121,6 +173,9 @@ export const Dashboard = () => {
   const devLevel = Math.floor(totalPoints / 250) + 1;
   const nextLevelPoints = devLevel * 250;
   const levelProgressPercent = Math.min(100, Math.floor((totalPoints / nextLevelPoints) * 100));
+
+  const activeHeatmapCells = heatmapType === "github" ? githubHeatmapCells : platformHeatmapCells;
+  const activeHeatmapColors = heatmapType === "github" ? githubColors : platformColors;
 
   const challenges = [
     {
@@ -222,21 +277,34 @@ export const Dashboard = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
-                Git Contribution Heatmap
+                {heatmapType === "github" ? "Git Contribution Heatmap" : "Platform Activity Heatmap"}
               </h3>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Rank Activity Sync
-              </span>
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg">
+                <button
+                  onClick={() => setHeatmapType("github")}
+                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${heatmapType === "github" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                >
+                  GitHub
+                </button>
+                <button
+                  onClick={() => setHeatmapType("platform")}
+                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${heatmapType === "platform" ? "bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                >
+                  RankerHub
+                </button>
+              </div>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Consistent contributions directly increase your GitRank rating points.
+              {heatmapType === "github" 
+                ? "Consistent contributions directly increase your GitRank rating points." 
+                : "Your interactions and activity on the RankerHub platform."}
             </p>
           </div>
           <div className="my-6 grid grid-flow-col grid-rows-7 gap-1.5 overflow-x-auto py-2 scrollbar-none">
-            {heatmapCells.map((val, idx) => (
+            {activeHeatmapCells.map((val, idx) => (
               <div
                 key={idx}
-                className={`w-3.5 h-3.5 rounded-sm border border-slate-200/5 dark:border-slate-800/5 hover:ring-2 hover:ring-violet-500/40 transition-all duration-150 ${heatmapColors[val]}`}
+                className={`w-3.5 h-3.5 rounded-sm border border-slate-200/5 dark:border-slate-800/5 hover:ring-2 hover:ring-violet-500/40 transition-all duration-150 ${activeHeatmapColors[val]}`}
                 title={`Activity Level: ${val}`}
               />
             ))}
@@ -245,13 +313,17 @@ export const Dashboard = () => {
             <div className="flex items-center gap-2">
               <span>Less</span>
               <div className="flex gap-1">
-                {heatmapColors.map((col, idx) => (
+                {activeHeatmapColors.map((col, idx) => (
                   <div key={idx} className={`w-3 h-3 rounded-sm ${col}`} />
                 ))}
               </div>
               <span>More</span>
             </div>
-            <span>Activity logged from github.com/{userData?.githubUsername || "developer"}</span>
+            <span>
+              {heatmapType === "github" 
+                ? `Activity logged from github.com/${userData?.githubUsername || "developer"}` 
+                : "Activity logged on RankerHub"}
+            </span>
           </div>
         </Card>
 

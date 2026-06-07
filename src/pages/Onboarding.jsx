@@ -109,6 +109,29 @@ export const Onboarding = () => {
     }
   };
 
+  const handleCollegeBlur = () => {
+    if (!collegeSearch.trim()) {
+      return;
+    }
+    const exactMatch = collegesList.find(
+      (c) => c.toLowerCase() === collegeSearch.trim().toLowerCase()
+    );
+
+    if (exactMatch) {
+      setSelectedCollege(exactMatch);
+      setCollegeSearch(exactMatch);
+      if (exactMatch !== "Other") {
+        setCustomCollege("");
+      }
+    } else {
+      setSelectedCollege("Other");
+      if (collegeSearch.trim().toLowerCase() !== "other") {
+        setCustomCollege(collegeSearch.trim());
+      }
+      setCollegeSearch("Other");
+    }
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -150,13 +173,34 @@ export const Onboarding = () => {
       setIsLoading(false);
       return;
     }
-    if (!selectedCollege || !collegesList.includes(selectedCollege) || collegeSearch !== selectedCollege) {
+
+    // Normalizing college selection if user typed without selecting
+    let finalSelectedCollege = selectedCollege;
+    let finalCustomCollege = customCollege;
+    
+    if (collegeSearch.trim() && collegeSearch !== selectedCollege) {
+      const exactMatch = collegesList.find(
+        (c) => c.toLowerCase() === collegeSearch.trim().toLowerCase()
+      );
+      if (exactMatch) {
+        finalSelectedCollege = exactMatch;
+        if (exactMatch !== "Other") finalCustomCollege = "";
+      } else {
+        finalSelectedCollege = "Other";
+        finalCustomCollege = collegeSearch.trim();
+      }
+      setSelectedCollege(finalSelectedCollege);
+      setCollegeSearch(finalSelectedCollege);
+      setCustomCollege(finalCustomCollege);
+    }
+
+    if (!finalSelectedCollege || !collegesList.includes(finalSelectedCollege)) {
       setError("Please select a valid college from the searchable dropdown list.");
       setIsLoading(false);
       return;
     }
 
-    if (selectedCollege === "Other" && !customCollege.trim()) {
+    if (finalSelectedCollege === "Other" && !finalCustomCollege.trim()) {
       setError("Please specify your college name.");
       setIsLoading(false);
       return;
@@ -284,7 +328,7 @@ export const Onboarding = () => {
           gender,
           dob,
           city: city.trim(),
-          college: selectedCollege === "Other" ? customCollege.trim() : selectedCollege,
+          college: finalSelectedCollege === "Other" ? finalCustomCollege.trim() : finalSelectedCollege,
           linkedinUrl: linkedinUrl.trim() || "",
           instagramHandle: instagramHandle.trim().replace(/^@/, "") || "",
           referralCode: newReferralCode,
@@ -524,6 +568,7 @@ export const Onboarding = () => {
                   placeholder="Type to filter Mumbai colleges..."
                   value={collegeSearch}
                   onFocus={() => setShowCollegeDropdown(true)}
+                  onBlur={handleCollegeBlur}
                   onChange={(e) => {
                     setCollegeSearch(e.target.value);
                     setShowCollegeDropdown(true);
@@ -549,7 +594,10 @@ export const Onboarding = () => {
                       filteredColleges.map((col) => (
                         <div
                           key={col}
-                          onClick={() => handleSelectCollege(col)}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectCollege(col);
+                          }}
                           className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer font-medium transition-colors"
                         >
                           {col}
