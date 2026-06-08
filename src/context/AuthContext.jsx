@@ -249,7 +249,13 @@ export const AuthProvider = ({ children }) => {
       const userDocRef = doc(db, "users", authUser.uid);
       const docSnap = await getDoc(userDocRef);
 
+      // Issue #191: Strict Timezone-Agnostic UTC Streak Calculation
+      const today = new Date();
+      const todayUTCStr = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+
       if (!docSnap.exists()) {
+        // First login ever
         const skeletalUser = {
           uid: authUser.uid,
           githubUsername: sanitizedUserData.githubUsername,
@@ -260,23 +266,59 @@ export const AuthProvider = ({ children }) => {
           onboardingStatus: "incomplete",
           privateRepoSyncEnabled: requestRepoScope,
           city: "",
-          streak: 0,
+          streak: 1, // Start streak
           longestStreak: 0,
           githubStreak: 0,
-          lastLogin: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
+          lastLogin: today.toISOString(),
+          createdAt: today.toISOString(),
           points: {
             gitRankPoints: 0,
             codingVersePoints: 0,
-            streakPoints: 0,
+            streakPoints: 10, // Base points for 1st day streak
             referralPoints: 0,
-            totalPoints: 0
+            totalPoints: 10
           }
         };
         await setDoc(userDocRef, skeletalUser);
       } else {
+        // Existing user: Calculate streak safely
+        const existingData = docSnap.data();
+        let newStreak = existingData.streak || 0;
+        let newStreakPoints = existingData.points?.streakPoints || 0;
+        let newTotalPoints = existingData.points?.totalPoints || 0;
+
+        const lastLoginDate = existingData.lastLogin ? new Date(existingData.lastLogin) : null;
+
+        if (lastLoginDate) {
+          const lastLoginUTCStr = lastLoginDate.toISOString().split('T')[0];
+
+          // Only process streak logic if it's a completely new UTC day
+          if (todayUTCStr !== lastLoginUTCStr) {
+            const lastUTC = Date.UTC(lastLoginDate.getUTCFullYear(), lastLoginDate.getUTCMonth(), lastLoginDate.getUTCDate());
+            const diffDays = Math.floor((todayUTC - lastUTC) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+              newStreak += 1; // Perfect continuation
+            } else if (diffDays > 1) {
+              newStreak = 1; // Streak broken, restart
+            }
+
+            // Award 10 points for the new active day
+            newStreakPoints += 10;
+            newTotalPoints += 10;
+          }
+        } else {
+          // Fallback if lastLogin was somehow missing
+          newStreak = 1;
+          newStreakPoints += 10;
+          newTotalPoints += 10;
+        }
+
         await setDoc(userDocRef, {
-          lastLogin: new Date().toISOString(),
+          lastLogin: today.toISOString(),
+          streak: newStreak,
+          "points.streakPoints": newStreakPoints,
+          "points.totalPoints": newTotalPoints,
           ...(requestRepoScope && { privateRepoSyncEnabled: true })
         }, { merge: true });
       }
@@ -462,14 +504,14 @@ export const AuthProvider = ({ children }) => {
     if (!user || !userData?.githubUsername) return;
 
     if (userData.lastSync) {
-      const getTimestamp = (val) => {
+const getTimestamp = (val) => {
         if (!val) return 0;
         if (val.toMillis) return val.toMillis();
         if (val.seconds) return val.seconds * 1000;
         return new Date(val).getTime();
       };
       const lastSyncTime = getTimestamp(userData.lastSync);
-      const cooldownMs = 5 * 60 * 1000;
+      const cooldownMs = 5 * 60 * 1000; // 5 minutes
       if (Date.now() - lastSyncTime < cooldownMs) {
         console.log("Background GitHub sync skipped: Cooldown active.");
         return;
@@ -494,6 +536,7 @@ export const AuthProvider = ({ children }) => {
       const newGitRankPoints = ghStats.gitRankPoints;
       const newTotalPoints = newGitRankPoints + currentReferralPoints + currentCodingVersePoints + currentStreakPoints;
 
+      // Retained the Atomic Batch Writes (Issue #193)
       // Phase 2: Issue Atomic Batch Write
       const batch = writeBatch(db);
       
@@ -521,7 +564,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
+    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
       {children}
     </AuthContext.Provider>
   );
