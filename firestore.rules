@@ -58,14 +58,24 @@ service cloud.firestore {
              request.resource.data.createdAt == resource.data.createdAt
            ))
 
-        // 3. Prevent arbitrary point spikes during normal client writes:
+        // 3. Prevent arbitrary point and HubCoin spikes during normal client writes:
         && (
           // Transitioning from incomplete -> complete
           (resource.data.onboardingStatus == "incomplete" && request.resource.data.onboardingStatus == "complete") ||
-          // Points unchanged
-          (request.resource.data.points.totalPoints == resource.data.points.totalPoints) ||
+          // Points unchanged (Mascot purchases, profile updates, etc.)
+          (
+            request.resource.data.points.totalPoints == resource.data.points.totalPoints &&
+            // HubCoins can only stay the same or decrease (spending), never go below 0
+            request.resource.data.hubCoins <= (resource.data.hubCoins != null ? resource.data.hubCoins : 500) &&
+            request.resource.data.hubCoins >= 0
+          ) ||
           // NEW LIMIT: Cap changed from 100 to 200 for CodingVerse Hard challenges
-          (request.resource.data.points.totalPoints > resource.data.points.totalPoints && request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 200) ||
+          (
+            request.resource.data.points.totalPoints > resource.data.points.totalPoints && 
+            request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 200 &&
+            // HubCoins can increase by at most the same amount as points (e.g. +10 HubCoins for +100 XP)
+            (request.resource.data.hubCoins != null ? request.resource.data.hubCoins : 500) - (resource.data.hubCoins != null ? resource.data.hubCoins : 500) <= (request.resource.data.points.totalPoints - resource.data.points.totalPoints)
+          ) ||
           // GitHub stats formula sync
           (
             request.resource.data.points.gitRankPoints == (

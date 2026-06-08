@@ -591,6 +591,7 @@ export const CodingVerse = () => {
         const updatePayload = {
           "points.codingVersePoints": newCodingVersePoints,
           "points.totalPoints": newTotalPoints,
+          "hubCoins": (userData.hubCoins || 0) + (isCorrect ? earnedPoints : 0),
           "solvedCodingVerseQuestions": newSolvedQuestions,
           "attemptedCodingVerseQuestions": newAttemptedQuestions,
           "codingVerseAnswers": newAnswersState

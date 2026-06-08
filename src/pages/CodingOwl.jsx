@@ -1,15 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Timer, Plus, Check } from "lucide-react";
+import { Timer, Plus, Check, ShoppingCart, Zap, CircleDollarSign } from "lucide-react";
 import { habitCards, weeklyHeatmap } from "../data/streaks";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useAuth } from "../context/AuthContext";
+import { mascotsData } from "../constants/mascots";
 
 export const CodingOwl = () => {
-  const { userData } = useAuth();
+  const { userData, purchaseMascot, equipMascot } = useAuth();
   const userName = userData?.name || "Developer";
   const loginStreak = userData?.streak || 0;
   const githubStreak = userData?.githubStreak || 0; // New GitHub Live Streak
+  const hubCoins = userData?.hubCoins ?? 500;
+  const inventory = userData?.inventory || ["oliver"];
+  const activeMascotId = userData?.activeMascot || "oliver";
+  const activeMascotInfo = mascotsData.find(m => m.id === activeMascotId) || mascotsData[0];
+
+  const [activeTab, setActiveTab] = useState("arena"); // "arena" | "shop"
+  const [isProcessing, setIsProcessing] = useState(false);
   const [habits, setHabits] = useState(habitCards);
   const [timeLeft, setTimeLeft] = useState(1500); // 25:00 in seconds
   const [timerActive, setTimerActive] = useState(false);
@@ -61,37 +69,98 @@ export const CodingOwl = () => {
     }));
   };
 
+  const handlePurchase = async (mascotId, price) => {
+    setIsProcessing(true);
+    try {
+      await purchaseMascot(mascotId, price);
+      // Let AuthContext handle the state update via firestore snapshot
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to purchase.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEquip = async (mascotId) => {
+    setIsProcessing(true);
+    try {
+      await equipMascot(mascotId);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to equip.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <SectionHeader
-        title="CodingOwl Streak Tracker"
-        subtitle="Stay consistent, build ironclad coding habits, and earn points with our companion owl."
-        badge="Consistency mascot"
-        badgeColor="bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20"
-      />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <SectionHeader
+          title="CodingOwl Streak Tracker"
+          subtitle="Stay consistent, build ironclad coding habits, and earn points with our companion owl."
+          badge="Consistency mascot"
+          badgeColor="bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20"
+        />
+        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl">
+          <CircleDollarSign className="w-5 h-5 text-amber-500" />
+          <div>
+            <span className="block text-[10px] uppercase font-bold text-slate-500">HubCoins</span>
+            <span className="block text-sm font-black text-slate-900 dark:text-white leading-none">{hubCoins.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
 
-      {/* Mascot & Streak Highlight */}
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-px">
+        <button
+          onClick={() => setActiveTab("arena")}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-all ${
+            activeTab === "arena"
+              ? "border-orange-500 text-orange-500"
+              : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          }`}
+        >
+          <Timer className="w-4 h-4 inline-block mr-2" />
+          Focus Arena
+        </button>
+        <button
+          onClick={() => setActiveTab("shop")}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-all ${
+            activeTab === "shop"
+              ? "border-amber-500 text-amber-500"
+              : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          }`}
+        >
+          <ShoppingCart className="w-4 h-4 inline-block mr-2" />
+          Mascot Shop
+        </button>
+      </div>
+
+      {activeTab === "arena" ? (
+        <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Mascot bubble */}
-        <Card className="lg:col-span-2 p-8 flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-orange-500/10 via-slate-50/0 to-slate-50/0 dark:from-orange-500/5 dark:via-slate-900/0 dark:to-slate-900/0 border-orange-500/15">
+        <Card className={`lg:col-span-2 p-8 flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-${activeMascotInfo.color}-500/10 via-slate-50/0 to-slate-50/0 dark:from-${activeMascotInfo.color}-500/5 dark:via-slate-900/0 dark:to-slate-900/0 border-${activeMascotInfo.color}-500/15`}>
           {/* Mascot representation */}
-          <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-orange-400 to-red-500 flex items-center justify-center text-4xl shadow-lg border border-orange-400/25 flex-shrink-0 animate-bounce">
-            🦉
+          <div className={`w-28 h-28 rounded-full bg-gradient-to-tr from-${activeMascotInfo.color}-400 to-${activeMascotInfo.color === 'orange' ? 'red' : activeMascotInfo.color}-500 flex items-center justify-center text-4xl shadow-lg border border-${activeMascotInfo.color}-400/25 flex-shrink-0 animate-bounce`}>
+            {activeMascotInfo.icon}
           </div>
 
           <div className="space-y-3 flex-1 text-center sm:text-left">
             <h3 className="text-xl font-extrabold text-slate-950 dark:text-white my-0">
-              Mascot: Oliver the Owl
+              Mascot: {activeMascotInfo.label}
             </h3>
             
             <div className="bg-white/80 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/45 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-semibold italic relative">
-              "Whoo-whoo! You've pushed code to GitHub for {githubStreak} consecutive days, {userName}. Oliver is proud! Maintain your live GitHub streak today to earn your +10 XP daily bonus."
+              "Whoo-whoo! You've pushed code to GitHub for {githubStreak} consecutive days, {userName}. {activeMascotInfo.label} is proud! Maintain your live GitHub streak today to earn your +10 HubCoins daily bonus."
             </div>
             
             <div className="flex justify-center sm:justify-start items-center gap-4 text-xs font-bold text-slate-400">
-              <span>Mood: <span className="text-orange-500">Ecstatic! 🔥</span></span>
+              <span>Mood: <span className={`text-${activeMascotInfo.color}-500`}>Ecstatic! 🔥</span></span>
               <span>•</span>
               <span>Platform Streak: {loginStreak} days</span>
             </div>
@@ -259,6 +328,76 @@ export const CodingOwl = () => {
           </div>
         </div>
       </Card>
+        </>
+      ) : (
+        <div className="space-y-6">
+          <div className="text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed text-sm">
+            Welcome to the Mascot Shop! Spend your hard-earned HubCoins to unlock new companions. 
+            Mascots appear on your dashboard, profile, and inside the CodingVerse arena.
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mascotsData.map((mascot) => {
+              const isOwned = inventory.includes(mascot.id);
+              const isEquipped = activeMascotId === mascot.id;
+              const canAfford = hubCoins >= mascot.price;
+
+              return (
+                <Card key={mascot.id} className={`p-6 flex flex-col justify-between border-2 transition-all ${isEquipped ? 'border-amber-500' : 'border-slate-200/50 dark:border-slate-800/50 hover:border-amber-500/30'}`}>
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-${mascot.color}-400 to-${mascot.color === 'orange' ? 'red' : mascot.color}-500 flex items-center justify-center text-3xl shadow-lg border border-${mascot.color}-400/25`}>
+                        {mascot.icon}
+                      </div>
+                      {isEquipped && (
+                        <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-500 text-[10px] font-bold uppercase rounded-md border border-amber-500/20">
+                          Equipped
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mb-1">
+                      {mascot.label}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium min-h-[40px]">
+                      {mascot.description}
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                    {isEquipped ? (
+                      <button disabled className="w-full py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2 transition-all">
+                        <Check className="w-4 h-4" /> Selected
+                      </button>
+                    ) : isOwned ? (
+                      <button 
+                        onClick={() => handleEquip(mascot.id)}
+                        disabled={isProcessing}
+                        className="w-full py-2.5 rounded-xl font-bold bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-500 border border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20 cursor-pointer flex items-center justify-center gap-2 transition-all"
+                      >
+                        Equip Mascot
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handlePurchase(mascot.id, mascot.price)}
+                        disabled={!canAfford || isProcessing}
+                        className={`w-full py-2.5 rounded-xl font-bold border flex items-center justify-center gap-2 transition-all ${
+                          canAfford 
+                            ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent hover:scale-[1.02] cursor-pointer" 
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-transparent cursor-not-allowed"
+                        }`}
+                      >
+                        {mascot.price === 0 ? "Free" : (
+                          <>
+                            <CircleDollarSign className="w-4 h-4" /> {mascot.price.toLocaleString()}
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
     </div>
   );
