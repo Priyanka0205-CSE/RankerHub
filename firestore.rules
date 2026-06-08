@@ -25,19 +25,16 @@ service cloud.firestore {
     function isStreakUpdate() {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
       let streakFields = ['streak', 'longestStreak', 'lastLogin', 'points'];
+      let pointsAffected = request.resource.data.points.diff(resource.data.points).affectedKeys();
       return affected.hasOnly(streakFields)
+        && pointsAffected.hasOnly(['streakPoints', 'totalPoints'])
         && request.resource.data.longestStreak >= resource.data.longestStreak
         && request.resource.data.streak >= 0
         && request.resource.data.points.streakPoints >= resource.data.points.streakPoints
         // FIXED: Enforce a maximum of +10 streakPoints per write (Issue #360)
         && (request.resource.data.points.streakPoints - resource.data.points.streakPoints <= 10)
         // STRICT CAP: totalPoints must increase by the EXACT same delta as streakPoints
-        && (request.resource.data.points.totalPoints - resource.data.points.totalPoints == request.resource.data.points.streakPoints - resource.data.points.streakPoints)
-        // PREVENT TAMPERING: Other points must remain frozen during a streak update
-        && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
-        && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
-        && request.resource.data.points.referralPoints == resource.data.points.referralPoints
-        && request.resource.data.points.auditorPoints == resource.data.points.auditorPoints;
+        && (request.resource.data.points.totalPoints - resource.data.points.totalPoints == request.resource.data.points.streakPoints - resource.data.points.streakPoints);
     }
 
     match /users/{uid} {
