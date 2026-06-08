@@ -60,7 +60,7 @@ service cloud.firestore {
 
         // 3. Prevent arbitrary point spikes during normal client writes:
         && (
-          // Transitioning from incomplete -> complete
+// Transitioning from incomplete -> complete
           (resource.data.onboardingStatus == "incomplete" && request.resource.data.onboardingStatus == "complete") ||
           // Points unchanged
           (request.resource.data.points.totalPoints == resource.data.points.totalPoints) ||
@@ -87,12 +87,14 @@ service cloud.firestore {
           )
         );
 
-      // RULE 4: Referrer update - Allow the referred user to atomically increment a referrer's
-      // referralPoints by exactly 100 points as part of the onboarding referral transaction.
+// RULE 4: Referrer update - Prevent multi-write inflation exploit (Issue #306)
+      // Locks referralPoints to the actual totalEarned value in the referrals index.
       allow update: if isAuthenticated()
         && request.auth.uid != uid
-        && request.resource.data.points.referralPoints == resource.data.points.referralPoints + 100
-        && request.resource.data.points.totalPoints == resource.data.points.totalPoints + 100
+        // FIX: Sync referralPoints directly with the referrals index document's totalEarned counter
+        && request.resource.data.points.referralPoints == get(/databases/$(database)/documents/referrals/$(uid)).data.totalEarned
+        // FIX: Total points must reflect the exact growth in referral points
+        && request.resource.data.points.totalPoints == resource.data.points.totalPoints + (request.resource.data.points.referralPoints - resource.data.points.referralPoints)
         && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
         && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
         && request.resource.data.points.streakPoints == resource.data.points.streakPoints
