@@ -28,7 +28,15 @@ service cloud.firestore {
       return affected.hasOnly(streakFields)
         && request.resource.data.longestStreak >= resource.data.longestStreak
         && request.resource.data.streak >= 0
-        && request.resource.data.points.streakPoints >= resource.data.points.streakPoints;
+        && request.resource.data.points.streakPoints >= resource.data.points.streakPoints
+        // FIXED: Enforce a maximum of +10 streakPoints per write (Issue #360)
+        && (request.resource.data.points.streakPoints - resource.data.points.streakPoints <= 10)
+        // STRICT CAP: totalPoints must increase by the EXACT same delta as streakPoints
+        && (request.resource.data.points.totalPoints - resource.data.points.totalPoints == request.resource.data.points.streakPoints - resource.data.points.streakPoints)
+        // PREVENT TAMPERING: Other points must remain frozen during a streak update
+        && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
+        && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
+        && request.resource.data.points.referralPoints == resource.data.points.referralPoints;
     }
 
     match /users/{uid} {
