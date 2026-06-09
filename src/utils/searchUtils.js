@@ -17,8 +17,8 @@ export const searchLeaderboard = (query, includeWomen = false) => {
   }
 
   return allData.filter((user) => {
-    const name = user.name.toLowerCase();
-    const username = user.username.toLowerCase();
+    const name = (user.name || "").toLowerCase();
+    const username = (user.username || "").toLowerCase();
     const role = (user.role || "").toLowerCase();
     const language = (user.language || "").toLowerCase();
 
