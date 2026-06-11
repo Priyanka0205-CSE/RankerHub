@@ -20,7 +20,9 @@ import {
   Image,
   AlertCircle,
   Zap,
-  Share2
+  Share2,
+  Code,
+  Copy
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc, getDocs } from "firebase/firestore";
@@ -98,6 +100,7 @@ export const Profile = () => {
   const [updating, setUpdating] = useState(false);
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
   const [editGender, setEditGender] = useState("");
@@ -495,6 +498,34 @@ export const Profile = () => {
     } catch (err) {
       console.error('Share/copy failed', err);
       setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Failed to copy profile link.', type: 'error' }]);
+    }
+  };
+
+  const getEmbedMarkdown = () => {
+    const domain = window.location.origin;
+    const usernameParam = userData?.githubUsername || username || 'developer';
+    return `[![${userData?.name || 'Developer'}'s RankerHub Stats](${domain}/api/og/profile/${usernameParam})](${domain}/#/profile/${usernameParam})`;
+  };
+
+  const handleCopyEmbed = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(getEmbedMarkdown());
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = getEmbedMarkdown();
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Markdown copied to clipboard!", type: "success" }]);
+      setIsEmbedModalOpen(false); // Close modal automatically
+    } catch (err) {
+      console.error("Failed to copy", err);
+      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Failed to copy snippet.", type: "error" }]);
     }
   };
 
@@ -1155,6 +1186,10 @@ export const Profile = () => {
         <GradientButton onClick={handleSharePublicProfile} variant="secondary" className="py-2.5 px-4 text-xs flex items-center gap-1.5">
           <Share2 className="w-3.5 h-3.5" />
           Share Profile
+        </GradientButton>
+        <GradientButton onClick={() => setIsEmbedModalOpen(true)} variant="secondary" className="py-2.5 px-4 text-xs flex items-center gap-1.5">
+          <Code className="w-3.5 h-3.5" />
+          Embed
         </GradientButton>
       </SectionHeader>
 
@@ -1829,6 +1864,59 @@ export const Profile = () => {
                   </GradientButton>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
+      {/* GitHub Embed Modal */}
+      <AnimatePresence>
+        {isEmbedModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEmbedModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-slate-900/90 dark:bg-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-6"
+            >
+              <button
+                onClick={() => setIsEmbedModalOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white my-0 flex items-center gap-2">
+                  <Code className="w-5 h-5 text-violet-500" /> Embed on GitHub
+                </h3>
+                <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                  Copy the Markdown snippet below to showcase your live RankerHub stats on your GitHub profile README.
+                </p>
+              </div>
+
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 rounded-xl blur opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
+                <div className="relative bg-slate-950 rounded-xl p-4 border border-slate-800 overflow-x-auto">
+                  <code className="text-xs text-emerald-400 break-all select-all font-mono">
+                    {getEmbedMarkdown()}
+                  </code>
+                </div>
+              </div>
+
+              <GradientButton
+                onClick={handleCopyEmbed}
+                className="w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
+              >
+                <Copy className="w-4 h-4" /> Copy Markdown Snippet
+              </GradientButton>
             </motion.div>
           </div>
         )}
