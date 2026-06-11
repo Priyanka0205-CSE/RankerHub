@@ -35,8 +35,8 @@ function CardComponent(props, ref) {
         ["--mouse-x"]: `${mouseCoords.x}px`,
         ["--mouse-y"]: `${mouseCoords.y}px`
       }}
-      className={`
-        relative backdrop-blur-xl bg-white/70 dark:bg-slate-900/70
+    className={`
+        relative max-w-full overflow-hidden break-words backdrop-blur-xl bg-white/70 dark:bg-slate-900/70
         border border-slate-200/50 dark:border-slate-800/50
         rounded-2xl p-6 shadow-md transition-colors duration-300
         ${glow && onClick ? "hover:shadow-[0_0_25px_rgba(124,58,237,0.15)] dark:hover:shadow-[0_0_25px_rgba(124,58,237,0.1)]" : ""}
