@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import ReportModal from '../components/ReportModal';
 import domtoimage from 'dom-to-image-more';
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -45,6 +46,7 @@ export const Profile = () => {
   const { username } = useParams();
   const [publicProfile, setPublicProfile] = useState(null);
   const [loadingPublicProfile, setLoadingPublicProfile] = useState(!!username);
+  const [showReport, setShowReport] = useState(false);
 
   const isOwnProfile = !username || username === authUserData?.githubUsername || username === user?.uid;
   
@@ -418,7 +420,6 @@ export const Profile = () => {
     const code = userData?.referralCode || "NEWCODE";
     const profileUrl = `${window.location.origin}${window.location.pathname}`;
 
-    // Prefer native share on supporting devices (mobile/secure contexts)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -433,12 +434,10 @@ export const Profile = () => {
       }
     }
 
-    // Clipboard fallback
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(code);
       } else {
-        // legacy fallback
         const ta = document.createElement('textarea');
         ta.value = code;
         ta.style.position = 'fixed';
@@ -459,7 +458,6 @@ export const Profile = () => {
   };
 
  const handleSharePublicProfile = async () => {
-    // Construct correct public profile URL for the HashRouter
     const usernameParam = userData?.githubUsername || username;
     const profileUrl = `${window.location.origin}/#/profile/${usernameParam}`;
     
@@ -469,7 +467,6 @@ export const Profile = () => {
       url: profileUrl
     };
 
-    // Prefer native share on mobile/supported devices
     if (navigator.share) {
       try {
         await navigator.share(shareData);
@@ -480,7 +477,6 @@ export const Profile = () => {
       }
     }
 
-    // Clipboard fallback for desktop browsers
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(profileUrl);
@@ -522,7 +518,7 @@ export const Profile = () => {
         document.body.removeChild(ta);
       }
       setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Markdown copied to clipboard!", type: "success" }]);
-      setIsEmbedModalOpen(false); // Close modal automatically
+      setIsEmbedModalOpen(false);
     } catch (err) {
       console.error("Failed to copy", err);
       setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Failed to copy snippet.", type: "error" }]);
@@ -536,14 +532,11 @@ export const Profile = () => {
     }
 
     try {
-      // Create a sanitized clone to avoid capturing dynamic overlays and animations.
       const original = profileCardRef.current;
       const clone = original.cloneNode(true);
 
-      // Remove pointer-only overlays that interfere with rendering
       clone.querySelectorAll('.pointer-events-none').forEach(n => n.remove());
 
-      // Helper to copy computed styles from source element to target element
       const copyComputedStyles = (sourceEl, targetEl) => {
         const computed = window.getComputedStyle(sourceEl);
         let cssText = '';
@@ -558,7 +551,6 @@ export const Profile = () => {
         targetEl.style.cssText = cssText;
       };
 
-      // Recursively inline computed styles for the clone using the original DOM structure
       const inlineAllStyles = (srcRoot, tgtRoot) => {
         copyComputedStyles(srcRoot, tgtRoot);
         const srcChildren = Array.from(srcRoot.children || []);
@@ -574,12 +566,10 @@ export const Profile = () => {
         console.warn('Inline styles fallback:', e);
       }
 
-      // Ensure fonts are loaded for accurate measurement
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
 
-      // Size and place clone offscreen
       const rect = original.getBoundingClientRect();
       clone.style.position = 'fixed';
       clone.style.left = '-9999px';
@@ -588,22 +578,18 @@ export const Profile = () => {
       clone.style.height = `${Math.round(rect.height)}px`;
       clone.style.boxSizing = 'border-box';
 
-      // If dev bypass is enabled, open an in-page preview so you can inspect the clone
       const isDev = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
       if (isDev) {
-        // Create an in-page overlay so the cloned node renders with the same CSS/fonts
         const overlay = document.createElement('div');
         overlay.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.8);z-index:999999;padding:24px;`;
 
         const container = document.createElement('div');
         container.style.cssText = `position:relative;max-width:calc(100% - 48px);max-height:calc(100% - 48px);overflow:auto;padding:18px;border-radius:12px;`;
 
-        // Debug banner
         const dbg = document.createElement('div');
         dbg.style.cssText = 'position:absolute;left:12px;top:12px;padding:6px 10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:6px;font-size:12px;z-index:100000';
         dbg.textContent = `Preview nodes: ${clone.getElementsByTagName('*').length}`;
 
-        // Close button
         const closeBtn = document.createElement('button');
         closeBtn.textContent = 'Close Preview';
         closeBtn.style.cssText = 'position:absolute;right:12px;top:12px;padding:6px 10px;background:#111827;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000';
@@ -611,7 +597,6 @@ export const Profile = () => {
           if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
         };
 
-        // Download button for the preview — use SVG foreignObject -> canvas rasterization for better fidelity
         const downloadBtn = document.createElement('button');
         downloadBtn.textContent = 'Download Preview as PNG';
         downloadBtn.style.cssText = 'position:absolute;right:140px;top:12px;padding:6px 10px;background:#7c3aed;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000';
@@ -620,7 +605,6 @@ export const Profile = () => {
             const width = 1200;
             const height = 630;
 
-            // Helper: fetch image and convert to data URL
             const imgToDataUrl = async (url) => {
               try {
                 const res = await fetch(url, { mode: 'cors' });
@@ -640,7 +624,6 @@ export const Profile = () => {
             const avatarUrl = (userData && (userData.avatar || user?.photoURL)) || 'https://avatars.githubusercontent.com/u/9919?v=4';
             const avatarData = await imgToDataUrl(avatarUrl);
 
-            // Construct a simple SVG that mirrors the preview layout
             const svgParts = [];
             svgParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
             svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
@@ -650,13 +633,10 @@ export const Profile = () => {
               .meta{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:#93c5fd}
               .body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:rgba(255,255,255,0.85)}
             ]]></style>`);
-            // background gradient (define inside defs before use to avoid ordering issues)
             svgParts.push(`<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`);
             svgParts.push(`</defs>`);
             svgParts.push(`<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`);
-            svgParts.push(`<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`);
 
-            // Avatar
             const avatarX = 48;
             const avatarY = 48;
             const avatarSize = 160;
@@ -666,7 +646,6 @@ export const Profile = () => {
               svgParts.push(`<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`);
             }
 
-            // Text block
             const textX = avatarX + avatarSize + 36;
             const textY = avatarY + 36;
             const displayName = (userData && userData.name) || (user && user.displayName) || 'Developer';
@@ -676,8 +655,8 @@ export const Profile = () => {
 
             svgParts.push(`<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`);
             svgParts.push(`<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`);
-            // Description: avoid foreignObject (taints canvas). Use simple SVG text lines with basic wrapping.
-            const description = 'Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges. ☕';
+            
+            const description = 'Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.';
             const wrapTextLines = (text, maxChars) => {
               const words = text.split(' ');
               const lines = [];
@@ -700,7 +679,6 @@ export const Profile = () => {
               svgParts.push(`<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`);
             }
 
-            // Right column
             svgParts.push(`<g transform="translate(${width - 260},${avatarY})">`);
             svgParts.push(`<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`);
             svgParts.push(`<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`);
@@ -708,7 +686,6 @@ export const Profile = () => {
             svgParts.push(`<text x="12" y="105" class="meta" font-size="12">Referral</text>`);
             svgParts.push(`<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`);
             svgParts.push(`</g>`);
-
             svgParts.push(`</svg>`);
 
             const svgString = svgParts.join('\n');
@@ -748,7 +725,6 @@ export const Profile = () => {
           }
         };
 
-        // Build a simple self-contained preview (fallback) so it always renders
         try {
           const avatarUrl = (userData && (userData.avatar || user?.photoURL)) || "https://avatars.githubusercontent.com/u/9919?v=4";
           const displayName = (userData && (userData.name)) || (user && user.displayName) || "Developer";
@@ -764,7 +740,7 @@ export const Profile = () => {
                 <div style="flex:1;">
                   <div style="font-size:36px;font-weight:800;margin-bottom:6px">${displayName}</div>
                   <div style="color:#93c5fd;font-size:14px">@${usernameHandle} • ${collegeName}</div>
-                  <p style="color:rgba(255,255,255,0.8);margin-top:12px;max-width:820px;font-size:14px">Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges. ☕</p>
+                  <p style="color:rgba(255,255,255,0.8);margin-top:12px;max-width:820px;font-size:14px">Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.</p>
                 </div>
                 <div style="width:220px;text-align:right;padding-left:8px;">
                   <div style="color:#9ca3af;font-size:13px">RankerHub</div>
@@ -780,7 +756,6 @@ export const Profile = () => {
 
           container.innerHTML = simpleHtml;
         } catch {
-          // Fallback: append clone directly
           try { container.appendChild(clone); } catch { container.innerHTML = clone.outerHTML; }
         }
 
@@ -789,16 +764,11 @@ export const Profile = () => {
         overlay.appendChild(closeBtn);
         overlay.appendChild(downloadBtn);
         document.body.appendChild(overlay);
-
-        // Do not proceed with export so you can inspect the preview first
         return;
       }
 
       document.body.appendChild(clone);
-
       const dataUrl = await domtoimage.toPng(clone, { cacheBust: true, bgcolor: null });
-
-      // Cleanup
       document.body.removeChild(clone);
 
       const link = document.createElement('a');
@@ -829,8 +799,6 @@ export const Profile = () => {
     try {
       const userRef = doc(db, "users", user.uid);
 
-      // Verify ownership: fetch the user document and confirm the
-      // authenticated user owns it before allowing any updates.
       const userDocSnap = await getDoc(userRef);
       if (!userDocSnap.exists()) {
         setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile not found. Please try again.", type: "error" }]);
@@ -868,7 +836,6 @@ export const Profile = () => {
 
       updateData.updatedAt = new Date().toISOString();
 
-      // Use Atomic Batch Write instead of updateDoc
       const batch = writeBatch(db);
       batch.update(userRef, updateData);
       await batch.commit();
@@ -935,7 +902,6 @@ export const Profile = () => {
   ];
   const earnedPointsTotal = pointsEngines.reduce((sum, engine) => sum + Math.max(engine.value, 0), 0);
 
-  // GitHub Heatmap Colors (Green/Emerald mapping)
   const getGithubIntensityColor = (intensity) => {
     switch(intensity) {
       case 4: return "bg-emerald-600 dark:bg-emerald-500";
@@ -946,7 +912,6 @@ export const Profile = () => {
     }
   };
 
-  // RankerHub Heatmap Colors (Violet/Indigo mapping)
   const getPlatformIntensityColor = (intensity) => {
     switch(intensity) {
       case 4: return "bg-violet-600 dark:bg-violet-500";
@@ -1161,7 +1126,7 @@ export const Profile = () => {
 
   return (
     <div className="space-y-8">
-   <SectionHeader
+      <SectionHeader
         title={isOwnProfile ? "Developer Profile" : `${userData?.name || "Developer"}'s Profile`}
         subtitle={isOwnProfile ? "Manage your public links, view achievements, and review earned badges." : `View ${userData?.name || "this developer"}'s achievements and badges.`}
         badge="Verified Account"
@@ -1249,6 +1214,32 @@ export const Profile = () => {
               </div>
             ))}
           </div>
+
+          {/* ✅ Report User Button - only visible to logged-in users on other people's profiles */}
+          {!isOwnProfile && user && (
+            <div className="flex justify-center md:justify-start mt-2">
+              <button
+                onClick={() => setShowReport(true)}
+                className="text-red-500 border border-red-300 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-semibold transition-colors"
+              >
+                🚩 Report User
+              </button>
+            </div>
+          )}
+
+          {/* ✅ Report Modal */}
+          {showReport && (
+            <ReportModal
+              reportedUid={publicProfile?.uid}
+              reporterUid={user?.uid}
+              onClose={() => setShowReport(false)}
+              toast={{
+                success: (msg) => setToasts(prev => [...prev, { id: Date.now() + Math.random(), message: msg, type: 'success' }]),
+                error: (msg) => setToasts(prev => [...prev, { id: Date.now() + Math.random(), message: msg, type: 'error' }])
+              }}
+            />
+          )}
+
           <div className="fixed bottom-6 right-5 z-50 flex flex-col gap-2 w-80">
             <AnimatePresence>
               {toasts.map((toast) => (
@@ -1309,10 +1300,8 @@ export const Profile = () => {
         ))}
       </div>
 
-      {/* NEW SECTION: Two Heatmaps Side-by-Side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
-        {/* 1. GitHub Contributions Heatmap */}
         <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
             <div>
@@ -1370,7 +1359,6 @@ export const Profile = () => {
           </div>
         </Card>
 
-        {/* 2. RankerHub Internal Platform Heatmap */}
         <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
             <div>
@@ -1640,7 +1628,6 @@ export const Profile = () => {
       <AnimatePresence>
         {isEditModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1651,14 +1638,12 @@ export const Profile = () => {
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
             />
 
-            {/* Modal Content */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-xl bg-slate-900/90 dark:bg-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
             >
-              {/* Close Button */}
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
@@ -1667,7 +1652,6 @@ export const Profile = () => {
                 <X className="w-4 h-4" />
               </button>
 
-              {/* Header */}
               <div className="space-y-1">
                 <h3 className="text-xl font-black text-white my-0 flex items-center gap-2">
                   <User className="w-5 h-5 text-violet-500" /> Edit Developer Profile
@@ -1677,7 +1661,6 @@ export const Profile = () => {
                 </p>
               </div>
 
-              {/* Edit Form */}
               <form onSubmit={handleSaveProfile} className="space-y-4">
                 {editError && (
                   <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold">
@@ -1686,9 +1669,7 @@ export const Profile = () => {
                   </div>
                 )}
 
-                {/* Grid for Name & Avatar URL */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Full Name */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <User className="w-3 h-3" /> Full Name
@@ -1702,7 +1683,6 @@ export const Profile = () => {
                     />
                   </div>
 
-                  {/* Avatar URL */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <Image className="w-3 h-3" /> Avatar Image URL
@@ -1717,9 +1697,7 @@ export const Profile = () => {
                   </div>
                 </div>
 
-                {/* Grid for Gender & DOB */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Gender */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <HelpCircle className="w-3 h-3" /> Gender
@@ -1737,7 +1715,6 @@ export const Profile = () => {
                     </select>
                   </div>
 
-                  {/* DOB */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <Calendar className="w-3 h-3" /> Date of Birth
@@ -1752,9 +1729,7 @@ export const Profile = () => {
                   </div>
                 </div>
 
-                {/* Grid for City & College Select */}
                 <div className="space-y-4">
-                  {/* City */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> City
@@ -1768,7 +1743,6 @@ export const Profile = () => {
                     />
                   </div>
 
-                  {/* Searchable College Dropdown */}
                   <div className="space-y-1.5 relative" ref={editDropdownRef}>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <Building2 className="w-3 h-3" /> Mumbai College
@@ -1793,7 +1767,6 @@ export const Profile = () => {
                       />
                     </div>
 
-                    {/* Dropdown Menu */}
                     <AnimatePresence>
                       {showCollegeDropdown && (
                         <motion.div
@@ -1829,7 +1802,6 @@ export const Profile = () => {
                     </AnimatePresence>
                   </div>
 
-                  {/* Custom College Input if Other is selected */}
                   <AnimatePresence>
                     {editCollege === "Other" && (
                       <motion.div
@@ -1853,7 +1825,6 @@ export const Profile = () => {
                   </AnimatePresence>
                 </div>
 
-                {/* Submit & Cancel Buttons */}
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
@@ -1877,7 +1848,6 @@ export const Profile = () => {
         )}
       </AnimatePresence>
       
-      {/* GitHub Embed Modal */}
       <AnimatePresence>
         {isEmbedModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
