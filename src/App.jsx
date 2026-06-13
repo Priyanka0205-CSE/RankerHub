@@ -7,6 +7,7 @@ import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 import RateLimitBanner from "./components/ui/RateLimitBanner";
 import Preloader from "./components/ui/Preloader";
+import ScrollToTop from "./components/ui/ScrollToTop";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
               <Preloader />
               <RateLimitBanner />
               <AppRoutes />
+              <ScrollToTop />
             </HashRouter>
           </RateLimitProvider>
         </AuthProvider>
