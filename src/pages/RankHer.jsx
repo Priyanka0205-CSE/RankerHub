@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Quote, Star, Loader2 } from "lucide-react";
+import { AlertTriangle, Sparkles, Quote, Star, Loader2 } from "lucide-react";
 import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import Card from "../components/ui/Card";
@@ -12,6 +12,7 @@ const { user, userData } = useAuth();
   // []    = subscription returned, zero qualifying users
   // [...] = real users ranked by totalPoints
   const [womenUsers, setWomenUsers] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const q = query(
@@ -33,6 +34,7 @@ const { user, userData } = useAuth();
       },
       (error) => {
         console.error("RankHer leaderboard subscription error:", error);
+        setError(error.message || "Failed to load rankings");
         setWomenUsers([]);
       }
     );
@@ -41,6 +43,20 @@ const { user, userData } = useAuth();
   }, []);
 
   const renderBody = () => {
+    if (error) {
+      return (
+        <Card className="p-8 text-center border-red-200 dark:border-red-800/40">
+          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-red-500 dark:text-red-400">
+            Unable to load rankings
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            {error}. Please try again later.
+          </p>
+        </Card>
+      );
+    }
+
     if (womenUsers === null) {
       return (
         <div className="flex items-center justify-center py-12 text-slate-400">

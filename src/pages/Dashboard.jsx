@@ -106,7 +106,7 @@ export const Dashboard = () => {
           const cacheAge = now - cacheEntry.timestamp;
           const fifteenMinutes = 15 * 60 * 1000;
 
-          if (cacheAge < fifteenMinutes || err.message.includes("API")) {
+          if (cacheAge < fifteenMinutes && err.message.includes("API")) {
             data = cacheEntry.data;
           }
         }
