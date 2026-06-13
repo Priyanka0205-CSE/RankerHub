@@ -61,7 +61,9 @@ export const CodingVerse = () => {
             </p>
 
             <div className="flex items-center gap-4 text-xs font-bold text-slate-500 pt-2">
-              <span className="flex items-center gap-1">Difficulty: <span className="text-red-500">Hard (80 XP)</span></span>
+              <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full border text-red-500 bg-red-500/10 border-red-500/25">
+                Hard (80 XP)
+              </span>
               <span>•</span>
               <span>Target Time: 45 mins</span>
             </div>
