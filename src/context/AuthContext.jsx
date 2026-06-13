@@ -456,21 +456,46 @@ export const AuthProvider = ({ children }) => {
 
       let githubStreak = 0;
       try {
-        const eventsRes = await axios.get(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
-        const events = eventsRes.data;
-        
-        const eventDates = new Set(
-          events
-            .filter(e => e.created_at)
-            .map(e => e.created_at.split('T')[0])
-        );
-        
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
         
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        const eventDates = new Set();
+        let eventsUrl = `https://api.github.com/users/${username}/events?per_page=100`;
+
+        while (eventsUrl) {
+          const eventsRes = await axios.get(eventsUrl, { headers });
+          const events = eventsRes.data;
+          
+          if (!events || events.length === 0) {
+            break;
+          }
+
+          let oldestEventDateStr = null;
+
+          events.forEach(e => {
+            if (e.created_at) {
+              const dateStr = e.created_at.split('T')[0];
+              eventDates.add(dateStr);
+              oldestEventDateStr = dateStr;
+            }
+          });
+
+          if (oldestEventDateStr && oldestEventDateStr < yesterdayStr) {
+            break;
+          }
+
+          const linkHeader = eventsRes.headers?.link || eventsRes.headers?.Link;
+          if (linkHeader) {
+            const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+            eventsUrl = nextLinkMatch ? nextLinkMatch[1] : null;
+          } else {
+            eventsUrl = null;
+          }
+        }
 
         let dateToCheck = new Date(today);
         
