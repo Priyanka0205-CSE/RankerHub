@@ -98,7 +98,8 @@ service cloud.firestore {
             request.resource.data.points.gitRankPoints == (
               request.resource.data.githubStats.commits * 2 +
               request.resource.data.githubStats.prs * 5 +
-              request.resource.data.githubStats.reviews * 10
+              request.resource.data.githubStats.reviews * 10 +
+              request.resource.data.githubStreak * 10
             ) &&
             request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints &&
             request.resource.data.points.streakPoints == resource.data.points.streakPoints &&
