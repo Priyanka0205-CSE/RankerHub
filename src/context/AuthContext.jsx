@@ -20,6 +20,7 @@ import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 import { validateUserData } from "../utils/inputValidation";
 import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
+import { calculateTrustScore } from "../services/trustScoreService";
 
 const AuthContext = createContext({});
 
@@ -150,6 +151,7 @@ export const AuthProvider = ({ children }) => {
                 streakPoints: 0,
                 referralPoints: 0,
                 auditorPoints: 0,
+                trustScore: 50,
                 totalPoints: 0
               },
               lastAuditReward: null
@@ -280,6 +282,7 @@ export const AuthProvider = ({ children }) => {
             streakPoints: 10,
             referralPoints: 0,
             auditorPoints: 0,
+            trustScore: 50,
             totalPoints: 10
           },
           hubCoins: 500,
@@ -409,12 +412,14 @@ export const AuthProvider = ({ children }) => {
       
       let stars = 0;
       let primaryLanguage = "JavaScript";
+      let reposList = [];
       try {
         const reposRes = await axios.get(`https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`, { headers });
-        stars = reposRes.data.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
+        reposList = reposRes.data || [];
+        stars = reposList.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
         
         const langCounts = {};
-        reposRes.data.forEach(r => {
+        reposList.forEach(r => {
           if (r.language) {
             langCounts[r.language] = (langCounts[r.language] || 0) + 1;
           }
@@ -445,6 +450,15 @@ export const AuthProvider = ({ children }) => {
         prs = 0;
       }
 
+      let mergedPrsCount = 0;
+      try {
+        const mergedPrsRes = await axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr+is:merged`, { headers });
+        mergedPrsCount = mergedPrsRes.data.total_count || 0;
+      } catch (err) {
+        console.warn("Merged PRs retrieval failed; score will be incomplete until next refresh:", err);
+        mergedPrsCount = 0;
+      }
+
       let reviews = 0;
       try {
         const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers });
@@ -455,6 +469,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       let githubStreak = 0;
+      let eventsList = [];
       try {
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
@@ -465,10 +480,23 @@ export const AuthProvider = ({ children }) => {
 
         const eventDates = new Set();
         let eventsUrl = `https://api.github.com/users/${username}/events?per_page=100`;
+        let firstPageLoaded = false;
 
         while (eventsUrl) {
-          const eventsRes = await axios.get(eventsUrl, { headers });
-          const events = eventsRes.data;
+          let events = [];
+          if (!firstPageLoaded) {
+            const eventsRes = await axios.get(eventsUrl, { headers });
+            events = eventsRes.data || [];
+            eventsList = events;
+            firstPageLoaded = true;
+            const linkHeader = eventsRes.headers?.link || eventsRes.headers?.Link;
+            eventsUrl = linkHeader ? (linkHeader.match(/<([^>]+)>;\s*rel="next"/) ? linkHeader.match(/<([^>]+)>;\s*rel="next"/)[1] : null) : null;
+          } else {
+            const eventsRes = await axios.get(eventsUrl, { headers });
+            events = eventsRes.data || [];
+            const linkHeader = eventsRes.headers?.link || eventsRes.headers?.Link;
+            eventsUrl = linkHeader ? (linkHeader.match(/<([^>]+)>;\s*rel="next"/) ? linkHeader.match(/<([^>]+)>;\s*rel="next"/)[1] : null) : null;
+          }
           
           if (!events || events.length === 0) {
             break;
@@ -486,14 +514,6 @@ export const AuthProvider = ({ children }) => {
 
           if (oldestEventDateStr && oldestEventDateStr < yesterdayStr) {
             break;
-          }
-
-          const linkHeader = eventsRes.headers?.link || eventsRes.headers?.Link;
-          if (linkHeader) {
-            const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
-            eventsUrl = nextLinkMatch ? nextLinkMatch[1] : null;
-          } else {
-            eventsUrl = null;
           }
         }
 
@@ -523,6 +543,20 @@ export const AuthProvider = ({ children }) => {
       }
 
       const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10) + (githubStreak * 10);
+      
+      let trustScore = 50;
+      try {
+        const trustBreakdown = calculateTrustScore(
+          trimmedUsername,
+          { commits, prs, reviews, publicRepos, stars, followers },
+          eventsList,
+          reposList,
+          mergedPrsCount
+        );
+        trustScore = trustBreakdown.totalScore;
+      } catch (err) {
+        console.warn("Trust score calculation error:", err);
+      }
 
       return {
         commits,
@@ -533,7 +567,8 @@ export const AuthProvider = ({ children }) => {
         followers,
         primaryLanguage,
         githubStreak,
-        gitRankPoints
+        gitRankPoints,
+        trustScore
       };
     } catch (error) {
       console.error("Error executing GitHub stats fetcher snapshot:", error);
@@ -598,6 +633,7 @@ export const AuthProvider = ({ children }) => {
         "githubStreak": ghStats.githubStreak,
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
+        "points.trustScore": ghStats.trustScore,
         "lastSync": serverTimestamp()
       });
 

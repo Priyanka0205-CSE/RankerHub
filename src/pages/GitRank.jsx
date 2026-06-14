@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal } from "lucide-react";
+import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal, ShieldCheck } from "lucide-react";
 import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { TableVirtuoso } from "react-virtuoso"; 
@@ -337,6 +337,7 @@ export const GitRank = () => {
           "githubStats.primaryLanguage": ghStats.primaryLanguage,
           "points.gitRankPoints": newGitRankPoints,
           "points.totalPoints": newTotalPoints,
+          "points.trustScore": ghStats.trustScore,
           "lastSync": serverTimestamp()
         });
       });
@@ -1091,6 +1092,7 @@ export const GitRank = () => {
                       <th className="py-3 px-2 sm:px-4 text-center">Commits</th>
                       <th className="py-3 px-2 sm:px-4 text-center">PRs</th>
                       <th className="py-3 px-2 sm:px-4 text-center">Reviews</th>
+                      <th className="py-3 px-2 sm:px-4 text-center">Trust</th>
                       <th className="py-3 px-2 sm:px-4 text-right">Git Points</th>
                     </>
                   ) : (
@@ -1131,6 +1133,22 @@ export const GitRank = () => {
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">{u.githubStats?.commits || 0}</td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-violet-600 dark:text-violet-400 text-xs sm:text-sm">{u.githubStats?.prs || 0}</td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-pink-600 dark:text-pink-400 text-xs sm:text-sm">{u.githubStats?.reviews || 0}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-center">
+                        {(() => {
+                          const ts = u.points?.trustScore ?? null;
+                          if (ts === null) return <span className="text-[9px] font-bold text-slate-400">—</span>;
+                          let label, cls;
+                          if (ts >= 90) { label = `${ts} ✦`; cls = "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"; }
+                          else if (ts >= 70) { label = `${ts} ✔`; cls = "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20"; }
+                          else if (ts >= 50) { label = `${ts}`; cls = "text-slate-500 dark:text-slate-400 bg-slate-500/10 border-slate-500/20"; }
+                          else { label = `${ts} ⚠`; cls = "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"; }
+                          return (
+                            <span className={`inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md border ${cls}`}>
+                              {label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-right font-black text-slate-900 dark:text-white text-xs sm:text-sm">{u.points?.gitRankPoints?.toLocaleString() || 0}</td>
                     </>
                   ) : (
