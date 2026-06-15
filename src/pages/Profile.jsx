@@ -293,6 +293,12 @@ export const Profile = () => {
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
         setRank(`#${currentRank}`);
+
+        // Save rank snapshot if it is the user's own profile
+        if (isOwnProfile && user?.uid) {
+          const { saveRankSnapshot } = await import("../services/rankHistoryService");
+          await saveRankSnapshot(user.uid, currentRank, userData.points.totalPoints, userData.timezone);
+        }
       } catch (err) {
         console.error("Error calculating dynamic rank:", err);
         setRank("#N/A");
@@ -300,7 +306,7 @@ export const Profile = () => {
     };
 
     fetchRank();
-  }, [userData]);
+  }, [userData, isOwnProfile, user]);
 
   // Fetch REAL Profile Heatmap Data for GitHub
   useEffect(() => {
