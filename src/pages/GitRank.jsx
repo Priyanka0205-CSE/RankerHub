@@ -310,7 +310,7 @@ export const GitRank = () => {
     setSyncError("");
 
     try {
-      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
+      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername, userData.timezone);
       const userRef = doc(db, "users", user.uid);
 
       await runTransaction(db, async (transaction) => {

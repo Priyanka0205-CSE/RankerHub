@@ -22,6 +22,14 @@ import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 import { validateUserData } from "../utils/inputValidation";
 import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
 import { calculateTrustScore } from "../services/trustScoreService";
+import {
+  calculateGithubStreak,
+  detectTimezone,
+  resolveTimezone,
+  toLocalDateString,
+  addDaysToDateString,
+  evaluateLoginStreak,
+} from "../utils/streakCalculator";
 
 const AuthContext = createContext({});
 
@@ -30,9 +38,13 @@ export const useAuth = () => useContext(AuthContext);
 const checkAndUpdateStreak = async (data, docRef) => {
   if (!data || data.onboardingStatus !== "complete") return;
   const now = new Date();
+  const timeZone = resolveTimezone(data.timezone);
   const lastLoginDate = data.lastLogin ? new Date(data.lastLogin) : null;
 
-  if (lastLoginDate && lastLoginDate.toDateString() === now.toDateString()) {
+  if (
+    lastLoginDate &&
+    toLocalDateString(lastLoginDate, timeZone) === toLocalDateString(now, timeZone)
+  ) {
     return;
   }
 
@@ -43,30 +55,32 @@ const checkAndUpdateStreak = async (data, docRef) => {
 
       const latestData = userDoc.data();
       const currentNow = new Date();
+      const latestTimeZone = resolveTimezone(latestData.timezone);
       const latestLastLogin = latestData.lastLogin ? new Date(latestData.lastLogin) : null;
 
-      if (latestLastLogin && latestLastLogin.toDateString() === currentNow.toDateString()) {
+      if (
+        latestLastLogin &&
+        toLocalDateString(latestLastLogin, latestTimeZone) ===
+          toLocalDateString(currentNow, latestTimeZone)
+      ) {
         return;
       }
 
-      let newStreak = latestData.streak || 1;
+      const streakUpdate = evaluateLoginStreak(
+        latestLastLogin?.toISOString() ?? null,
+        currentNow.toISOString(),
+        latestData.streak || 1,
+        latestTimeZone
+      );
+
+      const newStreak = streakUpdate.streak;
       let newStreakPoints = latestData.points?.streakPoints || 0;
-
-      if (latestLastLogin) {
-        const yesterday = new Date(currentNow);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const lastLoginDateStr = latestLastLogin.toDateString();
-        const yesterdayStr = yesterday.toDateString();
-
-        if (lastLoginDateStr === yesterdayStr) {
-          newStreak += 1;
-          newStreakPoints += 10;
-        } else {
-          newStreak = 1;
-        }
-      } else {
-        newStreak = 1;
+      if (
+        streakUpdate.updated &&
+        latestLastLogin &&
+        newStreak === (latestData.streak || 1) + 1
+      ) {
+        newStreakPoints += 10;
       }
 
       const newTotalPoints =
@@ -81,6 +95,7 @@ const checkAndUpdateStreak = async (data, docRef) => {
         streak: newStreak,
         longestStreak: newLongestStreak,
         lastLogin: currentNow.toISOString(),
+        timezone: latestTimeZone,
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints,
         hubCoins: (data.hubCoins || 0) + 10
@@ -139,6 +154,7 @@ export const AuthProvider = ({ children }) => {
               streak: 0,
               longestStreak: 0,
               githubStreak: 0,
+              timezone: detectTimezone(),
               lastLogin: new Date().toISOString(),
               createdAt: new Date().toISOString(),
               points: {
@@ -156,7 +172,7 @@ export const AuthProvider = ({ children }) => {
           } else {
             await setDoc(
               userDocRef,
-              { lastLogin: new Date().toISOString() },
+              { lastLogin: new Date().toISOString(), timezone: detectTimezone() },
               { merge: true }
             );
           }
@@ -380,7 +396,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const fetchGitHubStats = async (uid, username) => {
+  const fetchGitHubStats = async (uid, username, timeZone) => {
     if (!username || typeof username !== "string") {
       throw new Error("GitHub username is required and must be a string.");
     }
@@ -493,19 +509,15 @@ export const AuthProvider = ({ children }) => {
         console.warn("Reviews retrieval failed:", err);
       }
 
-      // --- Streak calculation ---
+      // --- Streak calculation (user-local calendar days) ---
       let githubStreak = 0;
       let eventsList = [];
+      const streakTimeZone = resolveTimezone(timeZone);
 
       try {
-        const today = new Date();
-        const todayStr = today.toISOString().split("T")[0];
-
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-        const eventDates = new Set();
+        const todayStr = toLocalDateString(new Date(), streakTimeZone);
+        const yesterdayStr = addDaysToDateString(todayStr, -1);
+        const eventTimestamps = [];
 
         let eventsUrl = `https://api.github.com/users/${encodedUsername}/events?per_page=100`;
         let firstPageLoaded = false;
@@ -524,38 +536,19 @@ export const AuthProvider = ({ children }) => {
 
           if (!events.length) break;
 
-          let oldestEventDateStr = null;
+          let oldestEventLocalDateStr = null;
           events.forEach((e) => {
             if (e.created_at) {
-              const dateStr = e.created_at.split("T")[0];
-              eventDates.add(dateStr);
-              oldestEventDateStr = dateStr;
+              eventTimestamps.push(e.created_at);
+              const localDateStr = toLocalDateString(e.created_at, streakTimeZone);
+              oldestEventLocalDateStr = localDateStr;
             }
           });
 
-          if (oldestEventDateStr && oldestEventDateStr < yesterdayStr) break;
+          if (oldestEventLocalDateStr && oldestEventLocalDateStr < yesterdayStr) break;
         }
 
-        let dateToCheck = new Date(today);
-        if (eventDates.has(todayStr)) {
-          // active today — start streak from today
-        } else if (eventDates.has(yesterdayStr)) {
-          dateToCheck = new Date(yesterday);
-        } else {
-          dateToCheck = null;
-        }
-
-        if (dateToCheck) {
-          while (true) {
-            const checkStr = dateToCheck.toISOString().split("T")[0];
-            if (eventDates.has(checkStr)) {
-              githubStreak++;
-              dateToCheck.setDate(dateToCheck.getDate() - 1);
-            } else {
-              break;
-            }
-          }
-        }
+        githubStreak = calculateGithubStreak(eventTimestamps, streakTimeZone);
       } catch (err) {
         console.warn("GitHub events retrieval failed for streak:", err);
       }
@@ -627,7 +620,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
+      const ghStats = await fetchGitHubStats(
+        user.uid,
+        userData.githubUsername,
+        userData.timezone
+      );
       const userRef = doc(db, "users", user.uid);
 
       const userDoc = await getDoc(userRef);

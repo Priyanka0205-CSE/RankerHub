@@ -16,7 +16,8 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
-import { doc, updateDoc, runTransaction, query, collection, where, getCountFromServer, getDocs } from "firebase/firestore";
+import { doc, runTransaction, query, collection, where, getCountFromServer, getDocs } from "firebase/firestore";
+import { evaluateCodingVerseStreak } from "../utils/streakCalculator";
 
 // --- Language Definitions ---
 const LANGUAGES = [
@@ -675,31 +676,14 @@ export const CodingVerse = () => {
               newSolvedQuestions = [...liveAnswered, qId];
               newCodingVersePoints += earnedPoints;
 
-              // Ensure timezone-agnostic boundaries using strict UTC Date strings
-              const today = new Date();
-              const todayUTCStr = today.toISOString().split('T')[0];
-              const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-
-              if (newLastCodingVerseSolveDate) {
-                if (todayUTCStr !== newLastCodingVerseSolveDate) {
-                  const lastDateParts = newLastCodingVerseSolveDate.split('-');
-                  const lastUTC = Date.UTC(parseInt(lastDateParts[0]), parseInt(lastDateParts[1]) - 1, parseInt(lastDateParts[2]));
-                  const diffDays = Math.floor((todayUTC - lastUTC) / (1000 * 60 * 60 * 24));
-
-                  if (diffDays === 1) {
-                    newCodingVerseStreak += 1; // Maintained consecutive sequence
-                  } else if (diffDays > 1) {
-                    newCodingVerseStreak = 1; // Broken streak, reset
-                  }
-                  earnedStreakPoints = 5; // +5 XP for each new active solving day
-                  newLastCodingVerseSolveDate = todayUTCStr;
-                }
-              } else {
-                newCodingVerseStreak = 1;
-                earnedStreakPoints = 5;
-                newLastCodingVerseSolveDate = todayUTCStr;
-              }
-
+              const streakResult = evaluateCodingVerseStreak(
+                newLastCodingVerseSolveDate,
+                newCodingVerseStreak,
+                liveData.timezone
+              );
+              newCodingVerseStreak = streakResult.streak;
+              newLastCodingVerseSolveDate = streakResult.lastSolveDate;
+              earnedStreakPoints = streakResult.earnedStreakPoints;
               newStreakPoints += earnedStreakPoints;
               newTotalPoints = (liveData.points?.gitRankPoints || 0) +
                               (liveData.points?.referralPoints || 0) +
