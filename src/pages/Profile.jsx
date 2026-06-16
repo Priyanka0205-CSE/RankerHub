@@ -239,12 +239,21 @@ export const Profile = () => {
 
       await updateDoc(userRef, updateData);
 
-      if (setUserData) {
-        setUserData(prev => ({
-          ...prev,
-          ...updateData
-        }));
-      }
+     if (setUserData) {
+  setUserData(prev => ({
+    ...prev,
+    ...updateData
+  }));
+}
+
+// Notify other tabs about avatar change
+if (updateData.avatar) {
+  localStorage.setItem("rh_avatar_updated", JSON.stringify({
+    uid: user.uid,
+    avatar: updateData.avatar,
+    ts: Date.now()
+  }));
+}
 
       setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile updated successfully!", type: "success" }]);
       setIsEditModalOpen(false);
