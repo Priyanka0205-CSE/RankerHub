@@ -113,6 +113,8 @@ export const Profile = () => {
   const [customCollege, setCustomCollege] = useState("");
   const [editError, setEditError] = useState("");
 
+  const [editLearningTags, setEditLearningTags] = useState([]);
+const [learningInput, setLearningInput] = useState("");
   const editDropdownRef = useRef(null);
   const profileCardRef = useRef(null);
 
@@ -160,6 +162,7 @@ export const Profile = () => {
     }
     
     setEditError("");
+    setEditLearningTags(userData?.learningTags || []);
     setIsEditModalOpen(true);
   };
 
@@ -234,6 +237,7 @@ export const Profile = () => {
         dob: editDob,
         city: finalCity,
         college: finalCollege,
+        learningTags: editLearningTags, 
         updatedAt: new Date().toISOString()
       };
 
@@ -1965,7 +1969,64 @@ export const Profile = () => {
                     )}
                   </AnimatePresence>
                 </div>
-
+                {/* Currently Learning */}
+<div className="space-y-1.5">
+  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+    Currently Learning
+  </label>
+  <div className="flex flex-wrap gap-2 mb-2">
+    {(editLearningTags || []).map((tag, index) => (
+      <span
+        key={index}
+        className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30"
+      >
+        {tag}
+        <button
+          type="button"
+          onClick={() => setEditLearningTags(prev => prev.filter((_, i) => i !== index))}
+          className="hover:text-red-400 transition-colors"
+        >
+          ×
+        </button>
+      </span>
+    ))}
+  </div>
+  {(editLearningTags || []).length < 5 && (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        placeholder="e.g. Rust, DSA, System Design"
+        value={learningInput}
+        onChange={(e) => setLearningInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const val = learningInput.trim();
+            if (val && !(editLearningTags || []).includes(val)) {
+              setEditLearningTags(prev => [...(prev || []), val]);
+              setLearningInput("");
+            }
+          }
+        }}
+        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500 text-white"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          const val = learningInput.trim();
+          if (val && !(editLearningTags || []).includes(val)) {
+            setEditLearningTags(prev => [...(prev || []), val]);
+            setLearningInput("");
+          }
+        }}
+        className="px-3 py-1 text-xs rounded-xl bg-violet-500 text-white hover:bg-violet-600 transition-colors"
+      >
+        Add
+      </button>
+    </div>
+  )}
+  <p className="text-[10px] text-slate-500">Add up to 5 tags (press Enter or click Add)</p>
+</div>
                 {/* Submit & Cancel Buttons */}
                 <div className="flex gap-3 pt-2">
                   <button
