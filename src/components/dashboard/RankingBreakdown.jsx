@@ -63,7 +63,9 @@ export const RankingBreakdown = ({ userData }) => {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
 
-  const progressPercentage = (breakdown.totalPoints / breakdown.nextMilestone.points) * 100;
+  const progressPercentage = breakdown.nextMilestone.points > 0
+    ? (breakdown.totalPoints / breakdown.nextMilestone.points) * 100
+    : 0;
 
   // Chronological history for the chart
   const chronologicalHistory = useMemo(() => {
