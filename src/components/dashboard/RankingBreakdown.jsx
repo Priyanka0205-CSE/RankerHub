@@ -18,7 +18,9 @@ export const RankingBreakdown = ({ userData }) => {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
 
-  const progressPercentage = (breakdown.totalPoints / breakdown.nextMilestone.points) * 100;
+  const progressPercentage = breakdown.nextMilestone.points > 0
+    ? (breakdown.totalPoints / breakdown.nextMilestone.points) * 100
+    : 0;
 
   return (
     <div className="space-y-6">
