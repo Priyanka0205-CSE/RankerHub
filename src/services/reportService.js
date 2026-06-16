@@ -6,7 +6,7 @@ import {
   getDocs,
   serverTimestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 
 export const reportUser = async (reporterUid, reportedUid, reason) => {
   // Prevent duplicate reports
