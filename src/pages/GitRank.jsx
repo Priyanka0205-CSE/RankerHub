@@ -43,7 +43,7 @@ export const GitRank = () => {
   const handleCollegeChange = (e) => {
     const val = e.target.value;
     const newParams = new URLSearchParams(searchParams);
-    if (val) newfParams.set("college", val);
+    if (val) newParams.set("college", val);
     else newParams.delete("college");
     setSearchParams(newParams, { replace: true });
   };
