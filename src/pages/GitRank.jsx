@@ -74,6 +74,13 @@ export const GitRank = () => {
   const [repos, setRepos] = useState([]);
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [chartRateLimitError, setChartRateLimitError] = useState("");
+  // Issue #585: Recently visited profiles from localStorage
+  const [recentProfiles, setRecentProfiles] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rh_recently_visited") || "[]");
+    } catch { return []; }
+  });
+
   // Jump to My Rank
 const [myRank, setMyRank] = useState(null);
 const [rankLoading, setRankLoading] = useState(false);
@@ -1057,7 +1064,29 @@ const handleJumpToMyRank = async () => {
   </div>
 )}
       
-        {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
+        {/* Issue #585: Recently Visited Profiles */}
+      {recentProfiles.length > 0 && (
+        <div className="mb-5">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            🕐 Recently Visited
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {recentProfiles.map((p) => (
+              
+                key={p.username}
+                href={`/dashboard/profile/${encodeURIComponent(p.username)}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-violet-500/40 hover:bg-violet-500/5 transition-all"
+              >
+                <img src={p.avatar} alt={p.name} className="w-5 h-5 rounded-full object-cover" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{p.name}</span>
+                <span className="text-[10px] text-slate-400">@{p.username}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
         
         <div className="flex items-center gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
           <button

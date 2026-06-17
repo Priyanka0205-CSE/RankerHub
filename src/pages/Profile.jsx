@@ -71,7 +71,22 @@ export const Profile = () => {
         const q1 = query(collection(db, "users"), where("githubUsername", "==", username));
         const snapshot1 = await getDocs(q1);
         if (!snapshot1.empty) {
-          setPublicProfile(snapshot1.docs[0].data());
+          const profileData = snapshot1.docs[0].data();
+          setPublicProfile(profileData);
+          // Issue #585: Save to recently visited profiles in localStorage
+          try {
+            const key = "rh_recently_visited";
+            const existing = JSON.parse(localStorage.getItem(key) || "[]");
+            const entry = {
+              username: profileData.githubUsername,
+              name: profileData.name,
+              avatar: profileData.avatar,
+              visitedAt: Date.now()
+            };
+            const filtered = existing.filter(e => e.username !== entry.username);
+            const updated = [entry, ...filtered].slice(0, 5);
+            localStorage.setItem(key, JSON.stringify(updated));
+          } catch {}
         } else {
           const docRef = doc(db, "users", username);
           const docSnap = await getDoc(docRef);
