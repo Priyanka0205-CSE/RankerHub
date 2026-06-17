@@ -1038,6 +1038,27 @@ const handleJumpToMyRank = async () => {
 
       {/* 3. Leaderboard Table / Search & Filters Controls */}
       <Card className="!p-3 sm:!p-6">
+      {/* Issue #585: Recently Visited Profiles */}
+      {recentProfiles.length > 0 && (
+        <div className="mb-5">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            🕐 Recently Visited
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {recentProfiles.map((p) => (
+              
+                key={p.username}
+                href={`/dashboard/profile/${encodeURIComponent(p.username)}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-violet-500/40 hover:bg-violet-500/5 transition-all"
+              >
+                <img src={p.avatar} alt={p.name} className="w-5 h-5 rounded-full object-cover" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{p.name}</span>
+                <span className="text-[10px] text-slate-400">@{p.username}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
        
       {/* Jump to My Rank - Issue #483 */}
 {user && (
