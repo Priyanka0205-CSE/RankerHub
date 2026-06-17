@@ -1048,7 +1048,7 @@ const handleJumpToMyRank = async () => {
           </p>
           <div className="flex flex-wrap gap-2">
             {recentProfiles.map((p) => (
-              
+              <a
                 key={p.username}
                 href={`/dashboard/profile/${encodeURIComponent(p.username)}`}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-violet-500/40 hover:bg-violet-500/5 transition-all"
