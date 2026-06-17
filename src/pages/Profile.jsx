@@ -301,7 +301,8 @@ if (updateData.avatar) {
       try {
         const q = query(
           collection(db, "users"),
-          where("points.totalPoints", ">", userData.points.totalPoints)
+          where("onboardingStatus", "==", "complete"),
+      where("points.gitRankPoints", ">", userData.points.gitRankPoints ?? 0)
         );
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
