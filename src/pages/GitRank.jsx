@@ -79,6 +79,7 @@ const [myRank, setMyRank] = useState(null);
 const [rankLoading, setRankLoading] = useState(false);
 const [rankError, setRankError] = useState("");
 const myRowRef = useRef(null);
+const searchInputRef = useRef(null);
 
 const handleJumpToMyRank = async () => {
   if (!user) return;
@@ -425,6 +426,19 @@ const handleJumpToMyRank = async () => {
 
     return () => clearInterval(interval);
   }, [userData?.lastSync]);
+
+  // Issue #582: Press / to focus search bar
+  useEffect(() => {
+    const handleSlashKey = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (e.key === "/" && tag !== "input" && tag !== "textarea") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleSlashKey);
+    return () => document.removeEventListener("keydown", handleSlashKey);
+  }, []);
 
   const formatCooldown = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -1091,7 +1105,8 @@ const handleJumpToMyRank = async () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search user..."
+                placeholder="Search user...  [ / ]"
+              ref={searchInputRef}
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
