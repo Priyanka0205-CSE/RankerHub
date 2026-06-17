@@ -75,7 +75,7 @@ export const GitRank = () => {
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [chartRateLimitError, setChartRateLimitError] = useState("");
   // Issue #585: Recently visited profiles from localStorage
-  const [recentProfiles, setRecentProfiles] = useState(() => {
+  const [recentProfiles] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("rh_recently_visited") || "[]");
     } catch { return []; }
