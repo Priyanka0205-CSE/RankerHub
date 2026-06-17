@@ -990,6 +990,16 @@ export const CodingVerse = () => {
                     <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                       +{difficultyXP} XP
                     </span>
+                    {isSolved && (
+                      <span className="px-2.5 py-0.5 text-[9px] font-extrabold rounded-lg border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Solved
+                      </span>
+                    )}
+                    {isWrong && (
+                      <span className="px-2.5 py-0.5 text-[9px] font-extrabold rounded-lg border bg-red-500/10 text-red-500 border-red-500/20">
+                        ✗ Wrong
+                      </span>
+                    )}
                     <button className="text-slate-400 hover:text-slate-200 p-1 cursor-pointer">
                       <MoreHorizontal className="w-5 h-5" />
                     </button>
