@@ -86,7 +86,7 @@ export const Profile = () => {
             const filtered = existing.filter(e => e.username !== entry.username);
             const updated = [entry, ...filtered].slice(0, 5);
             localStorage.setItem(key, JSON.stringify(updated));
-          } catch {}
+          } catch (e) { console.error(e); }
         } else {
           const docRef = doc(db, "users", username);
           const docSnap = await getDoc(docRef);
