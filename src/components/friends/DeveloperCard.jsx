@@ -30,7 +30,7 @@ export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact 
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <Link
-                to={`/dashboard/profile/${developer.username}`}
+                to={`/dashboard/profile/${encodeURIComponent(developer.username)}`}
                 className="font-extrabold text-slate-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors truncate block"
               >
                 {developer.name}
