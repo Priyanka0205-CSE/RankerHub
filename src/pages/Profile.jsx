@@ -42,7 +42,8 @@ import collegesList from "../data/colleges.json";
 export const Profile = () => {
   const navigate = useNavigate();
   const { userData: authUserData, user, setUserData, syncGitHubData } = useAuth();
-  const { username } = useParams();
+  const { username: rawUsername } = useParams();
+  const username = rawUsername ? decodeURIComponent(rawUsername) : undefined;
   const [publicProfile, setPublicProfile] = useState(null);
   const [loadingPublicProfile, setLoadingPublicProfile] = useState(!!username);
 
