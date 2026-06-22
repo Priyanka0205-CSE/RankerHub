@@ -1,6 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /reports/{reportId} {
+  allow create: if request.auth != null;
+  allow read, update, delete: if false;
+}
 
     // Helper: Is the user authenticated?
     function isAuthenticated() {
