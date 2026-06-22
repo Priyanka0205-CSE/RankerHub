@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal } from "lucide-react";
-import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal, ShieldCheck } from "lucide-react";
+import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp, getCountFromServer } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { TableVirtuoso } from "react-virtuoso"; 
 import { db } from "../lib/firebase";
@@ -74,7 +74,58 @@ export const GitRank = () => {
   const [repos, setRepos] = useState([]);
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [chartRateLimitError, setChartRateLimitError] = useState("");
+  // Issue #585: Recently visited profiles from localStorage
+  const [recentProfiles] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rh_recently_visited") || "[]");
+    } catch { return []; }
+  });
 
+  // Jump to My Rank
+const [myRank, setMyRank] = useState(null);
+const [rankLoading, setRankLoading] = useState(false);
+const [rankError, setRankError] = useState("");
+const myRowRef = useRef(null);
+const searchInputRef = useRef(null);
+
+const handleJumpToMyRank = async () => {
+  if (!user) return;
+  setRankLoading(true);
+  setRankError("");
+  setMyRank(null);
+  try {
+    const userPoints = activeTab === "referrals"
+      ? (userData?.points?.referralPoints ?? 0)
+      : (userData?.points?.gitRankPoints ?? 0);
+
+    if (userPoints === 0) {
+      setRankError("You haven't earned any points yet! Start contributing 🚀");
+      setRankLoading(false);
+      return;
+    }
+
+    const pointsField = activeTab === "referrals"
+      ? "points.referralPoints"
+      : "points.gitRankPoints";
+
+    const q = query(
+      collection(db, "users"),
+      where(pointsField, ">", userPoints)
+    );
+    const snapshot = await getCountFromServer(q);
+    const rank = snapshot.data().count + 1;
+    setMyRank(rank);
+
+    setTimeout(() => {
+      myRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  } catch (err) {
+    console.error(err);
+    setRankError("Could not fetch your rank. Please try again.");
+  } finally {
+    setRankLoading(false);
+  }
+};
   const languages = ["All", "TypeScript", "Rust", "Go", "Python", "Kotlin", "Ruby", "JavaScript"];
 
   // 1. Real-time Leaderboard Listener (Server-Side Filtered)
@@ -125,8 +176,10 @@ export const GitRank = () => {
 
         setUsersList(ranked);
         setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === 50); 
-        setLoadingUsers(false);
+        setHasMore(snapshot.docs.length === 50);
+        if (!snapshot.metadata.fromCache) {
+          setLoadingUsers(false);
+        }
       },
       (error) => {
         console.error("Leaderboard subscription error:", error);
@@ -310,7 +363,7 @@ export const GitRank = () => {
     setSyncError("");
 
     try {
-      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
+      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername, userData.timezone);
       const userRef = doc(db, "users", user.uid);
 
       await runTransaction(db, async (transaction) => {
@@ -337,6 +390,7 @@ export const GitRank = () => {
           "githubStats.primaryLanguage": ghStats.primaryLanguage,
           "points.gitRankPoints": newGitRankPoints,
           "points.totalPoints": newTotalPoints,
+          "points.trustScore": ghStats.trustScore,
           "lastSync": serverTimestamp()
         });
       });
@@ -381,6 +435,19 @@ export const GitRank = () => {
 
     return () => clearInterval(interval);
   }, [userData?.lastSync]);
+
+  // Issue #582: Press / to focus search bar
+  useEffect(() => {
+    const handleSlashKey = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (e.key === "/" && tag !== "input" && tag !== "textarea") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleSlashKey);
+    return () => document.removeEventListener("keydown", handleSlashKey);
+  }, []);
 
   const formatCooldown = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -987,8 +1054,32 @@ export const GitRank = () => {
 
       {/* 3. Leaderboard Table / Search & Filters Controls */}
       <Card className="!p-3 sm:!p-6">
+      
+      
+        {/* Issue #585: Recently Visited Profiles */}
+      {recentProfiles.length > 0 && (
+        <div className="mb-5">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            🕐 Recently Visited
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {recentProfiles.map((p) => (
+              <a
+                key={p.username}
+                href={`/dashboard/profile/${encodeURIComponent(p.username)}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-violet-500/40 hover:bg-violet-500/5 transition-all"
+              >
+                <img src={p.avatar} alt={p.name} className="w-5 h-5 rounded-full object-cover" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{p.name}</span>
+                <span className="text-[10px] text-slate-400">@{p.username}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
         
-        {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
         <div className="flex items-center gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
           <button
             onClick={() => handleTabChange("gitrank")}
@@ -1021,7 +1112,8 @@ export const GitRank = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search user..."
+                placeholder="Search user...  [ / ]"
+              ref={searchInputRef}
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
@@ -1065,9 +1157,24 @@ export const GitRank = () => {
 
         <div className="overflow-x-auto overflow-y-hidden w-full">
           {loadingUsers ? (
-            <div className="py-20 text-center text-slate-400">
-              <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-sm font-bold">Synchronizing Live Standings...</p>
+            <div className="w-full mt-4 min-w-[640px]">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-slate-100 dark:border-slate-800/40 animate-pulse">
+                  <div className="w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-9 h-9 bg-slate-200 dark:bg-slate-800 rounded-lg shrink-0" />
+                    <div className="space-y-1.5">
+                      <div className="w-28 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <div className="w-20 h-2.5 bg-slate-100 dark:bg-slate-700 rounded" />
+                    </div>
+                  </div>
+                  <div className="w-16 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-12 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-12 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-12 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-16 h-3 bg-slate-200 dark:bg-slate-800 rounded ml-auto" />
+                </div>
+              ))}
             </div>
           ) : filteredData.length > 0 ? (
             <TableVirtuoso
@@ -1076,7 +1183,17 @@ export const GitRank = () => {
               components={{
                 Table: (props) => <table {...props} className="w-full text-left mt-4 border-collapse min-w-[640px]" />,
                 TableHead: React.forwardRef((props, ref) => <thead {...props} ref={ref} />),
-                TableRow: (props) => <tr {...props} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors group" />,
+               TableRow: ({ item: u, ...props }) => (
+  <tr
+    {...props}
+    ref={user && u?.uid === user?.uid ? myRowRef : null}
+    className={`hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors group ${
+      user && u?.uid === user?.uid && myRank
+        ? "bg-violet-50 dark:bg-violet-500/10 ring-2 ring-violet-400 ring-inset"
+        : ""
+    }`}
+  />
+),
                 TableBody: React.forwardRef((props, ref) => <tbody {...props} ref={ref} className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm" />),
               }}
               fixedHeaderContent={() => (
@@ -1091,6 +1208,7 @@ export const GitRank = () => {
                       <th className="py-3 px-2 sm:px-4 text-center">Commits</th>
                       <th className="py-3 px-2 sm:px-4 text-center">PRs</th>
                       <th className="py-3 px-2 sm:px-4 text-center">Reviews</th>
+                      <th className="py-3 px-2 sm:px-4 text-center">Trust</th>
                       <th className="py-3 px-2 sm:px-4 text-right">Git Points</th>
                     </>
                   ) : (
@@ -1131,6 +1249,22 @@ export const GitRank = () => {
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">{u.githubStats?.commits || 0}</td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-violet-600 dark:text-violet-400 text-xs sm:text-sm">{u.githubStats?.prs || 0}</td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-pink-600 dark:text-pink-400 text-xs sm:text-sm">{u.githubStats?.reviews || 0}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-center">
+                        {(() => {
+                          const ts = u.points?.trustScore ?? null;
+                          if (ts === null) return <span className="text-[9px] font-bold text-slate-400">—</span>;
+                          let label, cls;
+                          if (ts >= 90) { label = `${ts} ✦`; cls = "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"; }
+                          else if (ts >= 70) { label = `${ts} ✔`; cls = "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20"; }
+                          else if (ts >= 50) { label = `${ts}`; cls = "text-slate-500 dark:text-slate-400 bg-slate-500/10 border-slate-500/20"; }
+                          else { label = `${ts} ⚠`; cls = "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"; }
+                          return (
+                            <span className={`inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md border ${cls}`}>
+                              {label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-right font-black text-slate-900 dark:text-white text-xs sm:text-sm">{u.points?.gitRankPoints?.toLocaleString() || 0}</td>
                     </>
                   ) : (

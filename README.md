@@ -1,140 +1,187 @@
-# RankerHub 🚀
+# RankerHub — Community Developer Ranking & Coding Platform
 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/indresh404/RankerHub/pulls)
-[![GSSoC 2026](https://img.shields.io/badge/GSSoC-2026-orange?style=flat-square)](https://gssoc.girlscript.tech/)
-[![NSoC 2026](https://img.shields.io/badge/NSoC-2026-blueviolet?style=flat-square)](https://nsoc.github.io/)
-[![GitHub license](https://img.shields.io/github/license/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/issues)
-[![GitHub forks](https://img.shields.io/github/forks/indresh404/RankerHub?style=flat-square)](https://github.com/indresh404/RankerHub/network/members)
+RankerHub is a modern, community-driven developer platform designed to gamify open-source contributions and computer science fundamentals. It combines real-world GitHub activity tracking (via **GitRank**) with interactive computer science challenges (via **CodingVerse**), celebrating developer achievements on global leaderboards and promoting inclusivity with a dedicated **RankHer** section.
 
-RankerHub is a developer ranking and coding platform that helps students and developers track GitHub activity, coding performance, streaks, achievements, and leaderboard rankings in one place.
+> [!NOTE]
+> This project is proudly part of **NSoC 2026 (Nexus Summer of Code)**. 🚀
 
 ---
 
-## ✨ Features
+## 📌 Project Overview
 
-* 🔐 GitHub Authentication
-* 🏆 GitHub Contribution Rankings
-* 👩 RankHer – Female Developer Leaderboard
-* 💻 Coding Theory + Practical Questions
-* 🎖️ Badge & Achievement System
-* 🔥 Daily Activity Streaks
-* 🏫 College-based Rankings
-* 👤 Developer Profiles
-* 📊 Community Leaderboards
+Unlike traditional coding websites, RankerHub links real-world open-source activity with academic theory and problem-solving. It offers a comprehensive developer suite where users can showcase their achievements, build profile cards, analyze repository health, match with coding buddies, and maintain learning streaks.
 
 ---
 
-## 🛠️ Tech Stack
+## 🌟 Core Features
 
-* **Frontend**: React + Vite
-* **Styling**: Tailwind CSS
-* **Database & Auth**: Firebase Auth & Firestore Database
-* **Integration**: GitHub API
+### 🔐 1. GitHub OAuth & Advanced Onboarding
+* **Secure Login**: Passwordless, trusted auth using Firebase Authentication linked to GitHub OAuth.
+* **Onboarding Wizard**: Custom profiles that capture developer details (e.g., college, gender, social handles) during their first login.
+* **Real-time Synchronization**: Syncs repositories, commits, and public profile details.
 
----
+### 🏆 2. GitRank (Global GitHub Leaderboard)
+* **Activity Tracking**: Tracks and ranks users based on real-world Git contributions.
+* **Smart Ranking Parameters**: Commits, public repositories, stars, and review activity are factored into the score.
+* **Diverse Sub-Leaderboards**:
+  * Top 10 Developers
+  * Top Committers
+  * Most Repositories
+  * Rising Developers
 
-## 📦 Installation & Local Setup
+### 👩‍💻 3. RankHer Leaderboard
+* **Inclusive Rankings**: A dedicated space highlighting and celebrating female developer achievements.
+* **Features**: Gender-filtered GitRank, Coding leaderboard, and exclusive RankHer achievements/badges to promote diversity in tech.
 
-To set up RankerHub locally on your machine, follow these steps:
+### 🌌 4. CodingVerse (Interactive Challenges)
+* **Theory Challenges**: Multiple-choice and text-input questions covering core CS fundamentals:
+  * Object-Oriented Programming (OOP)
+  * Database Management Systems (DBMS)
+  * Operating Systems (OS)
+  * Data Structures & Algorithms (DSA)
+* **Practical Challenges**: Submissions for code-related questions.
+* **Community Question Creator**: Users can submit custom questions (Title, Description, Difficulty, Expected Answer, Points) to expand the platform's question bank.
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/indresh404/RankerHub.git
-   cd RankerHub
-   ```
+### 🦉 5. CodingOwl (AI Assistant)
+* **Meet Oliver the Owl**: An interactive AI chat assistant powered by Firebase AI Logic (Gemini API) that guides users through tough concepts, explains code snippets, and answers general queries.
 
-2. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+### 💚 6. Repo Health Analyzer
+* **Static Analysis**: Scans any public GitHub repository to evaluate quality metrics (existence of README, LICENSE, `.gitignore`, CI/CD workflows, unit tests, and descriptive summaries).
+* **Gamified Rewards**: Earn profile XP/points by successfully scanning and auditing repositories.
 
-3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory and add your Firebase credentials:
-   ```env
-   VITE_FIREBASE_API_KEY=your_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
-   ```
+### 🎨 7. Developer Card Builder
+* **Custom Profile Cards**: Dynamic HTML5/SVG canvas generators allowing developers to customize and download profile badges and cards to show off their RankHer status, streaks, and scores on their GitHub profiles.
 
-4. **Start the Development Server**:
-   ```bash
-   npm run dev
-   ```
+### 👥 8. Matchmaker & Friends
+* **Find Coding Buddies**: Connect with other developers who have matching skills, availability, and interests.
+* **Follow System**: Keep up with classmates, friends, or team members and monitor their learning streaks and leaderboard placements.
 
----
-
-## 🌐 Live Demo
-
-<p align="left">
-  <a href="https://ranker-hub-xi.vercel.app/">
-    <img src="https://github.com/user-attachments/assets/1fc4738f-ccd1-4a51-8b39-c6f06a36e47e" alt="RankerHub Live" width="150" style="vertical-align: middle;">
-  </a>
-</p>
+### 🎖️ 9. Streak & Achievement System
+* **Streaks**: Encourages consistency with daily logins, challenge completion, and repository updates.
+* **Badges & Accomplishments**: Unlock standard and rare achievements (e.g., *First Solve*, *Consistency King*, *Java Master*, *Open Source Starter*, *RankHer Top 10*).
 
 ---
 
-## ⚠️ Troubleshooting Production Build (Firebase Config Error)
+## 🧮 Gamification & Points Formulas
 
-If you see errors like `Firebase config error: apiKey is missing` or `FirebaseError: Firebase: Error (auth/invalid-api-key)` in production, this is due to how Vite compiles environment variables.
+### GitRank Score (GitPoints)
+GitPoints reward consistent open-source contribution and code review.
+$$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{Reviews} \times 10) + (\text{GitHub Streak} \times 10)$$
 
-### The Problem
-* The `.env` file containing your keys is excluded from git (`.gitignore`).
-* When the project builds on a production deployment server (such as **GitHub Actions** for Firebase Hosting), Vite cannot read the `.env` file, and compiles the bundle with `undefined` values.
-
-### The Solution (For Firebase Hosting via GitHub Actions)
-To fix this, you must feed the environment variables to the GitHub Actions build pipeline:
-
-1. **Add Repository Secrets to GitHub**:
-   - Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions**.
-   - Under **Repository secrets**, click **New repository secret** and add each variable:
-     * `VITE_FIREBASE_API_KEY`
-     * `VITE_FIREBASE_AUTH_DOMAIN`
-     * `VITE_FIREBASE_PROJECT_ID`
-     * `VITE_FIREBASE_STORAGE_BUCKET`
-     * `VITE_FIREBASE_MESSAGING_SENDER_ID`
-     * `VITE_FIREBASE_APP_ID`
-     * `VITE_FIREBASE_MEASUREMENT_ID`
-
-2. **Workflows Update**:
-   Our deployment workflows in [.github/workflows/firebase-hosting-merge.yml](.github/workflows/firebase-hosting-merge.yml) and [.github/workflows/firebase-hosting-pull-request.yml](.github/workflows/firebase-hosting-pull-request.yml) are set up to pass these secrets into Vite during the build phase:
-   ```yaml
-   - run: npm ci && npm run build
-     env:
-       VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-       VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-       # ... and so on
-   ```
+### CodingVerse Points (XP)
+Points are awarded based on challenge difficulty:
+* **Easy Solve**: $+100\text{ XP}$
+* **Medium Solve**: $+150\text{ XP}$
+* **Hard Solve**: $+200\text{ XP}$
+* **Streak Login**: $+10\text{ XP}$ per consecutive day (maximum cap of $100\text{ XP}$)
+* **Approved Community Question**: $+30\text{ XP}$
+* **Successful Referral**: $+100\text{ XP}$ (awarded after the referred user completes their first challenge or PR)
 
 ---
 
-## 🚀 Future Plans
+## 🏗️ Technical Stack
 
-* Real-time coding contests
-* AI-powered coding insights
-* Multi-language compiler support
-* Advanced leaderboard algorithms
-* Open-source contribution scoring
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please check out the [Contributing Guide](CONTRIBUTING.md) for local installation instructions, git branching, and coding standards.
+* **Frontend**: React + Vite, Tailwind CSS, React Router, Framer Motion (for micro-animations), Lucide Icons, Swiper.
+* **Backend**: Serverless architecture built with Google Firebase.
+  * **Firebase Authentication**: Session management and GitHub OAuth.
+  * **Cloud Firestore**: Real-time NoSQL database storing users, questions, submissions, and referrals.
+  * **Firebase Hosting**: High-performance static web hosting.
+* **Integration**: GitHub REST API for repository trees and commits sync.
 
 ---
 
-## 📄License
+## 🗄️ Database Schema Design
 
-This project is licensed under the [MIT License](LICENSE).
+### `users` Collection (`/users/{uid}`)
+```json
+{
+  "uid": "Firebase Auth UID",
+  "githubUsername": "octocat",
+  "avatar": "https://github.com/images/...",
+  "college": "Example University",
+  "gender": "female/male/other",
+  "onboardingStatus": "complete",
+  "gitRankPoints": 250,
+  "codingVersePoints": 350,
+  "streakPoints": 40,
+  "referralPoints": 100,
+  "totalPoints": 740,
+  "streak": 5,
+  "badges": ["first_solve", "rankher_top_10"],
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
+}
+```
+
+### `referrals` Collection (`/referrals/{uid}`)
+```json
+{
+  "uid": "Referrer User UID",
+  "referralCode": "REF-XYZ123",
+  "usedBy": ["referred_user_uid_1", "referred_user_uid_2"],
+  "totalEarned": 200
+}
+```
 
 ---
 
-## 👨‍💻 Author
+## ⚙️ Setup & Installation
 
-Made with ❤️ by the RankerHub team.
+### 1. Prerequisites
+* [Node.js](https://nodejs.org/) (v20.0.0 or higher)
+* [Git](https://git-scm.com/)
+
+### 2. Clone the Repository
+```bash
+git clone https://github.com/indresh404/RankerHub.git
+cd RankerHub
+```
+
+### 3. Install Dependencies
+```bash
+npm install
+```
+
+### 4. Configure Environment Variables
+Copy `.env.example` to `.env` and fill in your Firebase configuration keys:
+```bash
+cp .env.example .env
+```
+Fill in the following fields in `.env`:
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+### 5. Running the Application
+```bash
+# Start local development server
+npm run dev
+
+# Run unit tests
+npm run test
+
+# Run ESLint linter checks
+npm run lint
+
+# Build production bundle
+npm run build
+```
+
+---
+
+## 🏁 Future Scope
+* **Online Compiler & Sandboxed Code Execution**: Real-time execution of Java, Python, and JS codes inside the CodingVerse challenges.
+* **AI-Generated Questions**: Automated generation of new questions based on user progression paths.
+* **Live Coding Contests**: Custom group coding tournaments, speed contests, and coding duels.
+
+---
+
+## 👥 Project Maintainer & Acknowledgement
+* **Maintainer**: [@indresh404](https://github.com/indresh404)
+* **Program**: Proudly built for and supported by **Nexus Summer of Code 2026 (NSoC 2026)**.

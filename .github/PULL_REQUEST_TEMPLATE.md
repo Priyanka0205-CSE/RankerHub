@@ -34,7 +34,7 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] Any dependent changes have been merged and published in downstream modules.
 
 ## Contributor Declaration
-- [ ] I confirm that this contribution is made under the rules of **GSSoC 2026** and **NSoC 2026**.
+- [ ] I confirm that this contribution is made under the rules of **NSoC 2026** (Nexus Summer of Code).
 - [ ] I confirm that I have been assigned the related issue by a maintainer before opening this PR.
 - [ ] I have read the [Contributing Guidelines](https://github.com/indresh404/RankerHub/blob/main/docs/CONTRIBUTING.md) and [Code of Conduct](https://github.com/indresh404/RankerHub/blob/main/docs/CODE_OF_CONDUCT.md).
 

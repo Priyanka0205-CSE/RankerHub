@@ -218,6 +218,24 @@ export const AuthProvider = ({ children }) => {
       if (unsubscribeSnapshot) unsubscribeSnapshot();
     };
   }, []);
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key !== "rh_avatar_updated") return;
+      try {
+        const payload = JSON.parse(e.newValue);
+        if (!payload || payload.uid !== auth?.currentUser?.uid) return;
+        setUserData(prev => {
+          if (!prev) return prev;
+          return { ...prev, avatar: payload.avatar };
+        });
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    window.addEventListener("storage", e => handleStorageChange(e));
+    return () => window.removeEventListener("storage", e => handleStorageChange(e));
+  }, []);
 
   const login = async (requestRepoScope = true) => {
     try {
@@ -336,6 +354,11 @@ export const AuthProvider = ({ children }) => {
           updatedAt: new Date().toISOString()
         });
       });
+      setUserData(prev => ({
+        ...prev,
+        hubCoins: (prev.hubCoins ?? 0) - price,
+        inventory: [...(prev.inventory || ["oliver"]), mascotId],
+      }));
     } catch (err) {
       console.error("Failed to purchase mascot:", err);
       throw err;
