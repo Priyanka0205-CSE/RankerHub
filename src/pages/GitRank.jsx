@@ -168,8 +168,10 @@ const handleJumpToMyRank = async () => {
 
         setUsersList(ranked);
         setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === 50); 
-        setLoadingUsers(false);
+        setHasMore(snapshot.docs.length === 50);
+        if (!snapshot.metadata.fromCache) {
+          setLoadingUsers(false);
+        }
       },
       (error) => {
         console.error("Leaderboard subscription error:", error);
