@@ -354,6 +354,11 @@ export const AuthProvider = ({ children }) => {
           updatedAt: new Date().toISOString()
         });
       });
+      setUserData(prev => ({
+        ...prev,
+        hubCoins: (prev.hubCoins ?? 0) - price,
+        inventory: [...(prev.inventory || ["oliver"]), mascotId],
+      }));
     } catch (err) {
       console.error("Failed to purchase mascot:", err);
       throw err;
