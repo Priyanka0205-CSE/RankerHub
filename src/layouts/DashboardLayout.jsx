@@ -43,6 +43,7 @@ export const DashboardLayout = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto"
+          style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
         >
           <Outlet />
         </motion.main>
