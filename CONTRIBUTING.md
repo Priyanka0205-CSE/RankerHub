@@ -2,7 +2,7 @@
 
 First off, thank you for taking the time to contribute! Contributions make the open-source community an amazing place to learn, inspire, and create. Any contribution you make to RankerHub is **greatly appreciated**.
 
-This project is part of open-source programs like **GSSoC (GirlScript Summer of Code) 2026** and **NSoC 2026**. Please follow the guidelines below to ensure a smooth contribution process.
+This project is part of open-source programs like **NSoC 2026** (Nexus Summer of Code). Please follow the guidelines below to ensure a smooth contribution process.
 
 ---
 
@@ -138,7 +138,7 @@ Write clear and descriptive commit messages following the semantic commit patter
 
 ---
 
-## How to Contribute (GSSoC / NSoC Rules)
+## How to Contribute (NSoC Rules)
 
 1. **Find an Issue**: Search the [Issues](https://github.com/indresh404/RankerHub/issues) tab for open issues.
 2. **Request Assignment**: Comment on the issue stating that you'd like to work on it. Wait for a project maintainer to assign it to you before starting work.
