@@ -126,6 +126,7 @@ export const Profile = () => {
   const [editDob, setEditDob] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editCollege, setEditCollege] = useState("");
+  const [editBio, setEditBio] = useState("");
   const [collegeSearch, setCollegeSearch] = useState("");
   const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
   const [customCollege, setCustomCollege] = useState("");
@@ -185,6 +186,7 @@ const [learningInput, setLearningInput] = useState("");
     
     setEditError("");
     setEditLearningTags(userData?.learningTags || []);
+    setEditBio(userData?.bio || "");
     setIsEditModalOpen(true);
   };
 
@@ -255,6 +257,7 @@ const [learningInput, setLearningInput] = useState("");
       const updateData = {
         name: finalName,
         avatar: editAvatar.trim(),
+        bio: editBio.trim(),
         gender: editGender,
         dob: editDob,
         city: finalCity,
@@ -1973,6 +1976,21 @@ if (updateData.avatar) {
                 </div>
                 
                 {/* Currently Learning */}
+             {/* Bio */}
+<div className="space-y-1.5">
+  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+    Bio
+  </label>
+  <textarea
+    placeholder="Tell the community about yourself..."
+    value={editBio}
+    maxLength={200}
+    onChange={(e) => setEditBio(e.target.value)}
+    rows={3}
+    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all resize-none"
+  />
+  <p className="text-right text-[10px] text-slate-500 font-medium">{editBio.length}/200</p>
+</div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                     Currently Learning
