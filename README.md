@@ -1,113 +1,260 @@
-# RankerHub — Community Developer Ranking & Coding Platform
+# RankerHub — Unified Developer Ranking Platform
 
-RankerHub is a modern, community-driven developer platform designed to gamify open-source contributions and computer science fundamentals. It combines real-world GitHub activity tracking (via **GitRank**) with interactive computer science challenges (via **CodingVerse**), celebrating developer achievements on global leaderboards and promoting inclusivity with a dedicated **RankHer** section.
+RankerHub is a community-driven developer platform that tracks a student's activity **across all major coding and open-source platforms** — combining everything into one generalized score so no effort ever goes unnoticed. Whether you grind LeetCode, push code on GitHub, compete on Codeforces, or complete courses and hackathons — RankerHub sees it all and gives you the credit you deserve.
 
 > [!NOTE]
 > This project is proudly part of **NSoC 2026 (Nexus Summer of Code)**. 🚀
 
 ---
 
-## 📌 Project Overview
+## 📌 The Problem We Solve
 
-Unlike traditional coding websites, RankerHub links real-world open-source activity with academic theory and problem-solving. It offers a comprehensive developer suite where users can showcase their achievements, build profile cards, analyze repository health, match with coding buddies, and maintain learning streaks.
+Students spread their activity across many platforms — some build projects on GitHub, some solve DSA on LeetCode, some compete on Codeforces, some earn certifications. No single platform captures the full picture, so effort feels invisible. **RankerHub unifies everything into one score, one profile, one leaderboard.**
+
+> **"Your entire coding life. One score. One profile."**
 
 ---
 
 ## 🌟 Core Features
 
 ### 🔐 1. GitHub OAuth & Advanced Onboarding
-* **Secure Login**: Passwordless, trusted auth using Firebase Authentication linked to GitHub OAuth.
-* **Onboarding Wizard**: Custom profiles that capture developer details (e.g., college, gender, social handles) during their first login.
-* **Real-time Synchronization**: Syncs repositories, commits, and public profile details.
-
-### 🏆 2. GitRank (Global GitHub Leaderboard)
-* **Activity Tracking**: Tracks and ranks users based on real-world Git contributions.
-* **Smart Ranking Parameters**: Commits, public repositories, stars, and review activity are factored into the score.
-* **Diverse Sub-Leaderboards**:
-  * Top 10 Developers
-  * Top Committers
-  * Most Repositories
-  * Rising Developers
-
-### 👩‍💻 3. RankHer Leaderboard
-* **Inclusive Rankings**: A dedicated space highlighting and celebrating female developer achievements.
-* **Features**: Gender-filtered GitRank, Coding leaderboard, and exclusive RankHer achievements/badges to promote diversity in tech.
-
-### 🌌 4. CodingVerse (Interactive Challenges)
-* **Theory Challenges**: Multiple-choice and text-input questions covering core CS fundamentals:
-  * Object-Oriented Programming (OOP)
-  * Database Management Systems (DBMS)
-  * Operating Systems (OS)
-  * Data Structures & Algorithms (DSA)
-* **Practical Challenges**: Submissions for code-related questions.
-* **Community Question Creator**: Users can submit custom questions (Title, Description, Difficulty, Expected Answer, Points) to expand the platform's question bank.
-
-### 🦉 5. CodingOwl (AI Assistant)
-* **Meet Oliver the Owl**: An interactive AI chat assistant powered by Firebase AI Logic (Gemini API) that guides users through tough concepts, explains code snippets, and answers general queries.
-
-### 💚 6. Repo Health Analyzer
-* **Static Analysis**: Scans any public GitHub repository to evaluate quality metrics (existence of README, LICENSE, `.gitignore`, CI/CD workflows, unit tests, and descriptive summaries).
-* **Gamified Rewards**: Earn profile XP/points by successfully scanning and auditing repositories.
-
-### 🎨 7. Developer Card Builder
-* **Custom Profile Cards**: Dynamic HTML5/SVG canvas generators allowing developers to customize and download profile badges and cards to show off their RankHer status, streaks, and scores on their GitHub profiles.
-
-### 👥 8. Matchmaker & Friends
-* **Find Coding Buddies**: Connect with other developers who have matching skills, availability, and interests.
-* **Follow System**: Keep up with classmates, friends, or team members and monitor their learning streaks and leaderboard placements.
-
-### 🎖️ 9. Streak & Achievement System
-* **Streaks**: Encourages consistency with daily logins, challenge completion, and repository updates.
-* **Badges & Accomplishments**: Unlock standard and rare achievements (e.g., *First Solve*, *Consistency King*, *Java Master*, *Open Source Starter*, *RankHer Top 10*).
+- **Secure Login**: Passwordless auth using Firebase Authentication linked to GitHub OAuth.
+- **Onboarding Wizard**: Captures developer details (college, gender, social handles, and all platform usernames) on first login.
+- **Platform Username Linking**: Connect GitHub, LeetCode, Codeforces, GFG, and HackerRank handles in one place.
+- **Real-time Sync**: Repositories, commits, and public profile details stay updated automatically.
 
 ---
 
-## 🧮 Gamification & Points Formulas
+### 🏆 2. Multi-Platform Activity Tracking
 
-### GitRank Score (GitPoints)
-GitPoints reward consistent open-source contribution and code review.
+RankerHub pulls your activity from across the internet and unifies it:
+
+#### GitHub ✅ (Auto-tracked via Official API)
+- Commits, Pull Requests, Code Reviews
+- Public Repositories, Stars received
+- GitHub contribution streak
+- Followers
+
+#### LeetCode ✅ (Auto-tracked via Public GraphQL)
+- Problems solved (Easy / Medium / Hard breakdown)
+- Contest rating and contest history
+- Global ranking
+
+#### Codeforces ✅ (Auto-tracked via Official API)
+- Current rating and max rating
+- Contest participation history
+- Problem submissions and verdicts
+- Rank title (Pupil, Specialist, Expert, etc.)
+
+#### GeeksforGeeks ⚠️ (Auto-tracked via Public Profile)
+- Coding score
+- Problems solved
+- Monthly score
+- Institution rank
+- Contest participation
+
+#### HackerRank ⚠️ (Auto-tracked via Public Endpoints)
+- Badges earned per domain
+- Skill certifications
+- Stars per skill track (Problem Solving, Python, SQL, etc.)
+
+> ⚠️ GFG and HackerRank use public profile parsing. Data is reliable but may occasionally need re-sync if those platforms update their structure.
+
+---
+
+### 🧮 3. Unified RankerHub Score
+
+All platform activity rolls up into one transparent score:
+
+```
+RankerHub Score =
+
+  Open Source Score       ← GitHub activity
++ DSA Score               ← LeetCode + GFG problems
++ Contest Score           ← Codeforces rating + contests
++ Certification Score     ← HackerRank badges & certs
++ Achievement Score       ← Hackathons + Courses (self-reported)
++ CodingVerse Score       ← In-platform challenges
+```
+
+**GitPoints Formula (GitHub):**
 $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{Reviews} \times 10) + (\text{GitHub Streak} \times 10)$$
 
-### CodingVerse Points (XP)
-Points are awarded based on challenge difficulty:
-* **Easy Solve**: $+100\text{ XP}$
-* **Medium Solve**: $+150\text{ XP}$
-* **Hard Solve**: $+200\text{ XP}$
-* **Streak Login**: $+10\text{ XP}$ per consecutive day (maximum cap of $100\text{ XP}$)
-* **Approved Community Question**: $+30\text{ XP}$
-* **Successful Referral**: $+100\text{ XP}$ (awarded after the referred user completes their first challenge or PR)
+**CodingVerse XP:**
+| Action | Points |
+|---|---|
+| Easy Solve | +100 XP |
+| Medium Solve | +150 XP |
+| Hard Solve | +200 XP |
+| Streak Login (per day) | +10 XP (max 100 XP) |
+| Approved Community Question | +30 XP |
+| Successful Referral | +100 XP |
+
+**Hackathon & Course XP:**
+| Achievement | Points |
+|---|---|
+| Hackathon Participated | +50 XP |
+| Hackathon Finalist | +150 XP |
+| Hackathon Winner | +300 XP |
+| Course Completion Certificate | +75 XP |
+| Premium Certification (Coursera / NPTEL) | +150 XP |
+| Specialization / Nanodegree | +300 XP |
 
 ---
 
-## 🏗️ Technical Stack
-
-* **Frontend**: React + Vite, Tailwind CSS, React Router, Framer Motion (for micro-animations), Lucide Icons, Swiper.
-* **Backend**: Serverless architecture built with Google Firebase.
-  * **Firebase Authentication**: Session management and GitHub OAuth.
-  * **Cloud Firestore**: Real-time NoSQL database storing users, questions, submissions, and referrals.
-  * **Firebase Hosting**: High-performance static web hosting.
-* **Integration**: GitHub REST API for repository trees and commits sync.
+### 🏅 4. GitRank — Global Leaderboard
+- Ranks users based on their unified RankerHub score.
+- **Sub-Leaderboards:**
+  - Top 10 Developers
+  - Top Committers
+  - Most Repositories
+  - Rising Developers (biggest weekly gainers)
+  - Best DSA Solvers
+  - Top Contest Performers
 
 ---
 
-## 🗄️ Database Schema Design
+### 🏫 5. College vs College Leaderboard
+- Every user represents their college.
+- Colleges are ranked by the combined RankerHub scores of all their students.
+- Massive engagement driver — compete for your institution.
+
+```
+🏆 College Rankings — Maharashtra
+1. VJTI Mumbai        — 84,200 pts
+2. COEP Pune          — 79,100 pts
+3. SPIT Mumbai        — 71,400 pts
+```
+
+---
+
+### 👩‍💻 6. RankHer Leaderboard
+- A dedicated space celebrating **female developer achievements**.
+- Gender-filtered GitRank, DSA leaderboard, and contest rankings.
+- Exclusive RankHer badges and achievements to promote diversity in tech.
+
+---
+
+### 🌌 7. CodingVerse — Interactive Challenges
+- **Theory Challenges**: MCQ and text-input questions covering:
+  - Object-Oriented Programming (OOP)
+  - Database Management Systems (DBMS)
+  - Operating Systems (OS)
+  - Data Structures & Algorithms (DSA)
+- **Practical Challenges**: Code-related problem submissions.
+- **Community Question Creator**: Users can submit custom questions (Title, Description, Difficulty, Expected Answer, Points) to grow the question bank.
+
+---
+
+### 🦉 8. CodingOwl — AI Activity Assistant
+- Meet **Oliver the Owl**: an AI-powered assistant that:
+  - Tracks and summarizes your activity across all platforms
+  - Shows your ranking trends and score breakdowns
+  - Guides you through tough CS concepts and code explanations
+  - Verifies uploaded certificates using AI-OCR for instant XP rewards
+  - Answers general queries about your profile and progress
+
+---
+
+### 🎖️ 9. Hackathon & Course Activity (Self-Reported + AI Verified)
+Students self-report their achievements with proof:
+
+```
+User submits:
+→ Hackathon name + platform (Unstop / Devfolio / Devpost)
+→ Result: Participated / Finalist / Winner
+→ Upload certificate or proof link
+
+CodingOwl AI reads the certificate:
+→ Extracts event name, date, result
+→ Auto-awards correct XP tier instantly
+```
+
+Certificate stored permanently on your RankerHub profile as verified proof — more trustworthy than a plain LinkedIn entry.
+
+---
+
+### 💚 10. Repo Health Analyzer
+- Scans any public GitHub repository for quality metrics:
+  - README existence and quality
+  - LICENSE file
+  - `.gitignore`
+  - CI/CD workflows
+  - Unit tests
+  - Descriptive commit messages
+- **Gamified Reward**: Earn XP by auditing repositories.
+
+---
+
+### 🎨 11. Developer Card Builder
+- Dynamic HTML5/SVG profile card generator.
+- Showcases your RankerHub score, platform stats, streaks, and badges.
+- One-click download and share to GitHub profile, LinkedIn, or Twitter.
+- Each share is a verified snapshot of your real activity — not self-claimed numbers.
+
+---
+
+### 📅 12. Monthly Dev Digest
+Auto-generated monthly summary shareable on LinkedIn / Twitter:
+
+```
+June 2026 — My Dev Stats
+🔨 23 commits across 4 repos
+🧩 31 LeetCode problems solved
+🏆 Codeforces: +87 rating
+📈 RankerHub rank: #234 → #189
+🎓 1 course completed
+```
+
+One-click share. Every post is free marketing for RankerHub.
+
+---
+
+### 👥 13. Matchmaker & Friends
+- **Find Coding Buddies**: Match with developers who share your skills, availability, and interests.
+- **Follow System**: Track classmates and friends — monitor their streaks and leaderboard movement.
+
+---
+
+### 🎯 14. Streak & Achievement System
+- **Daily Streaks**: Encourages consistent activity across platforms.
+- **Badges & Accomplishments**: Unlock standard and rare achievements:
+  - *First Solve*, *Consistency King*, *Java Master*
+  - *Open Source Starter*, *Contest Warrior*
+  - *RankHer Top 10*, *Hackathon Champion*
+  - *Certified Pro* (for verified certifications)
+
+---
+
+## 🗄️ Database Schema
 
 ### `users` Collection (`/users/{uid}`)
 ```json
 {
   "uid": "Firebase Auth UID",
   "githubUsername": "octocat",
+  "leetcodeUsername": "octocat_lc",
+  "codeforcesHandle": "octocat_cf",
+  "gfgUsername": "octocat_gfg",
+  "hackerrankUsername": "octocat_hr",
   "avatar": "https://github.com/images/...",
   "college": "Example University",
   "gender": "female/male/other",
   "onboardingStatus": "complete",
   "gitRankPoints": 250,
+  "leetcodePoints": 400,
+  "codeforcesPoints": 350,
+  "gfgPoints": 150,
+  "hackerrankPoints": 100,
   "codingVersePoints": 350,
+  "hackathonPoints": 300,
+  "coursePoints": 225,
   "streakPoints": 40,
   "referralPoints": 100,
-  "totalPoints": 740,
+  "totalPoints": 2265,
   "streak": 5,
-  "badges": ["first_solve", "rankher_top_10"],
+  "badges": ["first_solve", "rankher_top_10", "hackathon_champion"],
+  "college_rank": 4,
   "createdAt": "Timestamp",
   "updatedAt": "Timestamp"
 }
@@ -123,31 +270,56 @@ Points are awarded based on challenge difficulty:
 }
 ```
 
+### `certificates` Collection (`/certificates/{docId}`)
+```json
+{
+  "uid": "User UID",
+  "type": "hackathon | course | certification",
+  "title": "Machine Learning Specialization",
+  "platform": "Coursera",
+  "result": "completed | finalist | winner",
+  "xpAwarded": 150,
+  "certificateUrl": "https://storage/...",
+  "verifiedByAI": true,
+  "verifiedAt": "Timestamp"
+}
+```
+
+---
+
+## 🏗️ Technical Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React + Vite, Tailwind CSS, React Router, Framer Motion, Lucide Icons, Swiper |
+| **Backend** | Serverless — Google Firebase |
+| **Auth** | Firebase Authentication + GitHub OAuth |
+| **Database** | Cloud Firestore (real-time NoSQL) |
+| **Hosting** | Firebase Hosting |
+| **AI** | Firebase AI Logic (Gemini API) — CodingOwl + Certificate OCR |
+| **APIs** | GitHub REST API, Codeforces API, LeetCode GraphQL, GFG & HackerRank public profiles |
+
 ---
 
 ## ⚙️ Setup & Installation
 
-### 1. Prerequisites
-* [Node.js](https://nodejs.org/) (v20.0.0 or higher)
-* [Git](https://git-scm.com/)
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v20.0.0 or higher)
+- [Git](https://git-scm.com/)
 
-### 2. Clone the Repository
+### Clone & Install
 ```bash
 git clone https://github.com/indresh404/RankerHub.git
 cd RankerHub
-```
-
-### 3. Install Dependencies
-```bash
 npm install
 ```
 
-### 4. Configure Environment Variables
-Copy `.env.example` to `.env` and fill in your Firebase configuration keys:
+### Configure Environment Variables
 ```bash
 cp .env.example .env
 ```
-Fill in the following fields in `.env`:
+
+Fill in `.env`:
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -158,30 +330,16 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-### 5. Running the Application
+### Run
 ```bash
-# Start local development server
-npm run dev
-
-# Run unit tests
-npm run test
-
-# Run ESLint linter checks
-npm run lint
-
-# Build production bundle
-npm run build
+npm run dev       # Local development
+npm run test      # Unit tests
+npm run lint      # ESLint checks
+npm run build     # Production build
 ```
 
 ---
 
-## 🏁 Future Scope
-* **Online Compiler & Sandboxed Code Execution**: Real-time execution of Java, Python, and JS codes inside the CodingVerse challenges.
-* **AI-Generated Questions**: Automated generation of new questions based on user progression paths.
-* **Live Coding Contests**: Custom group coding tournaments, speed contests, and coding duels.
-
----
-
-## 👥 Project Maintainer & Acknowledgement
-* **Maintainer**: [@indresh404](https://github.com/indresh404)
-* **Program**: Proudly built for and supported by **Nexus Summer of Code 2026 (NSoC 2026)**.
+## 👥 Project Maintainer
+- **Maintainer**: [@indresh404](https://github.com/indresh404)
+- **Program**: Proudly built for **Nexus Summer of Code 2026 (NSoC 2026)**
