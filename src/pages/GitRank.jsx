@@ -1157,9 +1157,24 @@ const handleJumpToMyRank = async () => {
 
         <div className="overflow-x-auto overflow-y-hidden w-full">
           {loadingUsers ? (
-            <div className="py-20 text-center text-slate-400">
-              <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-sm font-bold">Synchronizing Live Standings...</p>
+            <div className="w-full mt-4 min-w-[640px]">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-slate-100 dark:border-slate-800/40 animate-pulse">
+                  <div className="w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-9 h-9 bg-slate-200 dark:bg-slate-800 rounded-lg shrink-0" />
+                    <div className="space-y-1.5">
+                      <div className="w-28 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <div className="w-20 h-2.5 bg-slate-100 dark:bg-slate-700 rounded" />
+                    </div>
+                  </div>
+                  <div className="w-16 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-12 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-12 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-12 h-3 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-16 h-3 bg-slate-200 dark:bg-slate-800 rounded ml-auto" />
+                </div>
+              ))}
             </div>
           ) : filteredData.length > 0 ? (
             <TableVirtuoso
