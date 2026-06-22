@@ -6,7 +6,19 @@ import { toLocalDateString, resolveTimezone } from "../../utils/streakCalculator
 
 export const StreakCard = () => {
   const { userData } = useAuth();
-  
+  const [, setTick] = React.useState(0);
+
+  // Issue #586: Re-render at midnight so streak updates without page refresh
+  React.useEffect(() => {
+    const now = new Date();
+    const msUntilMidnight =
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5).getTime() - now.getTime();
+    const timer = setTimeout(() => {
+      setTick(t => t + 1);
+    }, msUntilMidnight);
+    return () => clearTimeout(timer);
+  }, []);
+
   const activeStreak = userData?.streak || 0;
   const longestStreak = Math.max(userData?.longestStreak || 0, activeStreak);
   const streakFreezes = userData?.streakFreezes || 0;
