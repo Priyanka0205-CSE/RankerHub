@@ -125,15 +125,6 @@ Points are awarded based on challenge difficulty:
 
 ---
 
-## 🤖 GitHub Actions & CI/CD
-
-RankerHub utilizes GitHub Actions to automate and enforce project quality standards for NSoC 2026:
-1. **CI Checks (`ci.yml`)**: Triggered on all PRs to `main` branch. Executes linter check (`npm run lint`), runs unit tests (`npm run test`), and validates the build (`npm run build`). Successfully passed PRs automatically receive the `ready-to-merge` label.
-2. **Quality & Formatting (`quality-checks.yml`)**: Ensures Prettier rules, Markdown formatting (`markdownlint-cli2`), and spelling correctness (`cspell`) are satisfied. Also checks for duplicate issue submissions using custom regex search queries.
-3. **Repository Triage (`triage.yml` / `init-labels.yml`)**: Automates issue triage and labeling. Automatically applies `"NSoC'26"` and `"nsoc"` labels to incoming issues and PRs while assigning authors to their pull requests.
-
----
-
 ## ⚙️ Setup & Installation
 
 ### 1. Prerequisites
