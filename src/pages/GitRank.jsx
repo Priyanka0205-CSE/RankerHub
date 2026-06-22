@@ -74,6 +74,13 @@ export const GitRank = () => {
   const [repos, setRepos] = useState([]);
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [chartRateLimitError, setChartRateLimitError] = useState("");
+  // Issue #585: Recently visited profiles from localStorage
+  const [recentProfiles] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rh_recently_visited") || "[]");
+    } catch { return []; }
+  });
+
   // Jump to My Rank
 const [myRank, setMyRank] = useState(null);
 const [rankLoading, setRankLoading] = useState(false);
@@ -1047,33 +1054,31 @@ const handleJumpToMyRank = async () => {
 
       {/* 3. Leaderboard Table / Search & Filters Controls */}
       <Card className="!p-3 sm:!p-6">
-       
-      {/* Jump to My Rank - Issue #483 */}
-{user && (
-  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
-    <button
-      onClick={handleJumpToMyRank}
-      disabled={rankLoading}
-      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shadow-md"
-    >
-      {rankLoading ? "⏳ Finding rank..." : "📍 My Rank"}
-    </button>
-
-    {myRank && (
-      <div className="px-4 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-300 text-xs font-bold flex items-center gap-2">
-        🏅 You are ranked <span className="text-violet-600 dark:text-violet-400 font-black">#{myRank}</span> on the leaderboard
-      </div>
-    )}
-
-    {rankError && (
-      <div className="px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center gap-2">
-        ⚠️ {rankError}
-      </div>
-    )}
-  </div>
-)}
       
-        {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
+      
+        {/* Issue #585: Recently Visited Profiles */}
+      {recentProfiles.length > 0 && (
+        <div className="mb-5">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            🕐 Recently Visited
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {recentProfiles.map((p) => (
+              <a
+                key={p.username}
+                href={`/dashboard/profile/${encodeURIComponent(p.username)}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-violet-500/40 hover:bg-violet-500/5 transition-all"
+              >
+                <img src={p.avatar} alt={p.name} className="w-5 h-5 rounded-full object-cover" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{p.name}</span>
+                <span className="text-[10px] text-slate-400">@{p.username}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
         
         <div className="flex items-center gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
           <button
