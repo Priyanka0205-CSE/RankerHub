@@ -1,17 +1,17 @@
-import { 
-  collection, 
-  getDocs, 
-  doc, 
-  onSnapshot, 
-  query, 
-  where, 
+import {
+  collection,
+  getDocs,
+  doc,
+  onSnapshot,
+  query,
+  where,
   limit,
   orderBy,
   documentId,
   writeBatch,
   increment,
   deleteDoc,
-  setDoc
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -25,23 +25,30 @@ export const fetchDevelopers = async () => {
     const q = query(
       collection(db, "users"),
       orderBy("points.totalPoints", "desc"),
-      limit(50)
+      limit(50),
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => {
+    return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
-        name: data.displayName || data.name || data.githubUsername || "Unknown Developer",
+        name:
+          data.displayName ||
+          data.name ||
+          data.githubUsername ||
+          "Unknown Developer",
         username: data.githubUsername || doc.id,
-        avatar: data.photoURL || data.avatarUrl || `https://ui-avatars.com/api/?name=${data.displayName || 'Dev'}&background=random`,
+        avatar:
+          data.photoURL ||
+          data.avatarUrl ||
+          `https://ui-avatars.com/api/?name=${data.displayName || "Dev"}&background=random`,
         role: data.role || "Developer",
         bio: data.bio || "Building awesome projects on RankerHub.",
         tags: data.skills || ["Developer"],
         mutualFriends: 0,
         online: false,
         activity: "Recently joined RankerHub",
-        totalPoints: data.points?.totalPoints || 0
+        totalPoints: data.points?.totalPoints || 0,
       };
     });
   } catch (error) {
@@ -63,22 +70,32 @@ export const fetchUsersByIds = async (userIds) => {
   try {
     const users = [];
     for (const chunk of chunks) {
-      const q = query(collection(db, "users"), where(documentId(), "in", chunk));
+      const q = query(
+        collection(db, "users"),
+        where(documentId(), "in", chunk),
+      );
       const snapshot = await getDocs(q);
-      
-      snapshot.docs.forEach(doc => {
+
+      snapshot.docs.forEach((doc) => {
         const data = doc.data();
         users.push({
           id: doc.id,
-          name: data.displayName || data.name || data.githubUsername || "Unknown Developer",
+          name:
+            data.displayName ||
+            data.name ||
+            data.githubUsername ||
+            "Unknown Developer",
           username: data.githubUsername || doc.id,
-          avatar: data.photoURL || data.avatarUrl || `https://ui-avatars.com/api/?name=${data.displayName || 'Dev'}&background=random`,
+          avatar:
+            data.photoURL ||
+            data.avatarUrl ||
+            `https://ui-avatars.com/api/?name=${data.displayName || "Dev"}&background=random`,
           role: data.role || "Developer",
           bio: data.bio || "Building awesome projects on RankerHub.",
           tags: data.skills || ["Developer"],
           mutualFriends: 0,
           online: false,
-          activity: "Recently joined RankerHub"
+          activity: "Recently joined RankerHub",
         });
       });
     }
@@ -92,9 +109,12 @@ export const fetchUsersByIds = async (userIds) => {
 // Real-time listener for users the current user is following
 export const subscribeToFollowing = (currentUserId, callback) => {
   if (!currentUserId) return () => {};
-  const q = query(collection(db, "follows"), where("followerId", "==", currentUserId));
+  const q = query(
+    collection(db, "follows"),
+    where("followerId", "==", currentUserId),
+  );
   return onSnapshot(q, (snapshot) => {
-    const followingIds = snapshot.docs.map(doc => doc.data().followedId);
+    const followingIds = snapshot.docs.map((doc) => doc.data().followedId);
     callback(followingIds);
   });
 };
@@ -102,15 +122,22 @@ export const subscribeToFollowing = (currentUserId, callback) => {
 // Real-time listener for users following the current user
 export const subscribeToFollowers = (currentUserId, callback) => {
   if (!currentUserId) return () => {};
-  const q = query(collection(db, "follows"), where("followedId", "==", currentUserId));
+  const q = query(
+    collection(db, "follows"),
+    where("followedId", "==", currentUserId),
+  );
   return onSnapshot(q, (snapshot) => {
-    const followerIds = snapshot.docs.map(doc => doc.data().followerId);
+    const followerIds = snapshot.docs.map((doc) => doc.data().followerId);
     callback(followerIds);
   });
 };
 
 // Toggle logic with Firestore (Enhanced with Atomic Batches & Sharding)
-export const toggleFollowStatus = async (currentUserId, developerId, isFollowing) => {
+export const toggleFollowStatus = async (
+  currentUserId,
+  developerId,
+  isFollowing,
+) => {
   if (!currentUserId || !developerId) return;
   const followDocId = `${currentUserId}_${developerId}`;
   const followRef = doc(db, "follows", followDocId);
@@ -129,7 +156,7 @@ export const toggleFollowStatus = async (currentUserId, developerId, isFollowing
       await setDoc(followRef, {
         followerId: currentUserId,
         followedId: developerId,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
     }
   } catch (error) {
@@ -141,8 +168,18 @@ export const toggleFollowStatus = async (currentUserId, developerId, isFollowing
   // Failures here should not affect the user's follow/unfollow state.
   try {
     const randomShardId = Math.floor(Math.random() * SHARD_COUNT).toString();
-    const globalConnectionsShardRef = doc(db, "aggregates", "global_connections", "shards", randomShardId);
-    await setDoc(globalConnectionsShardRef, { count: increment(isFollowing ? -1 : 1) }, { merge: true });
+    const globalConnectionsShardRef = doc(
+      db,
+      "aggregates",
+      "global_connections",
+      "shards",
+      randomShardId,
+    );
+    await setDoc(
+      globalConnectionsShardRef,
+      { count: increment(isFollowing ? -1 : 1) },
+      { merge: true },
+    );
   } catch (error) {
     console.error("Error updating connection shard counter:", error);
   }
@@ -153,24 +190,37 @@ export const toggleFollowStatus = async (currentUserId, developerId, isFollowing
  * Replaces un-batched direct sets/updates to address single document write limit constraints.
  * Fixed: Removed TypeScript type annotations for valid .js compilation.
  */
-export const updateUserActivityAndStreak = async (userId, collegeId, newStreakValue, achievementData) => {
+export const updateUserActivityAndStreak = async (
+  userId,
+  collegeId,
+  newStreakValue,
+  achievementData,
+) => {
   if (!userId || !collegeId) return;
 
   const batch = writeBatch(db);
-  
+
   const userRef = doc(db, "users", userId);
-  const logRef = doc(collection(db, "activity_logs")); 
-  
+  const logRef = doc(collection(db, "activity_logs"));
+
   // Choose randomized shard index to bypass Firestore's 1 write/sec limit on leaderboard increments
   const randomShardId = Math.floor(Math.random() * SHARD_COUNT).toString();
-  const leaderboardShardRef = doc(db, "aggregates", collegeId, "shards", randomShardId);
+  const leaderboardShardRef = doc(
+    db,
+    "aggregates",
+    collegeId,
+    "shards",
+    randomShardId,
+  );
 
   try {
     // A. Update user profile metrics & streaks atomically
     batch.update(userRef, {
       currentStreak: newStreakValue,
       lastActivityTimestamp: new Date().toISOString(),
-      ...(achievementData && { totalPoints: increment(achievementData.points) })
+      ...(achievementData && {
+        totalPoints: increment(achievementData.points),
+      }),
     });
 
     // B. Log activity event inside the same transaction frame
@@ -178,7 +228,9 @@ export const updateUserActivityAndStreak = async (userId, collegeId, newStreakVa
       userId,
       activityType: "streak_increment",
       timestamp: new Date().toISOString(),
-      details: achievementData || { description: "Daily system contribution logged" }
+      details: achievementData || {
+        description: "Daily system contribution logged",
+      },
     });
 
     // C. Increment the Distributed Shard for high-concurrency rankings
@@ -200,7 +252,9 @@ export const updateUserActivityAndStreak = async (userId, collegeId, newStreakVa
 export const getAggregatedLeaderboardMetric = async (collegeId) => {
   let combinedTotal = 0;
   try {
-    const shardsSnapshot = await getDocs(collection(db, "aggregates", collegeId, "shards"));
+    const shardsSnapshot = await getDocs(
+      collection(db, "aggregates", collegeId, "shards"),
+    );
     shardsSnapshot.forEach((shardDoc) => {
       const data = shardDoc.data();
       if (data && typeof data.count === "number") {
@@ -214,7 +268,11 @@ export const getAggregatedLeaderboardMetric = async (collegeId) => {
 };
 
 // --- UPDATED FIX: Now async and fetches missing profiles dynamically ---
-export const hydrateConnections = async (suggestedDevelopers, followingIds, followerIds) => {
+export const hydrateConnections = async (
+  suggestedDevelopers,
+  followingIds,
+  followerIds,
+) => {
   // 1. Get a unique list of all IDs we actually need to render
   const uniqueConnectionIds = [...new Set([...followingIds, ...followerIds])];
 
@@ -223,24 +281,26 @@ export const hydrateConnections = async (suggestedDevelopers, followingIds, foll
 
   // 3. Map them for quick lookup
   const connectionMap = {};
-  fetchedConnections.forEach(dev => {
+  fetchedConnections.forEach((dev) => {
     connectionMap[dev.id] = dev;
   });
 
   // 4. Hydrate exact arrays (filter(Boolean) removes deleted accounts automatically)
-  const following = followingIds.map(id => connectionMap[id]).filter(Boolean);
-  const followers = followerIds.map(id => connectionMap[id]).filter(Boolean);
-  
-  const friendIds = followingIds.filter(id => followerIds.includes(id));
-  const friends = friendIds.map(id => connectionMap[id]).filter(Boolean);
+  const following = followingIds.map((id) => connectionMap[id]).filter(Boolean);
+  const followers = followerIds.map((id) => connectionMap[id]).filter(Boolean);
+
+  const friendIds = followingIds.filter((id) => followerIds.includes(id));
+  const friends = friendIds.map((id) => connectionMap[id]).filter(Boolean);
 
   // 5. Suggested pool remains the standard fetchDevelopers result, minus those we follow
-  const suggested = (suggestedDevelopers || []).filter(dev => !followingIds.includes(dev.id));
+  const suggested = (suggestedDevelopers || []).filter(
+    (dev) => !followingIds.includes(dev.id),
+  );
 
   return {
     friends,
     followers,
     following,
-    suggested
+    suggested,
   };
 };

@@ -1,6 +1,16 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, HelpCircle, TrendingUp, TrendingDown, Activity, LineChart, Sparkles, RefreshCw } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  LineChart,
+  Sparkles,
+  RefreshCw,
+} from "lucide-react";
 import { calculateRankingBreakdown } from "../../utils/rankingBreakdown";
 
 export const RankingBreakdown = ({ userData }) => {
@@ -11,7 +21,10 @@ export const RankingBreakdown = ({ userData }) => {
   const [seeding, setSeeding] = useState(false);
   const [tooltip, setTooltip] = useState(null);
 
-  const breakdown = useMemo(() => calculateRankingBreakdown(userData), [userData]);
+  const breakdown = useMemo(
+    () => calculateRankingBreakdown(userData),
+    [userData],
+  );
 
   // Fetch rank history when tab is clicked or userData changes
   useEffect(() => {
@@ -20,7 +33,8 @@ export const RankingBreakdown = ({ userData }) => {
     const fetchHistory = async () => {
       setLoadingHistory(true);
       try {
-        const { getRankHistory } = await import("../../services/rankHistoryService");
+        const { getRankHistory } =
+          await import("../../services/rankHistoryService");
         const data = await getRankHistory(userData.uid);
         if (isMounted) {
           setHistory(data);
@@ -34,15 +48,22 @@ export const RankingBreakdown = ({ userData }) => {
       }
     };
     fetchHistory();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [userData?.uid, userData?.points?.totalPoints, userData?.lastSync]);
 
   const handleSeedMockHistory = async () => {
     if (!userData?.uid) return;
     setSeeding(true);
     try {
-      const { seedMockRankHistory, getRankHistory } = await import("../../services/rankHistoryService");
-      await seedMockRankHistory(userData.uid, userData.points?.totalPoints || 0, userData.timezone);
+      const { seedMockRankHistory, getRankHistory } =
+        await import("../../services/rankHistoryService");
+      await seedMockRankHistory(
+        userData.uid,
+        userData.points?.totalPoints || 0,
+        userData.timezone,
+      );
       const data = await getRankHistory(userData.uid);
       setHistory(data);
     } catch (err) {
@@ -56,16 +77,17 @@ export const RankingBreakdown = ({ userData }) => {
     "🐙 GitHub Contributions": "🐙",
     "💻 Coding Challenges": "💻",
     "🔥 Daily Streak": "🔥",
-    "🤝 Referrals": "🤝"
+    "🤝 Referrals": "🤝",
   };
 
   const toggleCategory = (category) => {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
 
-  const progressPercentage = breakdown.nextMilestone.points > 0
-    ? (breakdown.totalPoints / breakdown.nextMilestone.points) * 100
-    : 0;
+  const progressPercentage =
+    breakdown.nextMilestone.points > 0
+      ? (breakdown.totalPoints / breakdown.nextMilestone.points) * 100
+      : 0;
 
   // Chronological history for the chart
   const chronologicalHistory = useMemo(() => {
@@ -99,15 +121,34 @@ export const RankingBreakdown = ({ userData }) => {
     const yMax = maxRank + Math.ceil(range * 0.1 || 2);
 
     const points = chronologicalHistory.map((h, i) => {
-      const x = paddingX + (i / (chronologicalHistory.length - 1)) * (chartWidth - 2 * paddingX);
-      const y = paddingY + ((h.rank - yMin) / (yMax - yMin)) * (chartHeight - 2 * paddingY);
+      const x =
+        paddingX +
+        (i / (chronologicalHistory.length - 1)) * (chartWidth - 2 * paddingX);
+      const y =
+        paddingY +
+        ((h.rank - yMin) / (yMax - yMin)) * (chartHeight - 2 * paddingY);
       return { x, y, date: h.date, rank: h.rank, totalPoints: h.totalPoints };
     });
 
-    const path = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map((p) => `L ${p.x} ${p.y}`).join(" ");
+    const path =
+      `M ${points[0].x} ${points[0].y} ` +
+      points
+        .slice(1)
+        .map((p) => `L ${p.x} ${p.y}`)
+        .join(" ");
     const area = `${path} L ${points[points.length - 1].x} ${chartHeight - paddingY} L ${points[0].x} ${chartHeight - paddingY} Z`;
 
-    return { points, path, area, chartWidth, chartHeight, paddingX, paddingY, yMin, yMax };
+    return {
+      points,
+      path,
+      area,
+      chartWidth,
+      chartHeight,
+      paddingX,
+      paddingY,
+      yMin,
+      yMax,
+    };
   }, [chronologicalHistory]);
 
   // Growth summary calculation
@@ -121,7 +162,7 @@ export const RankingBreakdown = ({ userData }) => {
       improved: diff > 0,
       oldestDate: history[history.length - 1].date,
       oldestRank: oldest,
-      currentRank: current
+      currentRank: current,
     };
   }, [history]);
 
@@ -176,14 +217,18 @@ export const RankingBreakdown = ({ userData }) => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider my-0">Total Points</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider my-0">
+                      Total Points
+                    </p>
                     <p className="text-4xl font-black text-slate-900 dark:text-white my-1">
                       {breakdown.totalPoints.toLocaleString()} XP
                     </p>
                   </div>
                   {breakdown.rank && (
                     <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider my-0">Current Rank</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider my-0">
+                        Current Rank
+                      </p>
                       <p className="text-3xl font-black text-violet-600 dark:text-violet-400 my-1">
                         {breakdown.rank}
                       </p>
@@ -196,17 +241,21 @@ export const RankingBreakdown = ({ userData }) => {
                   <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-400 font-semibold">
-                        Progress to next milestone ({breakdown.nextMilestone.points.toLocaleString()} XP)
+                        Progress to next milestone (
+                        {breakdown.nextMilestone.points.toLocaleString()} XP)
                       </span>
                       <span className="font-bold text-violet-500">
-                        {breakdown.nextMilestone.pointsNeeded.toLocaleString()} XP needed
+                        {breakdown.nextMilestone.pointsNeeded.toLocaleString()}{" "}
+                        XP needed
                       </span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-2 overflow-hidden">
                       <motion.div
                         className="bg-gradient-to-r from-violet-500 to-indigo-500 h-full rounded-full"
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                        animate={{
+                          width: `${Math.min(progressPercentage, 100)}%`,
+                        }}
                         transition={{ duration: 1, ease: "easeOut" }}
                       />
                     </div>
@@ -232,7 +281,9 @@ export const RankingBreakdown = ({ userData }) => {
                       className="w-full px-6 py-4 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-100/50 dark:hover:bg-slate-800/30 transition-colors border-none cursor-pointer"
                     >
                       <div className="flex items-center gap-3.5 text-left">
-                        <span className="text-2xl">{categoryIcons[category.category]}</span>
+                        <span className="text-2xl">
+                          {categoryIcons[category.category]}
+                        </span>
                         <div>
                           <p className="font-extrabold text-slate-800 dark:text-slate-200 my-0">
                             {category.category}
@@ -255,15 +306,19 @@ export const RankingBreakdown = ({ userData }) => {
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{
-                        height: expandedCategory === category.category ? "auto" : 0,
-                        opacity: expandedCategory === category.category ? 1 : 0
+                        height:
+                          expandedCategory === category.category ? "auto" : 0,
+                        opacity: expandedCategory === category.category ? 1 : 0,
                       }}
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
                       <div className="px-6 py-4 space-y-3 bg-slate-50/20 dark:bg-slate-950/10 border-t border-slate-200/30 dark:border-slate-800/30">
                         {category.details.map((detail, i) => (
-                          <div key={i} className="flex items-center justify-between text-xs font-semibold">
+                          <div
+                            key={i}
+                            className="flex items-center justify-between text-xs font-semibold"
+                          >
                             <div className="flex items-center gap-2">
                               <span className="text-slate-500 dark:text-slate-400">
                                 {detail.label}
@@ -291,7 +346,8 @@ export const RankingBreakdown = ({ userData }) => {
               ) : (
                 <div className="bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-8 text-center border border-dashed border-slate-200 dark:border-slate-800">
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                    Start earning points by completing challenges, contributing to GitHub, or logging in daily!
+                    Start earning points by completing challenges, contributing
+                    to GitHub, or logging in daily!
                   </p>
                 </div>
               )}
@@ -300,13 +356,26 @@ export const RankingBreakdown = ({ userData }) => {
             {/* Tips Section */}
             <div className="bg-amber-500/5 dark:bg-amber-500/5 rounded-xl p-5 border border-amber-500/10">
               <p className="text-sm font-extrabold text-amber-600 dark:text-amber-400 mb-2.5 flex items-center gap-1.5">
-                <Sparkles className="w-4.5 h-4.5 animate-pulse" /> Tips to boost your rating rank:
+                <Sparkles className="w-4.5 h-4.5 animate-pulse" /> Tips to boost
+                your rating rank:
               </p>
               <ul className="text-xs text-slate-500 dark:text-slate-400 space-y-2 list-disc list-inside font-semibold leading-relaxed">
-                <li>Contribute code to GitHub repositories (commits +2, PRs +5, reviews +10)</li>
-                <li>Solve CodingVerse Arena challenges (easy +10, medium +100, hard +200)</li>
-                <li>Maintain your daily check-in login streak (+10 per day, capped at 100 XP per cycle)</li>
-                <li>Refer other developers to join using your referral code (+100 XP per successful invite)</li>
+                <li>
+                  Contribute code to GitHub repositories (commits +2, PRs +5,
+                  reviews +10)
+                </li>
+                <li>
+                  Solve CodingVerse Arena challenges (easy +10, medium +100,
+                  hard +200)
+                </li>
+                <li>
+                  Maintain your daily check-in login streak (+10 per day, capped
+                  at 100 XP per cycle)
+                </li>
+                <li>
+                  Refer other developers to join using your referral code (+100
+                  XP per successful invite)
+                </li>
               </ul>
             </div>
           </motion.div>
@@ -328,9 +397,12 @@ export const RankingBreakdown = ({ userData }) => {
                   📈
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-slate-800 dark:text-white my-0">No Rank History Found</h4>
+                  <h4 className="font-extrabold text-slate-800 dark:text-white my-0">
+                    No Rank History Found
+                  </h4>
                   <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mt-1 mx-auto leading-relaxed">
-                    Historical rankings are saved daily as immutable snapshots when you sync your metrics or load your profile.
+                    Historical rankings are saved daily as immutable snapshots
+                    when you sync your metrics or load your profile.
                   </p>
                 </div>
                 <button
@@ -338,7 +410,9 @@ export const RankingBreakdown = ({ userData }) => {
                   disabled={seeding}
                   className="px-4 py-2 text-xs font-bold rounded-lg bg-violet-600 hover:bg-violet-700 text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${seeding ? "animate-spin" : ""}`} />
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${seeding ? "animate-spin" : ""}`}
+                  />
                   Seed Mock History for Validation
                 </button>
               </div>
@@ -353,24 +427,36 @@ export const RankingBreakdown = ({ userData }) => {
                           Growth Insight
                         </span>
                         <span className="block text-lg font-black text-slate-800 dark:text-white leading-tight">
-                          {growthSummary.improved 
-                            ? `Up ${growthSummary.diff} positions` 
-                            : growthSummary.diff === 0 
-                            ? "Rank holds stable" 
-                            : `Down ${Math.abs(growthSummary.diff)} positions`}
+                          {growthSummary.improved
+                            ? `Up ${growthSummary.diff} positions`
+                            : growthSummary.diff === 0
+                              ? "Rank holds stable"
+                              : `Down ${Math.abs(growthSummary.diff)} positions`}
                         </span>
                         <span className="text-[10px] text-slate-400 block">
-                          Compared to {new Date(growthSummary.oldestDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          Compared to{" "}
+                          {new Date(
+                            growthSummary.oldestDate,
+                          ).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </span>
                       </div>
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                        growthSummary.improved 
-                          ? "bg-emerald-500/10 text-emerald-500" 
-                          : growthSummary.diff === 0 
-                          ? "bg-slate-500/10 text-slate-500" 
-                          : "bg-red-500/10 text-red-500"
-                      }`}>
-                        {growthSummary.improved ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+                          growthSummary.improved
+                            ? "bg-emerald-500/10 text-emerald-500"
+                            : growthSummary.diff === 0
+                              ? "bg-slate-500/10 text-slate-500"
+                              : "bg-red-500/10 text-red-500"
+                        }`}
+                      >
+                        {growthSummary.improved ? (
+                          <TrendingUp className="w-5 h-5" />
+                        ) : (
+                          <TrendingDown className="w-5 h-5" />
+                        )}
                       </div>
                     </div>
                   )}
@@ -381,7 +467,7 @@ export const RankingBreakdown = ({ userData }) => {
                         Record High Rank
                       </span>
                       <span className="block text-lg font-black text-slate-800 dark:text-white leading-tight">
-                        #{Math.min(...history.map(h => h.rank))}
+                        #{Math.min(...history.map((h) => h.rank))}
                       </span>
                       <span className="text-[10px] text-slate-400 block">
                         Best recorded standing
@@ -398,7 +484,13 @@ export const RankingBreakdown = ({ userData }) => {
                         Total Points Growth
                       </span>
                       <span className="block text-lg font-black text-slate-800 dark:text-white leading-tight">
-                        +{Math.max(0, history[0].totalPoints - history[history.length - 1].totalPoints)} XP
+                        +
+                        {Math.max(
+                          0,
+                          history[0].totalPoints -
+                            history[history.length - 1].totalPoints,
+                        )}{" "}
+                        XP
                       </span>
                       <span className="text-[10px] text-slate-400 block">
                         XP gained in active period
@@ -427,9 +519,15 @@ export const RankingBreakdown = ({ userData }) => {
                       >
                         {/* Horizontal Gridlines */}
                         {[0, 0.25, 0.5, 0.75, 1].map((r, i) => {
-                          const y = chartData.paddingY + r * (chartData.chartHeight - 2 * chartData.paddingY);
+                          const y =
+                            chartData.paddingY +
+                            r *
+                              (chartData.chartHeight - 2 * chartData.paddingY);
                           // Calculate the rank at this grid level
-                          const gridRank = Math.round(chartData.yMin + r * (chartData.yMax - chartData.yMin));
+                          const gridRank = Math.round(
+                            chartData.yMin +
+                              r * (chartData.yMax - chartData.yMin),
+                          );
                           return (
                             <g key={i}>
                               <line
@@ -455,9 +553,23 @@ export const RankingBreakdown = ({ userData }) => {
                         {/* Chart Line Paths */}
                         {chartData.area && (
                           <defs>
-                            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.15" />
-                              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
+                            <linearGradient
+                              id="chartGrad"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#8b5cf6"
+                                stopOpacity="0.15"
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#8b5cf6"
+                                stopOpacity="0.0"
+                              />
                             </linearGradient>
                           </defs>
                         )}
@@ -491,9 +603,15 @@ export const RankingBreakdown = ({ userData }) => {
 
                         {/* X-axis date labels */}
                         {chronologicalHistory.map((d, i) => {
-                          const x = chartData.paddingX + (i / (chronologicalHistory.length - 1)) * (chartData.chartWidth - 2 * chartData.paddingX);
+                          const x =
+                            chartData.paddingX +
+                            (i / (chronologicalHistory.length - 1)) *
+                              (chartData.chartWidth - 2 * chartData.paddingX);
                           const dateObj = new Date(d.date);
-                          const dateLabel = dateObj.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                          const dateLabel = dateObj.toLocaleDateString(
+                            undefined,
+                            { month: "short", day: "numeric" },
+                          );
                           return (
                             <text
                               key={i}
@@ -515,12 +633,26 @@ export const RankingBreakdown = ({ userData }) => {
                           style={{
                             left: `${(tooltip.x / chartData.chartWidth) * 100}%`,
                             top: `${(tooltip.y / chartData.chartHeight) * 100}%`,
-                            transform: "translate(-50%, -120%)"
+                            transform: "translate(-50%, -120%)",
                           }}
                         >
-                          <span className="font-bold text-[9px] text-slate-400">{new Date(tooltip.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                          <span className="font-extrabold text-violet-400">Rank: #{tooltip.rank}</span>
-                          <span className="text-slate-300 font-semibold">{tooltip.totalPoints} XP</span>
+                          <span className="font-bold text-[9px] text-slate-400">
+                            {new Date(tooltip.date).toLocaleDateString(
+                              undefined,
+                              {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                          <span className="font-extrabold text-violet-400">
+                            Rank: #{tooltip.rank}
+                          </span>
+                          <span className="text-slate-300 font-semibold">
+                            {tooltip.totalPoints} XP
+                          </span>
                         </div>
                       )}
                     </div>
@@ -550,9 +682,20 @@ export const RankingBreakdown = ({ userData }) => {
                         {history.map((item, idx) => {
                           const change = rankChanges[idx];
                           return (
-                            <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <tr
+                              key={idx}
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                            >
                               <td className="py-3.5 pr-4 text-slate-800 dark:text-slate-300">
-                                {new Date(item.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                {new Date(item.date).toLocaleDateString(
+                                  undefined,
+                                  {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  },
+                                )}
                               </td>
                               <td className="py-3.5 pr-4 text-center font-extrabold text-slate-900 dark:text-white">
                                 #{item.rank}
@@ -564,10 +707,13 @@ export const RankingBreakdown = ({ userData }) => {
                                   </span>
                                 ) : change < 0 ? (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 font-bold text-[10px]">
-                                    <TrendingDown className="w-3 h-3" /> {change}
+                                    <TrendingDown className="w-3 h-3" />{" "}
+                                    {change}
                                   </span>
                                 ) : (
-                                  <span className="text-slate-400 text-[11px] font-bold">—</span>
+                                  <span className="text-slate-400 text-[11px] font-bold">
+                                    —
+                                  </span>
                                 )}
                               </td>
                               <td className="py-3.5 text-right font-bold text-slate-800 dark:text-slate-200">

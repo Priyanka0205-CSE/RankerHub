@@ -18,7 +18,7 @@ import {
   UsersRound,
   Search,
   Activity,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 import { Github } from "../ui/Icons";
 import ThemeToggle from "../ui/ThemeToggle";
@@ -43,7 +43,7 @@ const iconMap = {
   UsersRound,
   Search,
   Activity,
-  TrendingUp
+  TrendingUp,
 };
 
 const isLinkActive = (pathname, path) => {
@@ -82,7 +82,11 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-800/50">
           <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/50 shadow-md">
-              <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
+              <img
+                src={logo}
+                alt="RankerHub Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <AnimatePresence>
               {!isCollapsed && (
@@ -103,7 +107,11 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
             onClick={toggleCollapse}
             className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
           </button>
         </div>
 
@@ -114,22 +122,22 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
             const isActive = isLinkActive(location.pathname, link.path);
 
             return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className="block relative"
-              >
+              <Link key={link.path} to={link.path} className="block relative">
                 <motion.div
                   whileHover={{ x: 4 }}
                   className={`
                     flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors duration-200 group
-                    ${isActive 
-                      ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]" 
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"}
+                    ${
+                      isActive
+                        ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                    }
                   `}
                 >
-                  <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors"}`} />
-                  
+                  <IconComponent
+                    className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors"}`}
+                  />
+
                   {!isCollapsed && (
                     <motion.span
                       initial={{ opacity: 0 }}
@@ -148,13 +156,13 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
               </Link>
             );
           })}
-
-
         </div>
 
         {/* Sidebar Footer / Theme & Logout */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800/50 space-y-2">
-          <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between px-3"} py-2`}>
+          <div
+            className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between px-3"} py-2`}
+          >
             {!isCollapsed && (
               <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Theme

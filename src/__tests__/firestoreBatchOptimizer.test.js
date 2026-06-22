@@ -5,14 +5,14 @@ import * as firestoreSdk from "firebase/firestore";
 // Mock firebase/firestore
 vi.mock("firebase/firestore", () => {
   return {
-    writeBatch: vi.fn()
+    writeBatch: vi.fn(),
   };
 });
 
 // Mock database
 vi.mock("../lib/firebase", () => {
   return {
-    db: {}
+    db: {},
   };
 });
 
@@ -24,7 +24,7 @@ describe("FirestoreBatchOptimizer", () => {
       set: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
-      commit: vi.fn().mockResolvedValue()
+      commit: vi.fn().mockResolvedValue(),
     };
     firestoreSdk.writeBatch.mockReturnValue(mockBatch);
     vi.useFakeTimers();
@@ -56,7 +56,7 @@ describe("FirestoreBatchOptimizer", () => {
     const optimizer = new FirestoreBatchOptimizer(1000, 3);
     optimizer.add({ type: "set", docRef: "r1", data: { v: 1 } });
     optimizer.add({ type: "update", docRef: "r2", data: { v: 2 } });
-    
+
     expect(optimizer.batch.length).toBe(2);
     expect(mockBatch.commit).not.toHaveBeenCalled();
 
@@ -71,12 +71,16 @@ describe("FirestoreBatchOptimizer", () => {
   });
 
   it("should re-queue failed operations when commit throws an error", async () => {
-    mockBatch.commit.mockRejectedValue(new Error("Firebase Transaction Conflict"));
+    mockBatch.commit.mockRejectedValue(
+      new Error("Firebase Transaction Conflict"),
+    );
     const optimizer = new FirestoreBatchOptimizer(1000, 2);
     optimizer.add({ type: "set", docRef: "r1", data: { v: 1 } });
 
     // Force flush
-    await expect(optimizer.flush()).rejects.toThrow("Firebase Transaction Conflict");
+    await expect(optimizer.flush()).rejects.toThrow(
+      "Firebase Transaction Conflict",
+    );
 
     // Operations should be put back in the queue
     expect(optimizer.batch.length).toBe(1);

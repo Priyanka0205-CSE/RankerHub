@@ -20,7 +20,7 @@ export class PaginationManager {
   initializeWithFirstPage(users) {
     this.allUsers = users.map((u, i) => ({
       ...u,
-      rank: i + 1
+      rank: i + 1,
     }));
     this.currentPage = 1;
     return this.allUsers;
@@ -33,7 +33,7 @@ export class PaginationManager {
     const startRank = this.allUsers.length + 1;
     const rankedNewUsers = newUsers.map((u, i) => ({
       ...u,
-      rank: startRank + i
+      rank: startRank + i,
     }));
     this.allUsers.push(...rankedNewUsers);
     this.currentPage++;
@@ -118,7 +118,7 @@ export function assignRanksEfficiently(existingUsers = [], newUsers = []) {
     // Initial load - assign ranks starting from 1
     return newUsers.map((u, i) => ({
       ...u,
-      rank: i + 1
+      rank: i + 1,
     }));
   }
 
@@ -126,7 +126,7 @@ export function assignRanksEfficiently(existingUsers = [], newUsers = []) {
   const startRank = existingUsers.length + 1;
   const rankedNewUsers = newUsers.map((u, i) => ({
     ...u,
-    rank: startRank + i
+    rank: startRank + i,
   }));
 
   return [...existingUsers, ...rankedNewUsers];
@@ -147,8 +147,10 @@ export function detectUnecessaryRanking(previousUsers = [], currentUsers = []) {
   // If same number of users but ranks changed, re-ranking occurred
   if (previousUsers.length === currentUsers.length) {
     for (let i = 0; i < previousUsers.length; i++) {
-      if (previousUsers[i].uid === currentUsers[i].uid &&
-          previousUsers[i].rank !== currentUsers[i].rank) {
+      if (
+        previousUsers[i].uid === currentUsers[i].uid &&
+        previousUsers[i].rank !== currentUsers[i].rank
+      ) {
         return true; // Re-ranking detected
       }
     }

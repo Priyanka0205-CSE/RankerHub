@@ -6,12 +6,31 @@
 export const calculateRankingBreakdown = (userData) => {
   if (!userData) {
     return {
-      gitPoints: { total: 0, commits: 0, prs: 0, reviews: 0, githubStreak: 0, explanation: "No GitHub activity yet" },
-      codingVersePoints: { total: 0, explanation: "Complete challenges to earn points" },
-      streakPoints: { total: 0, dailyStreak: 0, maxCap: 100, explanation: "Daily login streak (max 100 XP per cycle)" },
-      referralPoints: { total: 0, successfulReferrals: 0, explanation: "Earn 100 XP per successful referral" },
+      gitPoints: {
+        total: 0,
+        commits: 0,
+        prs: 0,
+        reviews: 0,
+        githubStreak: 0,
+        explanation: "No GitHub activity yet",
+      },
+      codingVersePoints: {
+        total: 0,
+        explanation: "Complete challenges to earn points",
+      },
+      streakPoints: {
+        total: 0,
+        dailyStreak: 0,
+        maxCap: 100,
+        explanation: "Daily login streak (max 100 XP per cycle)",
+      },
+      referralPoints: {
+        total: 0,
+        successfulReferrals: 0,
+        explanation: "Earn 100 XP per successful referral",
+      },
       totalPoints: 0,
-      pointsBreakdown: []
+      pointsBreakdown: [],
     };
   }
 
@@ -32,7 +51,7 @@ export const calculateRankingBreakdown = (userData) => {
     get total() {
       return this.commits + this.prs + this.reviews + this.githubStreak;
     },
-    explanation: `GitHub contributions: ${commits} commits × 2 + ${prs} PRs × 5 + ${reviews} reviews × 10 + ${githubStreak} streak × 10`
+    explanation: `GitHub contributions: ${commits} commits × 2 + ${prs} PRs × 5 + ${reviews} reviews × 10 + ${githubStreak} streak × 10`,
   };
 
   // Coding Verse Points Breakdown (precomputed total stored on points.codingVersePoints;
@@ -41,7 +60,7 @@ export const calculateRankingBreakdown = (userData) => {
 
   const codingVerseDetail = {
     total: codingVersePointsTotal,
-    explanation: `CodingVerse Arena challenges solved: ${codingVersePointsTotal} XP earned`
+    explanation: `CodingVerse Arena challenges solved: ${codingVersePointsTotal} XP earned`,
   };
 
   // Streak Points Breakdown (read from userData.streak, the live login streak)
@@ -55,7 +74,7 @@ export const calculateRankingBreakdown = (userData) => {
       return Math.min(this.dailyStreak, this.maxCap);
     },
     currentConsecutiveDays: currentStreak,
-    explanation: `Daily login streak: ${currentStreak} consecutive days × 10 XP (capped at ${maxStreakCap} XP per cycle)`
+    explanation: `Daily login streak: ${currentStreak} consecutive days × 10 XP (capped at ${maxStreakCap} XP per cycle)`,
   };
 
   // Referral Points Breakdown (derive successful referral count from points.referralPoints,
@@ -66,7 +85,7 @@ export const calculateRankingBreakdown = (userData) => {
   const referralDetail = {
     successfulReferrals,
     total: referralPointsTotal,
-    explanation: `Successful referrals: ${successfulReferrals} × 100 XP per person`
+    explanation: `Successful referrals: ${successfulReferrals} × 100 XP per person`,
   };
 
   // Use the authoritative totalPoints from Firestore to stay consistent with the rest of the app
@@ -78,18 +97,43 @@ export const calculateRankingBreakdown = (userData) => {
       category: "🐙 GitHub Contributions",
       points: gitPointsDetail.total,
       details: [
-        { label: "Commits", value: commits, multiplier: 2, total: gitPointsDetail.commits },
-        { label: "Pull Requests", value: prs, multiplier: 5, total: gitPointsDetail.prs },
-        { label: "Code Reviews", value: reviews, multiplier: 10, total: gitPointsDetail.reviews },
-        { label: "GitHub Streak", value: githubStreak, multiplier: 10, total: gitPointsDetail.githubStreak }
-      ]
+        {
+          label: "Commits",
+          value: commits,
+          multiplier: 2,
+          total: gitPointsDetail.commits,
+        },
+        {
+          label: "Pull Requests",
+          value: prs,
+          multiplier: 5,
+          total: gitPointsDetail.prs,
+        },
+        {
+          label: "Code Reviews",
+          value: reviews,
+          multiplier: 10,
+          total: gitPointsDetail.reviews,
+        },
+        {
+          label: "GitHub Streak",
+          value: githubStreak,
+          multiplier: 10,
+          total: gitPointsDetail.githubStreak,
+        },
+      ],
     },
     {
       category: "💻 Coding Challenges",
       points: codingVerseDetail.total,
       details: [
-        { label: "CodingVerse XP", value: codingVersePointsTotal, multiplier: 1, total: codingVersePointsTotal }
-      ]
+        {
+          label: "CodingVerse XP",
+          value: codingVersePointsTotal,
+          multiplier: 1,
+          total: codingVersePointsTotal,
+        },
+      ],
     },
     {
       category: "🔥 Daily Streak",
@@ -100,18 +144,23 @@ export const calculateRankingBreakdown = (userData) => {
           value: currentStreak,
           multiplier: 10,
           total: streakDetail.dailyStreak,
-          note: `Capped at ${maxStreakCap} XP per cycle`
-        }
-      ]
+          note: `Capped at ${maxStreakCap} XP per cycle`,
+        },
+      ],
     },
     {
       category: "🤝 Referrals",
       points: referralDetail.total,
       details: [
-        { label: "Successful Referrals", value: successfulReferrals, multiplier: 100, total: referralDetail.total }
-      ]
-    }
-  ].filter(item => item.points > 0); // Only show categories with points
+        {
+          label: "Successful Referrals",
+          value: successfulReferrals,
+          multiplier: 100,
+          total: referralDetail.total,
+        },
+      ],
+    },
+  ].filter((item) => item.points > 0); // Only show categories with points
 
   return {
     gitPoints: gitPointsDetail,
@@ -123,8 +172,9 @@ export const calculateRankingBreakdown = (userData) => {
     rank: userData.rank || "N/A",
     nextMilestone: {
       points: Math.ceil(totalFromBreakdown / 250) * 250,
-      pointsNeeded: Math.ceil(totalFromBreakdown / 250) * 250 - totalFromBreakdown
-    }
+      pointsNeeded:
+        Math.ceil(totalFromBreakdown / 250) * 250 - totalFromBreakdown,
+    },
   };
 };
 
@@ -140,6 +190,6 @@ export const getRankExplanation = (breakdown) => {
     return "Start earning points by completing challenges, contributing to GitHub, or logging in daily!";
   }
 
-  const categories = pointsBreakdown.map(cat => cat.category).join(", ");
+  const categories = pointsBreakdown.map((cat) => cat.category).join(", ");
   return `Your rank is based on ${totalPoints} total points earned from: ${categories}`;
 };

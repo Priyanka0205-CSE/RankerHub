@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Crown, Medal, Trophy, X, ChevronDown, ChevronUp, GitPullRequest, GitCommit, Star, Users } from "lucide-react";
+import {
+  AlertCircle,
+  Crown,
+  Medal,
+  Trophy,
+  X,
+  ChevronDown,
+  ChevronUp,
+  GitPullRequest,
+  GitCommit,
+  Star,
+  Users,
+} from "lucide-react";
 import ContributorCard from "./ContributorCard";
 
 // Helper function to calculate points based on level
@@ -8,7 +20,7 @@ const calculatePoints = (contributions, level = 1) => {
   const levelMultiplier = {
     3: 10,
     2: 5,
-    1: 3
+    1: 3,
   };
   const multiplier = levelMultiplier[level] || 3;
   return contributions * multiplier;
@@ -30,14 +42,14 @@ const getRankBadge = (rank) => {
 };
 
 // Leaderboard Modal - Moved outside
-const LeaderboardModal = ({ 
-  showLeaderboard, 
-  setShowLeaderboard, 
-  sortedContributors, 
-  expandedUser, 
-  setExpandedUser, 
-  sortBy, 
-  setSortBy 
+const LeaderboardModal = ({
+  showLeaderboard,
+  setShowLeaderboard,
+  sortedContributors,
+  expandedUser,
+  setExpandedUser,
+  sortBy,
+  setSortBy,
 }) => {
   if (!showLeaderboard) return null;
 
@@ -65,7 +77,9 @@ const LeaderboardModal = ({
             <div className="flex items-center gap-3">
               <Trophy className="w-6 h-6 text-yellow-500" />
               <div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white">Leaderboard</h2>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                  Leaderboard
+                </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Top {sortedContributors.length} contributors ranked by points
                 </p>
@@ -104,22 +118,26 @@ const LeaderboardModal = ({
               const rank = idx + 1;
               const isExpanded = expandedUser === contrib.id;
               const isTop3 = rank <= 3;
-              
+
               return (
                 <div
                   key={contrib.id}
                   className={`group rounded-xl border-2 ${
-                    isTop3 ? 
-                      rank === 1 ? 'border-yellow-400/50 bg-yellow-500/5' :
-                      rank === 2 ? 'border-gray-300/50 bg-gray-300/5' :
-                      'border-amber-600/50 bg-amber-600/5'
-                    : 'border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20'
+                    isTop3
+                      ? rank === 1
+                        ? "border-yellow-400/50 bg-yellow-500/5"
+                        : rank === 2
+                          ? "border-gray-300/50 bg-gray-300/5"
+                          : "border-amber-600/50 bg-amber-600/5"
+                      : "border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
                   } ${
-                    isExpanded ? 'border-violet-500/50 bg-violet-500/5' : ''
+                    isExpanded ? "border-violet-500/50 bg-violet-500/5" : ""
                   } transition-all duration-300`}
                 >
                   <button
-                    onClick={() => setExpandedUser(isExpanded ? null : contrib.id)}
+                    onClick={() =>
+                      setExpandedUser(isExpanded ? null : contrib.id)
+                    }
                     className="w-full px-4 py-3 flex items-center gap-3 text-left"
                   >
                     {/* Rank with badge for top 3 */}
@@ -130,7 +148,9 @@ const LeaderboardModal = ({
                           <span className="sr-only">Rank {rank}</span>
                         </div>
                       ) : (
-                        <span className="text-xs font-bold text-slate-400">#{rank}</span>
+                        <span className="text-xs font-bold text-slate-400">
+                          #{rank}
+                        </span>
                       )}
                     </div>
 
@@ -146,7 +166,9 @@ const LeaderboardModal = ({
                         src={contrib.avatar_url}
                         alt={contrib.login}
                         className={`w-10 h-10 rounded-full border-2 ${
-                          isTop3 ? 'border-yellow-400/50' : 'border-slate-200 dark:border-slate-700'
+                          isTop3
+                            ? "border-yellow-400/50"
+                            : "border-slate-200 dark:border-slate-700"
                         } hover:opacity-80 transition-opacity cursor-pointer`}
                         crossOrigin="anonymous"
                       />
@@ -165,11 +187,15 @@ const LeaderboardModal = ({
                           {contrib.login}
                         </p>
                         {isTop3 && (
-                          <span className={`text-[10px] font-black ${
-                            rank === 1 ? 'text-yellow-500' :
-                            rank === 2 ? 'text-gray-400' :
-                            'text-amber-600'
-                          }`}>
+                          <span
+                            className={`text-[10px] font-black ${
+                              rank === 1
+                                ? "text-yellow-500"
+                                : rank === 2
+                                  ? "text-gray-400"
+                                  : "text-amber-600"
+                            }`}
+                          >
                             ★ TOP {rank}
                           </span>
                         )}
@@ -189,9 +215,13 @@ const LeaderboardModal = ({
                     {/* Points & Expand */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <div className="text-right">
-                        <p className={`font-bold text-sm ${
-                          isTop3 ? 'text-yellow-500' : 'text-violet-600 dark:text-violet-400'
-                        }`}>
+                        <p
+                          className={`font-bold text-sm ${
+                            isTop3
+                              ? "text-yellow-500"
+                              : "text-violet-600 dark:text-violet-400"
+                          }`}
+                        >
                           {contrib.points} pts
                         </p>
                       </div>
@@ -216,19 +246,25 @@ const LeaderboardModal = ({
                         <div className="px-4 pb-4 pt-0 border-t border-slate-200/50 dark:border-slate-800/50">
                           <div className="grid grid-cols-3 gap-3 mt-3">
                             <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
-                              <p className="text-xs text-slate-500 dark:text-slate-400">Total Points</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Total Points
+                              </p>
                               <p className="text-lg font-bold text-violet-600 dark:text-violet-400">
                                 {contrib.points}
                               </p>
                             </div>
                             <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
-                              <p className="text-xs text-slate-500 dark:text-slate-400">Commits</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Commits
+                              </p>
                               <p className="text-lg font-bold text-slate-900 dark:text-white">
                                 {contrib.commits}
                               </p>
                             </div>
                             <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
-                              <p className="text-xs text-slate-500 dark:text-slate-400">Closed PRs</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Closed PRs
+                              </p>
                               <p className="text-lg font-bold text-green-600 dark:text-green-400">
                                 {contrib.closedPrs}
                               </p>
@@ -271,21 +307,27 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
     const fetchContributors = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://api.github.com/repos/indresh404/RankerHub/contributors");
+        const res = await fetch(
+          "https://api.github.com/repos/indresh404/RankerHub/contributors",
+        );
         if (!res.ok) {
           throw new Error(`Failed to fetch: ${res.status}`);
         }
         const data = await res.json();
-        
-        const filtered = data.filter(contrib => {
+
+        const filtered = data.filter((contrib) => {
           const login = (contrib.login || "").toLowerCase();
-          return login !== "indresh404" && 
-                 !login.includes("dependabot") && 
-                 login !== "divyagsharma2006-blip";
+          return (
+            login !== "indresh404" &&
+            !login.includes("dependabot") &&
+            login !== "divyagsharma2006-blip"
+          );
         });
-        
-        const sorted = filtered.sort((a, b) => b.contributions - a.contributions);
-        
+
+        const sorted = filtered.sort(
+          (a, b) => b.contributions - a.contributions,
+        );
+
         setContributors(sorted);
         setError(null);
       } catch (err) {
@@ -300,7 +342,7 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
   }, []);
 
   // Add points and level to contributors
-  const contributorsWithPoints = contributors.map(contrib => {
+  const contributorsWithPoints = contributors.map((contrib) => {
     const level = getLevel(contrib.contributions);
     const closedPrs = Math.max(1, Math.round(contrib.contributions * 0.4));
     return {
@@ -308,7 +350,7 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
       level,
       points: calculatePoints(contrib.contributions, level),
       closedPrs: closedPrs,
-      commits: contrib.contributions
+      commits: contrib.contributions,
     };
   });
 
@@ -346,13 +388,18 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
       <div className="p-6 rounded-xl border border-rose-500/20 bg-rose-500/5 text-center text-xs text-slate-650 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
         <AlertCircle className="w-5 h-5 text-rose-500" />
         <div>
-          <p className="font-bold text-rose-500 mb-1">Could not fetch contributors dynamically</p>
-          <p>GitHub API rate limit exceeded or network offline. You can view all activity directly on GitHub.</p>
+          <p className="font-bold text-rose-500 mb-1">
+            Could not fetch contributors dynamically
+          </p>
+          <p>
+            GitHub API rate limit exceeded or network offline. You can view all
+            activity directly on GitHub.
+          </p>
         </div>
-        <a 
-          href="https://github.com/indresh404/RankerHub/graphs/contributors" 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href="https://github.com/indresh404/RankerHub/graphs/contributors"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-block mt-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-850 hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition duration-200 font-bold"
         >
           View Contributors on GitHub
@@ -365,14 +412,16 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
     return (
       <div className="p-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/20 dark:bg-slate-950/20 text-center text-xs text-slate-500 dark:text-slate-400">
         <p className="font-bold">No external contributors found yet.</p>
-        <p className="mt-1">Be the first to submit a pull request and join the community!</p>
+        <p className="mt-1">
+          Be the first to submit a pull request and join the community!
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <motion.div 
+      <motion.div
         variants={staggerContainer}
         initial="hidden"
         whileInView="visible"
@@ -425,11 +474,11 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
                   >
                     <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                       <div className="w-full h-full rounded-full overflow-hidden border-2 border-slate-250 dark:border-slate-800 group-hover:border-violet-500/80 transition-colors duration-300 shadow-sm relative">
-                        <img 
-                          src={contrib.avatar_url} 
-                          alt={contrib.login} 
-                          className="w-full h-full object-cover" 
-                          loading="lazy" 
+                        <img
+                          src={contrib.avatar_url}
+                          alt={contrib.login}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
                           crossOrigin="anonymous"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -456,7 +505,7 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
       </motion.div>
 
       <AnimatePresence>
-        <LeaderboardModal 
+        <LeaderboardModal
           showLeaderboard={showLeaderboard}
           setShowLeaderboard={setShowLeaderboard}
           sortedContributors={sortedContributors}

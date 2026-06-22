@@ -20,12 +20,16 @@ export const PublicNavbar = () => {
   const navigate = useNavigate();
 
   // Compute activeIndex from location, but allow scroll observer to override
-  const locationBasedIndex = useMemo(() => getInitialIndex(location), [location]);
+  const locationBasedIndex = useMemo(
+    () => getInitialIndex(location),
+    [location],
+  );
   const [scrollBasedIndex, setScrollBasedIndex] = useState(null);
-  
+
   // Use scroll-based index if available, otherwise use location-based
-  const activeIndex = scrollBasedIndex !== null ? scrollBasedIndex : locationBasedIndex;
-  
+  const activeIndex =
+    scrollBasedIndex !== null ? scrollBasedIndex : locationBasedIndex;
+
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const isScrollingRef = useRef(false);
   const prevPathnameRef = useRef(location.pathname);
@@ -106,7 +110,10 @@ export const PublicNavbar = () => {
       }
     };
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions,
+    );
 
     // Observe all sections
     sections.forEach(({ id }) => {
@@ -149,9 +156,9 @@ export const PublicNavbar = () => {
     if (element) {
       // Set flag to prevent intersection observer from interfering
       isScrollingRef.current = true;
-      
+
       element.scrollIntoView({ behavior: "smooth" });
-      
+
       // Clear flag after scroll completes
       setTimeout(() => {
         isScrollingRef.current = false;
@@ -216,7 +223,11 @@ export const PublicNavbar = () => {
             className="nav-logo-link"
           >
             <div className="w-[32px] h-[32px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
-              <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
+              <img
+                src={logo}
+                alt="RankerHub Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <span className="font-caesar text-lg tracking-widest text-slate-900 dark:text-white">
               RankerHub
@@ -227,7 +238,11 @@ export const PublicNavbar = () => {
 
           {/* Navigation Links with Active Sliding Pill */}
           <div className="nav-items">
-            <div ref={activePillRef} className="active-pill" id="active-pill"></div>
+            <div
+              ref={activePillRef}
+              className="active-pill"
+              id="active-pill"
+            ></div>
             {navItems.map((item, idx) => (
               <button
                 key={idx}
@@ -277,7 +292,11 @@ export const PublicNavbar = () => {
               className="nav-logo-link"
             >
               <div className="w-[30px] h-[30px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
-                <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
+                <img
+                  src={logo}
+                  alt="RankerHub Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="font-caesar text-base tracking-widest text-slate-900 dark:text-white">
                 RankerHub
@@ -286,7 +305,7 @@ export const PublicNavbar = () => {
 
             <div className="flex items-center gap-1">
               {/* Theme Toggle always accessible */}
-            <ThemeToggle className="!w-9 !h-9" />
+              <ThemeToggle className="!w-9 !h-9" />
 
               {/* Hamburger Button */}
               <button
@@ -294,7 +313,11 @@ export const PublicNavbar = () => {
                 onClick={() => setMobileExpanded(!mobileExpanded)}
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileExpanded ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>

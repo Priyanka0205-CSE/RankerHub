@@ -1,28 +1,28 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Copy, Check, ExternalLink } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { Copy, Check, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
 
 const themes = [
-  { id: 'dark', name: 'Dark Mode', color: '#0D1117' },
-  { id: 'cyberpunk', name: 'Cyberpunk', color: '#00FF41' },
-  { id: 'solarized', name: 'Solarized', color: '#002B36' },
-  { id: 'glassmorphism', name: 'Glassmorphism', color: '#8b5cf6' },
+  { id: "dark", name: "Dark Mode", color: "#0D1117" },
+  { id: "cyberpunk", name: "Cyberpunk", color: "#00FF41" },
+  { id: "solarized", name: "Solarized", color: "#002B36" },
+  { id: "glassmorphism", name: "Glassmorphism", color: "#8b5cf6" },
 ];
 
 const CardBuilder = () => {
   const { userData } = useAuth();
-  const [selectedTheme, setSelectedTheme] = useState('dark');
+  const [selectedTheme, setSelectedTheme] = useState("dark");
   const [copied, setCopied] = useState(false);
 
   // Fallback to "username" if no GitHub username is available during test
-  const githubUsername = userData?.githubUsername || 'RankerHubUser';
-  
+  const githubUsername = userData?.githubUsername || "RankerHubUser";
+
   // The base URL of the site. In production this should be the live vercel domain
   // For local development, we'll use window.location.origin
   const baseUrl = window.location.origin;
   const devcardUrl = `${baseUrl}/api/devcard/${githubUsername}?theme=${selectedTheme}`;
-  
+
   const markdownCode = `[![RankerHub Stats](${devcardUrl})](${baseUrl}/dashboard/profile/${githubUsername})`;
 
   const handleCopy = () => {
@@ -38,16 +38,15 @@ const CardBuilder = () => {
           Developer Card Builder
         </h1>
         <p className="text-slate-500 dark:text-slate-400">
-          Customize your dynamic RankerHub stats card and share it on your GitHub profile README.
+          Customize your dynamic RankerHub stats card and share it on your
+          GitHub profile README.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Left Column: Controls */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white dark:bg-[#0f172a] rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-            
             {/* Theme Selector */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -60,12 +59,12 @@ const CardBuilder = () => {
                     onClick={() => setSelectedTheme(theme.id)}
                     className={`flex items-center space-x-2 p-3 rounded-lg border transition-all ${
                       selectedTheme === theme.id
-                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 text-slate-700 dark:text-slate-300'
+                        ? "border-violet-500 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300"
+                        : "border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 text-slate-700 dark:text-slate-300"
                     }`}
                   >
-                    <div 
-                      className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600" 
+                    <div
+                      className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600"
                       style={{ backgroundColor: theme.color }}
                     />
                     <span className="text-sm font-medium">{theme.name}</span>
@@ -80,9 +79,10 @@ const CardBuilder = () => {
                 Export Markdown
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Copy this code and paste it into your GitHub Profile README.md file.
+                Copy this code and paste it into your GitHub Profile README.md
+                file.
               </p>
-              
+
               <div className="relative group">
                 <pre className="p-4 bg-slate-50 dark:bg-[#090D1A] rounded-lg border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 overflow-x-auto whitespace-pre-wrap break-all">
                   {markdownCode}
@@ -92,16 +92,20 @@ const CardBuilder = () => {
                   className="absolute top-2 right-2 p-2 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-500 dark:text-slate-400"
                   aria-label="Copy markdown"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <Check className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
-            
+
             {/* Direct Link */}
             <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-              <a 
-                href={devcardUrl} 
-                target="_blank" 
+              <a
+                href={devcardUrl}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center space-x-2 w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
               >
@@ -109,7 +113,6 @@ const CardBuilder = () => {
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
-
           </div>
         </div>
 
@@ -125,7 +128,7 @@ const CardBuilder = () => {
                 <span>Auto-updating</span>
               </span>
             </div>
-            
+
             <div className="flex-1 flex items-center justify-center p-8 bg-slate-50 dark:bg-[#090D1A] rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
               <motion.div
                 key={selectedTheme}
@@ -139,27 +142,30 @@ const CardBuilder = () => {
                   We append a timestamp during dev/preview to force refresh if needed,
                   though in production standard caching is fine.
                 */}
-                <img 
-                  src={devcardUrl} 
+                <img
+                  src={devcardUrl}
                   alt={`${githubUsername}'s DevCard`}
                   className="w-full h-auto drop-shadow-xl"
                   onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.nextElementSibling.style.display = "flex";
                   }}
                 />
-                
+
                 {/* Fallback Error State */}
                 <div className="hidden flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
-                  <span className="text-sm font-medium">Failed to load preview. Is the API endpoint running?</span>
-                  <p className="text-xs mt-2">Vercel API routes may not work via standard local Vite dev server without Vercel CLI.</p>
+                  <span className="text-sm font-medium">
+                    Failed to load preview. Is the API endpoint running?
+                  </span>
+                  <p className="text-xs mt-2">
+                    Vercel API routes may not work via standard local Vite dev
+                    server without Vercel CLI.
+                  </p>
                 </div>
               </motion.div>
             </div>
-            
           </div>
         </div>
-
       </div>
     </div>
   );

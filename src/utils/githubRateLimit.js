@@ -38,7 +38,7 @@ export const getRateLimitMessage = (error) => {
 
 /**
  * Wraps an axios GitHub API call with rate limit error handling.
- * Returns { data, rateLimitError } 
+ * Returns { data, rateLimitError }
  */
 export const githubFetch = async (axiosFn) => {
   try {

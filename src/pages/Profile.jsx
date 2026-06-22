@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import ReportModal from '../components/ReportModal';
-import domtoimage from 'dom-to-image-more';
+import ReportModal from "../components/ReportModal";
+import domtoimage from "dom-to-image-more";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
@@ -23,10 +23,20 @@ import {
   Zap,
   Share2,
   Code,
-  Copy
+  Copy,
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
-import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc, getDocs } from "firebase/firestore";
+import {
+  query,
+  collection,
+  where,
+  getCountFromServer,
+  doc,
+  getDoc,
+  writeBatch,
+  updateDoc,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import RankingBreakdown from "../components/dashboard/RankingBreakdown";
@@ -42,26 +52,34 @@ import collegesList from "../data/colleges.json";
 
 export const Profile = () => {
   const navigate = useNavigate();
-  const { userData: authUserData, user, setUserData, syncGitHubData } = useAuth();
+  const {
+    userData: authUserData,
+    user,
+    setUserData,
+    syncGitHubData,
+  } = useAuth();
   const { username: rawUsername } = useParams();
   const username = rawUsername ? decodeURIComponent(rawUsername) : undefined;
   const [publicProfile, setPublicProfile] = useState(null);
   const [loadingPublicProfile, setLoadingPublicProfile] = useState(!!username);
   const [showReport, setShowReport] = useState(false);
 
-  const isOwnProfile = !username || username === authUserData?.githubUsername || username === user?.uid;
-  
+  const isOwnProfile =
+    !username ||
+    username === authUserData?.githubUsername ||
+    username === user?.uid;
+
   // Utility to escape text for embedding in XML/SVG
   const escapeXml = (unsafe) => {
-    if (unsafe == null) return '';
+    if (unsafe == null) return "";
     return String(unsafe)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
   };
-  
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (isOwnProfile) {
@@ -71,7 +89,10 @@ export const Profile = () => {
       }
       setLoadingPublicProfile(true);
       try {
-        const q1 = query(collection(db, "users"), where("githubUsername", "==", username));
+        const q1 = query(
+          collection(db, "users"),
+          where("githubUsername", "==", username),
+        );
         const snapshot1 = await getDocs(q1);
         if (!snapshot1.empty) {
           const profileData = snapshot1.docs[0].data();
@@ -84,12 +105,16 @@ export const Profile = () => {
               username: profileData.githubUsername,
               name: profileData.name,
               avatar: profileData.avatar,
-              visitedAt: Date.now()
+              visitedAt: Date.now(),
             };
-            const filtered = existing.filter(e => e.username !== entry.username);
+            const filtered = existing.filter(
+              (e) => e.username !== entry.username,
+            );
             const updated = [entry, ...filtered].slice(0, 5);
             localStorage.setItem(key, JSON.stringify(updated));
-          } catch (e) { console.error(e); }
+          } catch (e) {
+            console.error(e);
+          }
         } else {
           const docRef = doc(db, "users", username);
           const docSnap = await getDoc(docRef);
@@ -106,7 +131,7 @@ export const Profile = () => {
       setLoadingPublicProfile(false);
     };
     if (username && (authUserData || !user)) {
-       fetchProfile();
+      fetchProfile();
     }
   }, [username, isOwnProfile, authUserData, user]);
 
@@ -117,7 +142,7 @@ export const Profile = () => {
   const [editingSocial, setEditingSocial] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [updating, setUpdating] = useState(false);
-  
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
@@ -132,14 +157,16 @@ export const Profile = () => {
   const [editError, setEditError] = useState("");
 
   const [editLearningTags, setEditLearningTags] = useState([]);
-const [learningInput, setLearningInput] = useState("");
+  const [learningInput, setLearningInput] = useState("");
   const editDropdownRef = useRef(null);
   const profileCardRef = useRef(null);
 
   // GitHub Real Heatmap State
   const [githubHeatmap, setGithubHeatmap] = useState({
-    grid: Array.from({ length: 16 }, () => Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 }))),
-    total: 0
+    grid: Array.from({ length: 16 }, () =>
+      Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 })),
+    ),
+    total: 0,
   });
 
   const filteredColleges = useMemo(() => {
@@ -147,12 +174,17 @@ const [learningInput, setLearningInput] = useState("");
       return collegesList;
     }
     const searchLower = collegeSearch.toLowerCase();
-    return collegesList.filter((col) => col.toLowerCase().includes(searchLower));
+    return collegesList.filter((col) =>
+      col.toLowerCase().includes(searchLower),
+    );
   }, [collegeSearch]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (editDropdownRef.current && !editDropdownRef.current.contains(event.target)) {
+      if (
+        editDropdownRef.current &&
+        !editDropdownRef.current.contains(event.target)
+      ) {
         setShowCollegeDropdown(false);
       }
     };
@@ -170,7 +202,7 @@ const [learningInput, setLearningInput] = useState("");
     setEditGender(userData?.gender || "");
     setEditDob(userData?.dob || "");
     setEditCity(userData?.city || "");
-    
+
     const collegeVal = userData?.college || "";
     const isCustom = collegeVal && !collegesList.includes(collegeVal);
     if (isCustom) {
@@ -182,7 +214,7 @@ const [learningInput, setLearningInput] = useState("");
       setCollegeSearch(collegeVal);
       setCustomCollege("");
     }
-    
+
     setEditError("");
     setEditLearningTags(userData?.learningTags || []);
     setIsEditModalOpen(true);
@@ -194,7 +226,7 @@ const [learningInput, setLearningInput] = useState("");
 
     setUpdating(true);
     setEditError("");
-    
+
     const finalName = editName.trim();
     const finalCity = editCity.trim();
     let finalCollege = editCollege;
@@ -259,29 +291,39 @@ const [learningInput, setLearningInput] = useState("");
         dob: editDob,
         city: finalCity,
         college: finalCollege,
-        learningTags: editLearningTags, 
-        updatedAt: new Date().toISOString()
+        learningTags: editLearningTags,
+        updatedAt: new Date().toISOString(),
       };
 
       await updateDoc(userRef, updateData);
 
-     if (setUserData) {
-  setUserData(prev => ({
-    ...prev,
-    ...updateData
-  }));
-}
+      if (setUserData) {
+        setUserData((prev) => ({
+          ...prev,
+          ...updateData,
+        }));
+      }
 
-// Notify other tabs about avatar change
-if (updateData.avatar) {
-  localStorage.setItem("rh_avatar_updated", JSON.stringify({
-    uid: user.uid,
-    avatar: updateData.avatar,
-    ts: Date.now()
-  }));
-}
+      // Notify other tabs about avatar change
+      if (updateData.avatar) {
+        localStorage.setItem(
+          "rh_avatar_updated",
+          JSON.stringify({
+            uid: user.uid,
+            avatar: updateData.avatar,
+            ts: Date.now(),
+          }),
+        );
+      }
 
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile updated successfully!", type: "success" }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Profile updated successfully!",
+          type: "success",
+        },
+      ]);
       setIsEditModalOpen(false);
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -294,7 +336,7 @@ if (updateData.avatar) {
   const [localSocialLinks, setLocalSocialLinks] = useState({
     linkedinUrl: userData?.linkedinUrl || null,
     instagramHandle: userData?.instagramHandle || null,
-    discordUsername: userData?.discordUsername || null
+    discordUsername: userData?.discordUsername || null,
   });
 
   useEffect(() => {
@@ -302,16 +344,16 @@ if (updateData.avatar) {
       syncGitHubData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); 
+  }, [user]);
 
   useEffect(() => {
     if (userData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLocalSocialLinks(prev => ({
+      setLocalSocialLinks((prev) => ({
         ...prev,
         linkedinUrl: userData.linkedinUrl || null,
         instagramHandle: userData.instagramHandle || null,
-        discordUsername: userData.discordUsername || null
+        discordUsername: userData.discordUsername || null,
       }));
     }
   }, [userData]);
@@ -324,7 +366,11 @@ if (updateData.avatar) {
         const q = query(
           collection(db, "users"),
           where("onboardingStatus", "==", "complete"),
-      where("points.gitRankPoints", ">", userData.points.gitRankPoints ?? 0)
+          where(
+            "points.gitRankPoints",
+            ">",
+            userData.points.gitRankPoints ?? 0,
+          ),
         );
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
@@ -332,8 +378,14 @@ if (updateData.avatar) {
 
         // Save rank snapshot if it is the user's own profile
         if (isOwnProfile && user?.uid) {
-          const { saveRankSnapshot } = await import("../services/rankHistoryService");
-          await saveRankSnapshot(user.uid, currentRank, userData.points.totalPoints, userData.timezone);
+          const { saveRankSnapshot } =
+            await import("../services/rankHistoryService");
+          await saveRankSnapshot(
+            user.uid,
+            currentRank,
+            userData.points.totalPoints,
+            userData.timezone,
+          );
         }
       } catch (err) {
         console.error("Error calculating dynamic rank:", err);
@@ -351,9 +403,11 @@ if (updateData.avatar) {
       if (!username) return;
 
       try {
-        const res = await fetch(`https://github-contributions-api.jogruber.de/v4/${username}?y=last`);
+        const res = await fetch(
+          `https://github-contributions-api.jogruber.de/v4/${username}?y=last`,
+        );
         if (!res.ok) throw new Error("API Limit");
-        
+
         const data = await res.json();
         const contributions = data.contributions || [];
 
@@ -362,14 +416,18 @@ if (updateData.avatar) {
         const grid = [];
         let currentWeek = [];
 
-        const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const dateFormatter = new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
         const todayMs = Date.now();
 
         last112.forEach((day, index) => {
           const c = day.count;
           totalActivity += c;
           let intensity = 0;
-          
+
           if (c > 9) intensity = 4;
           else if (c > 5) intensity = 3;
           else if (c > 2) intensity = 2;
@@ -380,7 +438,7 @@ if (updateData.avatar) {
             dateStr = dateFormatter.format(new Date(day.date));
           } else {
             const daysAgo = 111 - index;
-            dateStr = dateFormatter.format(todayMs - (daysAgo * 86400000));
+            dateStr = dateFormatter.format(todayMs - daysAgo * 86400000);
           }
 
           currentWeek.push({ intensity, date: dateStr, count: c });
@@ -394,7 +452,13 @@ if (updateData.avatar) {
         if (grid.length < 16) {
           const diff = 16 - grid.length;
           for (let i = 0; i < diff; i++) {
-            grid.unshift(Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 })));
+            grid.unshift(
+              Array.from({ length: 7 }, () => ({
+                intensity: 0,
+                date: "",
+                count: 0,
+              })),
+            );
           }
         }
 
@@ -402,8 +466,14 @@ if (updateData.avatar) {
       } catch (err) {
         console.error("Profile heatmap fetch error:", err);
         setGithubHeatmap({
-          grid: Array.from({ length: 16 }, () => Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 }))),
-          total: 0
+          grid: Array.from({ length: 16 }, () =>
+            Array.from({ length: 7 }, () => ({
+              intensity: 0,
+              date: "",
+              count: 0,
+            })),
+          ),
+          total: 0,
         });
       }
     };
@@ -420,36 +490,44 @@ if (updateData.avatar) {
     let activityTotal = 0;
 
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     // Map timestamps to frequency counts
     const activityMap = {};
-    logs.forEach(log => {
-       const d = new Date(log);
-       d.setHours(0,0,0,0);
-       const key = d.getTime();
-       activityMap[key] = (activityMap[key] || 0) + 1;
+    logs.forEach((log) => {
+      const d = new Date(log);
+      d.setHours(0, 0, 0, 0);
+      const key = d.getTime();
+      activityMap[key] = (activityMap[key] || 0) + 1;
     });
 
     const todayMs = today.getTime();
-    const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
 
     for (let w = 0; w < weeks; w++) {
       const weekData = [];
       for (let d = 0; d < daysPerWeek; d++) {
-        const daysAgo = ((weeks - 1 - w) * daysPerWeek) + (daysPerWeek - 1 - d);
-        const targetTime = todayMs - (daysAgo * 86400000);
-        
+        const daysAgo = (weeks - 1 - w) * daysPerWeek + (daysPerWeek - 1 - d);
+        const targetTime = todayMs - daysAgo * 86400000;
+
         const count = activityMap[targetTime] || 0;
         activityTotal += count;
-        
+
         let intensity = 0;
         if (count > 9) intensity = 4;
         else if (count > 5) intensity = 3;
         else if (count > 2) intensity = 2;
         else if (count > 0) intensity = 1;
 
-        weekData.push({ intensity, date: dateFormatter.format(targetTime), count });
+        weekData.push({
+          intensity,
+          date: dateFormatter.format(targetTime),
+          count,
+        });
       }
       data.push(weekData);
     }
@@ -463,11 +541,18 @@ if (updateData.avatar) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${userData?.name || user?.displayName || 'RankerHub User'}`,
+          title: `${userData?.name || user?.displayName || "RankerHub User"}`,
           text: `Join RankerHub with my referral code: ${code}`,
-          url: profileUrl
+          url: profileUrl,
         });
-        setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Shared successfully.', type: 'success' }]);
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            message: "Shared successfully.",
+            type: "success",
+          },
+        ]);
         return;
       } catch {
         // user may have cancelled; fall through to clipboard fallback
@@ -478,39 +563,60 @@ if (updateData.avatar) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(code);
       } else {
-        const ta = document.createElement('textarea');
+        const ta = document.createElement("textarea");
         ta.value = code;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(ta);
       }
 
       setCopied(true);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Referral code copied to clipboard.', type: 'success' }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Referral code copied to clipboard.",
+          type: "success",
+        },
+      ]);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Share/copy failed', err);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Failed to copy referral code.', type: 'error' }]);
+      console.error("Share/copy failed", err);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Failed to copy referral code.",
+          type: "error",
+        },
+      ]);
     }
   };
 
- const handleSharePublicProfile = async () => {
+  const handleSharePublicProfile = async () => {
     const usernameParam = userData?.githubUsername || username;
     const profileUrl = `${window.location.origin}/#/profile/${usernameParam}`;
-    
+
     const shareData = {
-      title: `${userData?.name || 'Developer'}'s RankerHub Profile`,
-      text: 'Check out this ranking and achievements on RankerHub!',
-      url: profileUrl
+      title: `${userData?.name || "Developer"}'s RankerHub Profile`,
+      text: "Check out this ranking and achievements on RankerHub!",
+      url: profileUrl,
     };
 
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-        setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Profile shared successfully.', type: 'success' }]);
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            message: "Profile shared successfully.",
+            type: "success",
+          },
+        ]);
         return;
       } catch {
         // user may have cancelled; fall through to clipboard fallback
@@ -521,26 +627,40 @@ if (updateData.avatar) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(profileUrl);
       } else {
-        const ta = document.createElement('textarea');
+        const ta = document.createElement("textarea");
         ta.value = profileUrl;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(ta);
       }
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Profile link copied to clipboard.', type: 'success' }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Profile link copied to clipboard.",
+          type: "success",
+        },
+      ]);
     } catch (err) {
-      console.error('Share/copy failed', err);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'Failed to copy profile link.', type: 'error' }]);
+      console.error("Share/copy failed", err);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Failed to copy profile link.",
+          type: "error",
+        },
+      ]);
     }
   };
 
   const getEmbedMarkdown = () => {
     const domain = window.location.origin;
-    const usernameParam = userData?.githubUsername || username || 'developer';
-    return `[![${userData?.name || 'Developer'}'s RankerHub Stats](${domain}/api/og/profile/${usernameParam})](${domain}/#/profile/${usernameParam})`;
+    const usernameParam = userData?.githubUsername || username || "developer";
+    return `[![${userData?.name || "Developer"}'s RankerHub Stats](${domain}/api/og/profile/${usernameParam})](${domain}/#/profile/${usernameParam})`;
   };
 
   const handleCopyEmbed = async () => {
@@ -548,26 +668,47 @@ if (updateData.avatar) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(getEmbedMarkdown());
       } else {
-        const ta = document.createElement('textarea');
+        const ta = document.createElement("textarea");
         ta.value = getEmbedMarkdown();
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(ta);
       }
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Markdown copied to clipboard!", type: "success" }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Markdown copied to clipboard!",
+          type: "success",
+        },
+      ]);
       setIsEmbedModalOpen(false);
     } catch (err) {
       console.error("Failed to copy", err);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Failed to copy snippet.", type: "error" }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Failed to copy snippet.",
+          type: "error",
+        },
+      ]);
     }
   };
 
   const handleDownloadProfileCard = async () => {
     if (!profileCardRef.current) {
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile card not available for export.", type: "error" }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Profile card not available for export.",
+          type: "error",
+        },
+      ]);
       return;
     }
 
@@ -575,11 +716,11 @@ if (updateData.avatar) {
       const original = profileCardRef.current;
       const clone = original.cloneNode(true);
 
-      clone.querySelectorAll('.pointer-events-none').forEach(n => n.remove());
+      clone.querySelectorAll(".pointer-events-none").forEach((n) => n.remove());
 
       const copyComputedStyles = (sourceEl, targetEl) => {
         const computed = window.getComputedStyle(sourceEl);
-        let cssText = '';
+        let cssText = "";
         for (let i = 0; i < computed.length; i++) {
           const prop = computed[i];
           try {
@@ -603,7 +744,7 @@ if (updateData.avatar) {
       try {
         inlineAllStyles(original, clone);
       } catch (e) {
-        console.warn('Inline styles fallback:', e);
+        console.warn("Inline styles fallback:", e);
       }
 
       if (document.fonts && document.fonts.ready) {
@@ -611,35 +752,39 @@ if (updateData.avatar) {
       }
 
       const rect = original.getBoundingClientRect();
-      clone.style.position = 'fixed';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
+      clone.style.position = "fixed";
+      clone.style.left = "-9999px";
+      clone.style.top = "0";
       clone.style.width = `${Math.round(rect.width)}px`;
       clone.style.height = `${Math.round(rect.height)}px`;
-      clone.style.boxSizing = 'border-box';
+      clone.style.boxSizing = "border-box";
 
-      const isDev = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
+      const isDev = import.meta.env.VITE_DEV_AUTH_BYPASS === "true";
       if (isDev) {
-        const overlay = document.createElement('div');
+        const overlay = document.createElement("div");
         overlay.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.8);z-index:999999;padding:24px;`;
 
-        const container = document.createElement('div');
+        const container = document.createElement("div");
         container.style.cssText = `position:relative;max-width:calc(100% - 48px);max-height:calc(100% - 48px);overflow:auto;padding:18px;border-radius:12px;`;
 
-        const dbg = document.createElement('div');
-        dbg.style.cssText = 'position:absolute;left:12px;top:12px;padding:6px 10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:6px;font-size:12px;z-index:100000';
-        dbg.textContent = `Preview nodes: ${clone.getElementsByTagName('*').length}`;
+        const dbg = document.createElement("div");
+        dbg.style.cssText =
+          "position:absolute;left:12px;top:12px;padding:6px 10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:6px;font-size:12px;z-index:100000";
+        dbg.textContent = `Preview nodes: ${clone.getElementsByTagName("*").length}`;
 
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Close Preview';
-        closeBtn.style.cssText = 'position:absolute;right:12px;top:12px;padding:6px 10px;background:#111827;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000';
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "Close Preview";
+        closeBtn.style.cssText =
+          "position:absolute;right:12px;top:12px;padding:6px 10px;background:#111827;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000";
         closeBtn.onclick = () => {
-          if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          if (overlay && overlay.parentNode)
+            overlay.parentNode.removeChild(overlay);
         };
 
-        const downloadBtn = document.createElement('button');
-        downloadBtn.textContent = 'Download Preview as PNG';
-        downloadBtn.style.cssText = 'position:absolute;right:140px;top:12px;padding:6px 10px;background:#7c3aed;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000';
+        const downloadBtn = document.createElement("button");
+        downloadBtn.textContent = "Download Preview as PNG";
+        downloadBtn.style.cssText =
+          "position:absolute;right:140px;top:12px;padding:6px 10px;background:#7c3aed;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000";
         downloadBtn.onclick = async () => {
           try {
             const width = 1200;
@@ -647,7 +792,7 @@ if (updateData.avatar) {
 
             const imgToDataUrl = async (url) => {
               try {
-                const res = await fetch(url, { mode: 'cors' });
+                const res = await fetch(url, { mode: "cors" });
                 const blob = await res.blob();
                 return await new Promise((resolve, reject) => {
                   const fr = new FileReader();
@@ -656,54 +801,76 @@ if (updateData.avatar) {
                   fr.readAsDataURL(blob);
                 });
               } catch (e) {
-                console.warn('Avatar fetch failed, using blank:', e);
+                console.warn("Avatar fetch failed, using blank:", e);
                 return null;
               }
             };
 
-            const avatarUrl = (userData && (userData.avatar || user?.photoURL)) || 'https://avatars.githubusercontent.com/u/9919?v=4';
+            const avatarUrl =
+              (userData && (userData.avatar || user?.photoURL)) ||
+              "https://avatars.githubusercontent.com/u/9919?v=4";
             const avatarData = await imgToDataUrl(avatarUrl);
 
             const svgParts = [];
             svgParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-            svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
+            svgParts.push(
+              `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+            );
             svgParts.push(`<defs>`);
             svgParts.push(`<style><![CDATA[
               .title{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;fill:#ffffff;font-weight:800}
               .meta{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:#93c5fd}
               .body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:rgba(255,255,255,0.85)}
             ]]></style>`);
-            svgParts.push(`<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`);
+            svgParts.push(
+              `<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`,
+            );
             svgParts.push(`</defs>`);
-            svgParts.push(`<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`);
+            svgParts.push(
+              `<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`,
+            );
 
             const avatarX = 48;
             const avatarY = 48;
             const avatarSize = 160;
             if (avatarData) {
-              svgParts.push(`<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`);
+              svgParts.push(
+                `<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`,
+              );
             } else {
-              svgParts.push(`<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`);
+              svgParts.push(
+                `<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`,
+              );
             }
 
             const textX = avatarX + avatarSize + 36;
             const textY = avatarY + 36;
-            const displayName = (userData && userData.name) || (user && user.displayName) || 'Developer';
-            const usernameHandle = (userData && userData.githubUsername) || 'developer';
-            const collegeName = (userData && userData.college) || 'Mumbai College';
-            const referralCode = (userData && userData.referralCode) || 'N/A';
+            const displayName =
+              (userData && userData.name) ||
+              (user && user.displayName) ||
+              "Developer";
+            const usernameHandle =
+              (userData && userData.githubUsername) || "developer";
+            const collegeName =
+              (userData && userData.college) || "Mumbai College";
+            const referralCode = (userData && userData.referralCode) || "N/A";
 
-            svgParts.push(`<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`);
-            svgParts.push(`<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`);
-            
-            const description = 'Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.';
+            svgParts.push(
+              `<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`,
+            );
+            svgParts.push(
+              `<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`,
+            );
+
+            const description =
+              "Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.";
             const wrapTextLines = (text, maxChars) => {
-              const words = text.split(' ');
+              const words = text.split(" ");
               const lines = [];
-              let cur = '';
+              let cur = "";
               for (const w of words) {
-                if ((cur + ' ' + w).trim().length <= maxChars) {
-                  cur = (cur + ' ' + w).trim();
+                if ((cur + " " + w).trim().length <= maxChars) {
+                  cur = (cur + " " + w).trim();
                 } else {
                   if (cur) lines.push(cur);
                   cur = w;
@@ -715,38 +882,56 @@ if (updateData.avatar) {
             const descLines = wrapTextLines(description, 56);
             for (let i = 0; i < descLines.length; i++) {
               const line = descLines[i];
-              const y = textY + 56 + (i * 20);
-              svgParts.push(`<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`);
+              const y = textY + 56 + i * 20;
+              svgParts.push(
+                `<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`,
+              );
             }
 
-            svgParts.push(`<g transform="translate(${width - 260},${avatarY})">`);
-            svgParts.push(`<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`);
-            svgParts.push(`<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`);
-            svgParts.push(`<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`);
-            svgParts.push(`<text x="12" y="105" class="meta" font-size="12">Referral</text>`);
-            svgParts.push(`<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`);
+            svgParts.push(
+              `<g transform="translate(${width - 260},${avatarY})">`,
+            );
+            svgParts.push(
+              `<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`,
+            );
+            svgParts.push(
+              `<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`,
+            );
+            svgParts.push(
+              `<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`,
+            );
+            svgParts.push(
+              `<text x="12" y="105" class="meta" font-size="12">Referral</text>`,
+            );
+            svgParts.push(
+              `<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`,
+            );
             svgParts.push(`</g>`);
             svgParts.push(`</svg>`);
 
-            const svgString = svgParts.join('\n');
-            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const svgString = svgParts.join("\n");
+            const blob = new Blob([svgString], {
+              type: "image/svg+xml;charset=utf-8",
+            });
             const url = URL.createObjectURL(blob);
 
             await new Promise((resolve, reject) => {
               const img = new window.Image();
-              img.crossOrigin = 'anonymous';
+              img.crossOrigin = "anonymous";
               img.onload = () => {
                 try {
-                  const canvas = document.createElement('canvas');
+                  const canvas = document.createElement("canvas");
                   canvas.width = width;
                   canvas.height = height;
-                  const ctx = canvas.getContext('2d');
-                  ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#0b1220';
+                  const ctx = canvas.getContext("2d");
+                  ctx.fillStyle =
+                    getComputedStyle(document.body).backgroundColor ||
+                    "#0b1220";
                   ctx.fillRect(0, 0, width, height);
                   ctx.drawImage(img, 0, 0, width, height);
-                  const dataUrl = canvas.toDataURL('image/png');
-                  const link = document.createElement('a');
-                  link.download = `${(userData?.githubUsername || userData?.name || 'profile')}-rankerhub.png`;
+                  const dataUrl = canvas.toDataURL("image/png");
+                  const link = document.createElement("a");
+                  link.download = `${userData?.githubUsername || userData?.name || "profile"}-rankerhub.png`;
                   link.href = dataUrl;
                   link.click();
                   URL.revokeObjectURL(url);
@@ -756,20 +941,37 @@ if (updateData.avatar) {
                   reject(err);
                 }
               };
-              img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+              img.onerror = (e) => {
+                URL.revokeObjectURL(url);
+                reject(e);
+              };
               img.src = url;
             });
           } catch (err) {
-            console.error('SVG export failed', err);
-            setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: 'SVG export failed.', type: 'error' }]);
+            console.error("SVG export failed", err);
+            setToasts((prev) => [
+              ...prev,
+              {
+                id: Date.now() + Math.random(),
+                message: "SVG export failed.",
+                type: "error",
+              },
+            ]);
           }
         };
 
         try {
-          const avatarUrl = (userData && (userData.avatar || user?.photoURL)) || "https://avatars.githubusercontent.com/u/9919?v=4";
-          const displayName = (userData && (userData.name)) || (user && user.displayName) || "Developer";
-          const usernameHandle = (userData && userData.githubUsername) || "developer";
-          const collegeName = (userData && userData.college) || "Mumbai College";
+          const avatarUrl =
+            (userData && (userData.avatar || user?.photoURL)) ||
+            "https://avatars.githubusercontent.com/u/9919?v=4";
+          const displayName =
+            (userData && userData.name) ||
+            (user && user.displayName) ||
+            "Developer";
+          const usernameHandle =
+            (userData && userData.githubUsername) || "developer";
+          const collegeName =
+            (userData && userData.college) || "Mumbai College";
           const referralCode = (userData && userData.referralCode) || "N/A";
           const simpleHtml = `
             <div style="width:100%;max-width:980px;border-radius:12px;overflow:hidden;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background:linear-gradient(135deg,#0f172a,#0b1220);color:#fff;box-shadow:0 10px 30px rgba(2,6,23,0.6);">
@@ -796,7 +998,11 @@ if (updateData.avatar) {
 
           container.innerHTML = simpleHtml;
         } catch {
-          try { container.appendChild(clone); } catch { container.innerHTML = clone.outerHTML; }
+          try {
+            container.appendChild(clone);
+          } catch {
+            container.innerHTML = clone.outerHTML;
+          }
         }
 
         overlay.appendChild(container);
@@ -808,16 +1014,26 @@ if (updateData.avatar) {
       }
 
       document.body.appendChild(clone);
-      const dataUrl = await domtoimage.toPng(clone, { cacheBust: true, bgcolor: null });
+      const dataUrl = await domtoimage.toPng(clone, {
+        cacheBust: true,
+        bgcolor: null,
+      });
       document.body.removeChild(clone);
 
-      const link = document.createElement('a');
-      link.download = `${(userData?.githubUsername || userData?.name || 'profile')}-rankerhub.png`;
+      const link = document.createElement("a");
+      link.download = `${userData?.githubUsername || userData?.name || "profile"}-rankerhub.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
-      console.error('Export error', err);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Failed to export profile card.", type: "error" }]);
+      console.error("Export error", err);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Failed to export profile card.",
+          type: "error",
+        },
+      ]);
     }
   };
 
@@ -841,12 +1057,26 @@ if (updateData.avatar) {
 
       const userDocSnap = await getDoc(userRef);
       if (!userDocSnap.exists()) {
-        setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile not found. Please try again.", type: "error" }]);
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            message: "Profile not found. Please try again.",
+            type: "error",
+          },
+        ]);
         return;
       }
 
       if (userDocSnap.data().uid !== user.uid) {
-        setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Unauthorized: You can only update your own profile.", type: "error" }]);
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            message: "Unauthorized: You can only update your own profile.",
+            type: "error",
+          },
+        ]);
         return;
       }
 
@@ -856,20 +1086,23 @@ if (updateData.avatar) {
       if (type === "linkedin") {
         if (value && value.trim()) {
           let linkedinUrl = value.trim();
-          if (!linkedinUrl.startsWith('http://') && !linkedinUrl.startsWith('https://')) {
-            linkedinUrl = 'https://' + linkedinUrl;
+          if (
+            !linkedinUrl.startsWith("http://") &&
+            !linkedinUrl.startsWith("https://")
+          ) {
+            linkedinUrl = "https://" + linkedinUrl;
           }
           processedValue = linkedinUrl;
         }
         updateData.linkedinUrl = processedValue;
       } else if (type === "instagram") {
         if (value && value.trim()) {
-          processedValue = value.trim().replace(/^@/, '');
+          processedValue = value.trim().replace(/^@/, "");
         }
         updateData.instagramHandle = processedValue;
       } else if (type === "discord") {
         if (value && value.trim()) {
-          processedValue = value.trim().replace(/^@/, '');
+          processedValue = value.trim().replace(/^@/, "");
         }
         updateData.discordUsername = processedValue;
       }
@@ -879,29 +1112,49 @@ if (updateData.avatar) {
       const batch = writeBatch(db);
       batch.update(userRef, updateData);
       await batch.commit();
-      
+
       const updatedUserDoc = await getDoc(userRef);
-      const updatedData = updatedUserDoc.exists() ? updatedUserDoc.data() : null;
-      
-      setLocalSocialLinks(prev => ({
+      const updatedData = updatedUserDoc.exists()
+        ? updatedUserDoc.data()
+        : null;
+
+      setLocalSocialLinks((prev) => ({
         ...prev,
-        [type === "linkedin" ? "linkedinUrl" : type === "instagram" ? "instagramHandle" : "discordUsername"]: processedValue
+        [type === "linkedin"
+          ? "linkedinUrl"
+          : type === "instagram"
+            ? "instagramHandle"
+            : "discordUsername"]: processedValue,
       }));
-      
+
       if (setUserData && updatedData) {
-        setUserData(prev => ({
+        setUserData((prev) => ({
           ...prev,
-          ...updatedData
+          ...updatedData,
         }));
       }
-      
+
       setEditingSocial(null);
       setEditValue("");
-      
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: `${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`, type: "success" }]);
+
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: `${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`,
+          type: "success",
+        },
+      ]);
     } catch (err) {
       console.error("Error updating social link:", err);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: `Failed to update ${type}. Please try again.`, type: "error" }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: `Failed to update ${type}. Please try again.`,
+          type: "error",
+        },
+      ]);
     } finally {
       setUpdating(false);
     }
@@ -912,19 +1165,38 @@ if (updateData.avatar) {
     try {
       const isEnabling = !userData?.privateRepoSyncEnabled;
       const userRef = doc(db, "users", user.uid);
-      
+
       const batch = writeBatch(db);
       batch.update(userRef, { privateRepoSyncEnabled: isEnabling });
       await batch.commit();
-      
+
       if (setUserData) {
-        setUserData(prev => ({ ...prev, privateRepoSyncEnabled: isEnabling }));
+        setUserData((prev) => ({
+          ...prev,
+          privateRepoSyncEnabled: isEnabling,
+        }));
       }
-      
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: isEnabling ? "Private repository sync enabled!" : "Private repository sync disabled.", type: "success" }]);
+
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: isEnabling
+            ? "Private repository sync enabled!"
+            : "Private repository sync disabled.",
+          type: "success",
+        },
+      ]);
     } catch (err) {
       console.error("Toggle sync error:", err);
-      setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Failed to update sync preferences. Please try again.", type: "error" }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Failed to update sync preferences. Please try again.",
+          type: "error",
+        },
+      ]);
     }
   };
 
@@ -936,43 +1208,83 @@ if (updateData.avatar) {
   const streak = userData?.streak ?? 0;
   const pointsEngines = [
     { label: "GitRank Points", value: gitRankPoints, color: "bg-blue-500" },
-    { label: "CodingVerse Points", value: codingVersePoints, color: "bg-purple-500" },
+    {
+      label: "CodingVerse Points",
+      value: codingVersePoints,
+      color: "bg-purple-500",
+    },
     { label: "Streak Points", value: streakPoints, color: "bg-orange-500" },
-    { label: "Referral Points", value: referralPoints, color: "bg-emerald-500" }
+    {
+      label: "Referral Points",
+      value: referralPoints,
+      color: "bg-emerald-500",
+    },
   ];
-  const earnedPointsTotal = pointsEngines.reduce((sum, engine) => sum + Math.max(engine.value, 0), 0);
+  const earnedPointsTotal = pointsEngines.reduce(
+    (sum, engine) => sum + Math.max(engine.value, 0),
+    0,
+  );
 
   const getGithubIntensityColor = (intensity) => {
-    switch(intensity) {
-      case 4: return "bg-emerald-600 dark:bg-emerald-500";
-      case 3: return "bg-emerald-500/80 dark:bg-emerald-500/80";
-      case 2: return "bg-emerald-400/60 dark:bg-emerald-400/60";
-      case 1: return "bg-emerald-300/40 dark:bg-emerald-300/40";
-      default: return "bg-slate-100 dark:bg-slate-800/50";
+    switch (intensity) {
+      case 4:
+        return "bg-emerald-600 dark:bg-emerald-500";
+      case 3:
+        return "bg-emerald-500/80 dark:bg-emerald-500/80";
+      case 2:
+        return "bg-emerald-400/60 dark:bg-emerald-400/60";
+      case 1:
+        return "bg-emerald-300/40 dark:bg-emerald-300/40";
+      default:
+        return "bg-slate-100 dark:bg-slate-800/50";
     }
   };
 
   const getPlatformIntensityColor = (intensity) => {
-    switch(intensity) {
-      case 4: return "bg-violet-600 dark:bg-violet-500";
-      case 3: return "bg-violet-500/80 dark:bg-violet-500/80";
-      case 2: return "bg-violet-400/60 dark:bg-violet-400/60";
-      case 1: return "bg-violet-300/40 dark:bg-violet-300/40";
-      default: return "bg-slate-100 dark:bg-slate-800/50";
+    switch (intensity) {
+      case 4:
+        return "bg-violet-600 dark:bg-violet-500";
+      case 3:
+        return "bg-violet-500/80 dark:bg-violet-500/80";
+      case 2:
+        return "bg-violet-400/60 dark:bg-violet-400/60";
+      case 1:
+        return "bg-violet-300/40 dark:bg-violet-300/40";
+      default:
+        return "bg-slate-100 dark:bg-slate-800/50";
     }
   };
 
   const DiscordIcon = ({ className }) => (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.21.3753-.444.8643-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.163-.3852-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C2.5092 7.7761 1.862 11.0615 2.183 14.3025a.074.074 0 0 0 .0283.0479 19.9411 19.9411 0 0 0 6.0017 2.9829.0766.0766 0 0 0 .0791-.022c.4616-.6257.8731-1.2855 1.231-1.9798a.0745.0745 0 0 0-.041-.105c-.6486-.2477-1.2671-.5545-1.8551-.9069a.074.074 0 0 1-.025-.0968.074.074 0 0 1 .0959-.0291c.123.0769.2437.1567.3616.2393a12.5958 12.5958 0 0 0 7.6554 0c.1179-.0826.2387-.1624.3616-.2393a.074.074 0 0 1 .096.0288.074.074 0 0 1-.025.097c-.588.3524-1.2065.6592-1.8551.9069a.0745.0745 0 0 0-.041.105c.3579.6943.7694 1.3541 1.231 1.9798a.076.076 0 0 0 .0791.022 19.94 19.94 0 0 0 6.0017-2.9829.074.074 0 0 0 .0283-.0479c.379-3.7757-.607-7.0224-2.538-10.0367a.069.069 0 0 0-.032-.0278zM8.4966 12.5148c-1.182 0-2.148-1.0903-2.148-2.427s.955-2.427 2.148-2.427c1.192 0 2.158 1.0903 2.148 2.427 0 1.3367-.956 2.427-2.148 2.427zm6.999 0c-1.182 0-2.148-1.0903-2.148-2.427s.955-2.427 2.148-2.427c1.192 0 2.158 1.0903 2.148 2.427 0 1.3367-.956 2.427-2.148 2.427z"/>
+      <path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.21.3753-.444.8643-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.163-.3852-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C2.5092 7.7761 1.862 11.0615 2.183 14.3025a.074.074 0 0 0 .0283.0479 19.9411 19.9411 0 0 0 6.0017 2.9829.0766.0766 0 0 0 .0791-.022c.4616-.6257.8731-1.2855 1.231-1.9798a.0745.0745 0 0 0-.041-.105c-.6486-.2477-1.2671-.5545-1.8551-.9069a.074.074 0 0 1-.025-.0968.074.074 0 0 1 .0959-.0291c.123.0769.2437.1567.3616.2393a12.5958 12.5958 0 0 0 7.6554 0c.1179-.0826.2387-.1624.3616-.2393a.074.074 0 0 1 .096.0288.074.074 0 0 1-.025.097c-.588.3524-1.2065.6592-1.8551.9069a.0745.0745 0 0 0-.041.105c.3579.6943.7694 1.3541 1.231 1.9798a.076.076 0 0 0 .0791.022 19.94 19.94 0 0 0 6.0017-2.9829.074.074 0 0 0 .0283-.0479c.379-3.7757-.607-7.0224-2.538-10.0367a.069.069 0 0 0-.032-.0278zM8.4966 12.5148c-1.182 0-2.148-1.0903-2.148-2.427s.955-2.427 2.148-2.427c1.192 0 2.158 1.0903 2.148 2.427 0 1.3367-.956 2.427-2.148 2.427zm6.999 0c-1.182 0-2.148-1.0903-2.148-2.427s.955-2.427 2.148-2.427c1.192 0 2.158 1.0903 2.148 2.427 0 1.3367-.956 2.427-2.148 2.427z" />
     </svg>
   );
 
   const profileStats = [
-    { label: "XP Points", value: totalPoints.toLocaleString(), detail: "Total Earned XP" },
-    { label: "Git Rank", value: rank, detail: rank === "Loading..." ? "Calculating..." : "Global leaderboard position" },
-    { label: "Active Streak", value: `${streak} Day${streak !== 1 ? "s" : ""}`, detail: "Consecutive daily logins" },
-    { label: "Invites Shared", value: `${Math.floor(referralPoints / 100)} Used`, detail: "Referral code successes" }
+    {
+      label: "XP Points",
+      value: totalPoints.toLocaleString(),
+      detail: "Total Earned XP",
+    },
+    {
+      label: "Git Rank",
+      value: rank,
+      detail:
+        rank === "Loading..."
+          ? "Calculating..."
+          : "Global leaderboard position",
+    },
+    {
+      label: "Active Streak",
+      value: `${streak} Day${streak !== 1 ? "s" : ""}`,
+      detail: "Consecutive daily logins",
+    },
+    {
+      label: "Invites Shared",
+      value: `${Math.floor(referralPoints / 100)} Used`,
+      detail: "Referral code successes",
+    },
   ];
 
   const socialLinks = [
@@ -985,7 +1297,7 @@ if (updateData.avatar) {
       color: "hover:bg-slate-100 dark:hover:bg-slate-800",
       textColor: "text-slate-500",
       isClickable: true,
-      showAddButton: false
+      showAddButton: false,
     },
     {
       id: "email",
@@ -996,7 +1308,7 @@ if (updateData.avatar) {
       color: "hover:bg-blue-500/10 hover:text-blue-500",
       textColor: "text-slate-500",
       isClickable: true,
-      showAddButton: false
+      showAddButton: false,
     },
     {
       id: "linkedin",
@@ -1008,19 +1320,21 @@ if (updateData.avatar) {
       color: "hover:bg-indigo-500/10 hover:text-indigo-600",
       textColor: "text-slate-500",
       placeholder: "LinkedIn URL or profile ID",
-      type: "url"
+      type: "url",
     },
     {
       id: "instagram",
       name: "Instagram",
       icon: Instagram,
       hasLink: !!localSocialLinks.instagramHandle,
-      link: localSocialLinks.instagramHandle ? `https://instagram.com/${localSocialLinks.instagramHandle}` : null,
+      link: localSocialLinks.instagramHandle
+        ? `https://instagram.com/${localSocialLinks.instagramHandle}`
+        : null,
       value: localSocialLinks.instagramHandle,
       color: "hover:bg-pink-500/10 hover:text-pink-500",
       textColor: "text-slate-500",
       placeholder: "@username or username",
-      type: "username"
+      type: "username",
     },
     {
       id: "discord",
@@ -1032,8 +1346,8 @@ if (updateData.avatar) {
       color: "hover:bg-indigo-500/10 hover:text-indigo-600",
       textColor: "text-slate-500",
       placeholder: "Discord user ID",
-      type: "username"
-    }
+      type: "username",
+    },
   ];
 
   const renderSocialButton = (social) => {
@@ -1052,7 +1366,7 @@ if (updateData.avatar) {
             className="px-3 py-1.5 text-sm bg-transparent border-none focus:outline-none text-slate-900 dark:text-white w-48"
             autoFocus
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 handleUpdateSocialLink(social.id, editValue);
               }
             }}
@@ -1087,7 +1401,9 @@ if (updateData.avatar) {
           title={social.name}
         >
           <social.icon className="w-4 h-4" />
-          <span className="text-xs font-medium hidden sm:inline">{social.name}</span>
+          <span className="text-xs font-medium hidden sm:inline">
+            {social.name}
+          </span>
         </a>
       );
     }
@@ -1104,7 +1420,9 @@ if (updateData.avatar) {
               title={displayValue}
             >
               <social.icon className="w-4 h-4" />
-              <span className="text-xs font-medium hidden sm:inline">{social.name}</span>
+              <span className="text-xs font-medium hidden sm:inline">
+                {social.name}
+              </span>
             </a>
           ) : (
             <div
@@ -1112,7 +1430,9 @@ if (updateData.avatar) {
               title={displayValue}
             >
               <social.icon className="w-4 h-4" />
-              <span className="text-xs font-medium hidden sm:inline">{social.name}</span>
+              <span className="text-xs font-medium hidden sm:inline">
+                {social.name}
+              </span>
             </div>
           )}
           {isOwnProfile && (
@@ -1142,7 +1462,9 @@ if (updateData.avatar) {
         className="p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 hover:text-violet-500 hover:border-violet-500/50 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all flex items-center gap-2 group"
       >
         <Plus className="w-4 h-4" />
-        <span className="text-xs font-medium hidden sm:inline">Add {social.name}</span>
+        <span className="text-xs font-medium hidden sm:inline">
+          Add {social.name}
+        </span>
       </button>
     );
   };
@@ -1158,8 +1480,12 @@ if (updateData.avatar) {
   if (!userData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Profile not found</h2>
-        <p className="text-slate-500 mt-2">The developer you are looking for does not exist.</p>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+          Profile not found
+        </h2>
+        <p className="text-slate-500 mt-2">
+          The developer you are looking for does not exist.
+        </p>
       </div>
     );
   }
@@ -1167,44 +1493,80 @@ if (updateData.avatar) {
   return (
     <div className="space-y-8">
       <SectionHeader
-        title={isOwnProfile ? "Developer Profile" : `${userData?.name || "Developer"}'s Profile`}
-        subtitle={isOwnProfile ? "Manage your public links, view achievements, and review earned badges." : `View ${userData?.name || "this developer"}'s achievements and badges.`}
+        title={
+          isOwnProfile
+            ? "Developer Profile"
+            : `${userData?.name || "Developer"}'s Profile`
+        }
+        subtitle={
+          isOwnProfile
+            ? "Manage your public links, view achievements, and review earned badges."
+            : `View ${userData?.name || "this developer"}'s achievements and badges.`
+        }
         badge="Verified Account"
         badgeColor="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
       >
         {isOwnProfile && (
           <>
-            <GradientButton onClick={handleOpenEditModal} variant="secondary" className="py-2.5 px-4 text-xs">
+            <GradientButton
+              onClick={handleOpenEditModal}
+              variant="secondary"
+              className="py-2.5 px-4 text-xs"
+            >
               Edit Profile
             </GradientButton>
-            <GradientButton onClick={handleShareProfile} className="py-2.5 px-4 text-xs">
+            <GradientButton
+              onClick={handleShareProfile}
+              className="py-2.5 px-4 text-xs"
+            >
               {copied ? "Code Copied!" : "Copy Referral Code"}
             </GradientButton>
-            <GradientButton onClick={handleDownloadProfileCard} className="py-2.5 px-4 text-xs">
+            <GradientButton
+              onClick={handleDownloadProfileCard}
+              className="py-2.5 px-4 text-xs"
+            >
               Download Profile Card
             </GradientButton>
-            <GradientButton onClick={() => navigate('/dashboard/profile/card-builder')} className="py-2.5 px-4 text-xs bg-gradient-to-r from-blue-500 to-indigo-500">
+            <GradientButton
+              onClick={() => navigate("/dashboard/profile/card-builder")}
+              className="py-2.5 px-4 text-xs bg-gradient-to-r from-blue-500 to-indigo-500"
+            >
               Build GitHub DevCard
             </GradientButton>
           </>
         )}
-        <GradientButton onClick={handleSharePublicProfile} variant="secondary" className="py-2.5 px-4 text-xs flex items-center gap-1.5">
+        <GradientButton
+          onClick={handleSharePublicProfile}
+          variant="secondary"
+          className="py-2.5 px-4 text-xs flex items-center gap-1.5"
+        >
           <Share2 className="w-3.5 h-3.5" />
           Share Profile
         </GradientButton>
-        <GradientButton onClick={() => setIsEmbedModalOpen(true)} variant="secondary" className="py-2.5 px-4 text-xs flex items-center gap-1.5">
+        <GradientButton
+          onClick={() => setIsEmbedModalOpen(true)}
+          variant="secondary"
+          className="py-2.5 px-4 text-xs flex items-center gap-1.5"
+        >
           <Code className="w-3.5 h-3.5" />
           Embed
         </GradientButton>
       </SectionHeader>
 
-      <Card ref={profileCardRef} className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50">
+      <Card
+        ref={profileCardRef}
+        className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50"
+      >
         <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative w-32 h-32 flex-shrink-0">
           <div className="w-full h-full rounded-2xl overflow-hidden ring-4 ring-violet-500/20 shadow-xl">
             <img
-              src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"}
+              src={
+                userData?.avatar ||
+                user?.photoURL ||
+                "https://avatars.githubusercontent.com/u/9919?v=4"
+              }
               alt="Profile Avatar"
               className="w-full h-full object-cover"
             />
@@ -1225,33 +1587,44 @@ if (updateData.avatar) {
               </span>
             </div>
             <span className="text-sm font-bold text-slate-400 dark:text-slate-500 block">
-              @{userData?.githubUsername || "developer"} • {userData?.college || "Mumbai College"}
+              @{userData?.githubUsername || "developer"} •{" "}
+              {userData?.college || "Mumbai College"}
             </span>
           </div>
 
           <p className="text-slate-500 dark:text-slate-400 text-sm max-w-2xl leading-relaxed font-medium">
-            Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges. ☕
+            Verified RankerHub platform developer. Actively syncing repository
+            activity to scale the leaderboard, sharing referral tokens, and
+            resolving daily algorithmic arena challenges. ☕
           </p>
 
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 text-xs font-bold text-slate-400">
             <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4 text-slate-400" /> {userData?.city || "Mumbai"}, India
+              <MapPin className="w-4 h-4 text-slate-400" />{" "}
+              {userData?.city || "Mumbai"}, India
             </span>
             <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4 text-slate-400" /> Joined {userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString(undefined, {month: 'long', year: 'numeric'}) : "May 2026"}
+              <Calendar className="w-4 h-4 text-slate-400" /> Joined{" "}
+              {userData?.createdAt
+                ? new Date(userData.createdAt).toLocaleDateString(undefined, {
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "May 2026"}
             </span>
             {isOwnProfile && (
               <span className="flex items-center gap-1 text-violet-500">
-                🎫 Referral Code: <span className="font-extrabold bg-violet-500/10 px-2 py-0.5 rounded-full select-all">{userData?.referralCode || "N/A"}</span>
+                🎫 Referral Code:{" "}
+                <span className="font-extrabold bg-violet-500/10 px-2 py-0.5 rounded-full select-all">
+                  {userData?.referralCode || "N/A"}
+                </span>
               </span>
             )}
           </div>
 
           <div className="flex justify-center md:justify-start items-center gap-3 pt-2 flex-wrap">
             {socialLinks.map((social) => (
-              <div key={social.id}>
-                {renderSocialButton(social)}
-              </div>
+              <div key={social.id}>{renderSocialButton(social)}</div>
             ))}
           </div>
 
@@ -1274,8 +1647,24 @@ if (updateData.avatar) {
               reporterUid={user?.uid}
               onClose={() => setShowReport(false)}
               toast={{
-                success: (msg) => setToasts(prev => [...prev, { id: Date.now() + Math.random(), message: msg, type: 'success' }]),
-                error: (msg) => setToasts(prev => [...prev, { id: Date.now() + Math.random(), message: msg, type: 'error' }])
+                success: (msg) =>
+                  setToasts((prev) => [
+                    ...prev,
+                    {
+                      id: Date.now() + Math.random(),
+                      message: msg,
+                      type: "success",
+                    },
+                  ]),
+                error: (msg) =>
+                  setToasts((prev) => [
+                    ...prev,
+                    {
+                      id: Date.now() + Math.random(),
+                      message: msg,
+                      type: "error",
+                    },
+                  ]),
               }}
             />
           )}
@@ -1287,7 +1676,9 @@ if (updateData.avatar) {
                   key={toast.id}
                   message={toast.message}
                   type={toast.type}
-                  onClose={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+                  onClose={() =>
+                    setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+                  }
                 />
               ))}
             </AnimatePresence>
@@ -1299,17 +1690,21 @@ if (updateData.avatar) {
         <Card className="mb-6 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-slate-200/50 dark:border-slate-800/50">
           <div>
             <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-              <Github className="w-5 h-5 text-slate-700 dark:text-slate-300" /> Private Repository Sync
+              <Github className="w-5 h-5 text-slate-700 dark:text-slate-300" />{" "}
+              Private Repository Sync
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-              Enable indexing for private repositories to earn points for your private commits, PRs, and reviews.
+              Enable indexing for private repositories to earn points for your
+              private commits, PRs, and reviews.
             </p>
           </div>
-          
+
           <button
             onClick={handlePrivateSyncToggle}
             className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 flex-shrink-0 ${
-              userData?.privateRepoSyncEnabled ? 'bg-violet-500' : 'bg-slate-300 dark:bg-slate-700'
+              userData?.privateRepoSyncEnabled
+                ? "bg-violet-500"
+                : "bg-slate-300 dark:bg-slate-700"
             }`}
             role="switch"
             aria-checked={userData?.privateRepoSyncEnabled}
@@ -1317,7 +1712,9 @@ if (updateData.avatar) {
             <span className="sr-only">Enable Private Repo Sync</span>
             <span
               className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                userData?.privateRepoSyncEnabled ? 'translate-x-8' : 'translate-x-1'
+                userData?.privateRepoSyncEnabled
+                  ? "translate-x-8"
+                  : "translate-x-1"
               }`}
             />
           </button>
@@ -1326,7 +1723,10 @@ if (updateData.avatar) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {profileStats.map((stat, idx) => (
-          <Card key={idx} className="p-5 text-center flex flex-col items-center justify-center border-slate-200/50 dark:border-slate-800/50">
+          <Card
+            key={idx}
+            className="p-5 text-center flex flex-col items-center justify-center border-slate-200/50 dark:border-slate-800/50"
+          >
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
               {stat.label}
             </span>
@@ -1341,7 +1741,6 @@ if (updateData.avatar) {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        
         <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
             <div>
@@ -1365,9 +1764,15 @@ if (updateData.avatar) {
           <div className="mt-6 flex flex-col items-start min-w-max flex-1">
             <div className="flex gap-1">
               <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
-                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">Mon</span>
-                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">Wed</span>
-                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">Fri</span>
+                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">
+                  Mon
+                </span>
+                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">
+                  Wed
+                </span>
+                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">
+                  Fri
+                </span>
               </div>
 
               <div className="flex gap-1">
@@ -1422,9 +1827,15 @@ if (updateData.avatar) {
           <div className="mt-6 flex flex-col items-start min-w-max flex-1">
             <div className="flex gap-1">
               <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
-                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">Mon</span>
-                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">Wed</span>
-                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">Fri</span>
+                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">
+                  Mon
+                </span>
+                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">
+                  Wed
+                </span>
+                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">
+                  Fri
+                </span>
               </div>
 
               <div className="flex gap-1">
@@ -1455,15 +1866,17 @@ if (updateData.avatar) {
             </div>
           </div>
         </Card>
-
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         <Card className="p-6 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
           <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">GitHub Audit Snapshot</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Verified counts fetched once on onboarding to set GitRank points</p>
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
+              GitHub Audit Snapshot
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Verified counts fetched once on onboarding to set GitRank points
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 my-6">
@@ -1473,7 +1886,9 @@ if (updateData.avatar) {
                 <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
                   {userData?.githubStats?.commits || 0}
                 </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">Commits</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
+                  Commits
+                </span>
               </div>
             </div>
             <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
@@ -1482,7 +1897,9 @@ if (updateData.avatar) {
                 <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
                   {userData?.githubStats?.repos || 0}
                 </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">Repositories</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
+                  Repositories
+                </span>
               </div>
             </div>
             <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
@@ -1491,7 +1908,9 @@ if (updateData.avatar) {
                 <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
                   {userData?.githubStats?.stars || 0}
                 </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">Stars Earned</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
+                  Stars Earned
+                </span>
               </div>
             </div>
             <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
@@ -1500,36 +1919,69 @@ if (updateData.avatar) {
                 <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
                   {userData?.githubStats?.followers || 0}
                 </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">Followers</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
+                  Followers
+                </span>
               </div>
             </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-            <span>Points mapping: Commits(+2) Repos(+5) Stars(+3) Followers(+2)</span>
-            <span className="text-violet-600 dark:text-violet-400 font-bold">{gitRankPoints} GitPoints</span>
+            <span>
+              Points mapping: Commits(+2) Repos(+5) Stars(+3) Followers(+2)
+            </span>
+            <span className="text-violet-600 dark:text-violet-400 font-bold">
+              {gitRankPoints} GitPoints
+            </span>
           </div>
         </Card>
 
         <Card className="p-6 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
           <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">Points Engine Breakdown</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Multi-engine ratings tracking points distributions</p>
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
+              Points Engine Breakdown
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Multi-engine ratings tracking points distributions
+            </p>
           </div>
 
           <div className="my-6 space-y-3.5">
             {[
-              ...pointsEngines.map((engine) => ({ ...engine, max: totalPoints || 1 })),
-              { label: "Total Points", value: totalPoints, max: totalPoints || 1, isTotal: true }
+              ...pointsEngines.map((engine) => ({
+                ...engine,
+                max: totalPoints || 1,
+              })),
+              {
+                label: "Total Points",
+                value: totalPoints,
+                max: totalPoints || 1,
+                isTotal: true,
+              },
             ].map((engine, idx) => {
               const pct = Math.floor((engine.value / engine.max) * 100) || 0;
               return (
-                <div key={idx} className={`space-y-1 ${engine.isTotal ? "pt-2 border-t border-slate-100 dark:border-slate-800 mt-2" : ""}`}>
+                <div
+                  key={idx}
+                  className={`space-y-1 ${engine.isTotal ? "pt-2 border-t border-slate-100 dark:border-slate-800 mt-2" : ""}`}
+                >
                   <div className="flex items-center justify-between text-xs font-bold">
-                    <span className={engine.isTotal ? "text-violet-600 dark:text-violet-400" : "text-slate-500"}>
+                    <span
+                      className={
+                        engine.isTotal
+                          ? "text-violet-600 dark:text-violet-400"
+                          : "text-slate-500"
+                      }
+                    >
                       {engine.label}
                     </span>
-                    <span className={engine.isTotal ? "text-slate-900 dark:text-white" : "text-slate-500"}>
+                    <span
+                      className={
+                        engine.isTotal
+                          ? "text-slate-900 dark:text-white"
+                          : "text-slate-500"
+                      }
+                    >
                       {engine.value} pts
                     </span>
                   </div>
@@ -1538,7 +1990,8 @@ if (updateData.avatar) {
                       <div className="flex h-full w-full">
                         {pointsEngines.map((segment) => {
                           const segmentPct = earnedPointsTotal
-                            ? (Math.max(segment.value, 0) / earnedPointsTotal) * 100
+                            ? (Math.max(segment.value, 0) / earnedPointsTotal) *
+                              100
                             : 0;
 
                           return (
@@ -1566,10 +2019,11 @@ if (updateData.avatar) {
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-bold flex items-center justify-between">
             <span>Aggregated Rating Score</span>
-            <span className="text-violet-600 dark:text-violet-400 font-extrabold text-xs">{totalPoints} TotalPoints</span>
+            <span className="text-violet-600 dark:text-violet-400 font-extrabold text-xs">
+              {totalPoints} TotalPoints
+            </span>
           </div>
         </Card>
-
       </div>
 
       {/* Trust Score Scorecard */}
@@ -1577,22 +2031,75 @@ if (updateData.avatar) {
         const trustScore = userData?.points?.trustScore ?? null;
 
         // Tier derivation mirrors trustScoreService.getTrustTier
-        let tier = { label: "Not Synced", color: "text-slate-400", badgeBg: "bg-slate-500/10 border-slate-500/20", description: "Sync your GitHub data to calculate your Trust Score." };
+        let tier = {
+          label: "Not Synced",
+          color: "text-slate-400",
+          badgeBg: "bg-slate-500/10 border-slate-500/20",
+          description: "Sync your GitHub data to calculate your Trust Score.",
+        };
         if (trustScore !== null) {
-          if (trustScore >= 90) tier = { label: "High Trust", color: "text-emerald-500", badgeBg: "bg-emerald-500/10 border-emerald-500/20", description: "Outstanding contribution quality, active peer code reviews, and strong open-source presence." };
-          else if (trustScore >= 70) tier = { label: "Verified", color: "text-blue-500", badgeBg: "bg-blue-500/10 border-blue-500/20", description: "Consistent, legitimate activities across multiple public repositories with clear documentation." };
-          else if (trustScore >= 50) tier = { label: "Basic", color: "text-slate-500", badgeBg: "bg-slate-500/10 border-slate-500/20", description: "Initial ranking signal. Contributions are valid but concentrated in self-owned repositories." };
-          else tier = { label: "Low Trust", color: "text-amber-500", badgeBg: "bg-amber-500/10 border-amber-500/20", description: "Suspicious commit frequency, low-content messages, or repetitive commit triggers detected." };
+          if (trustScore >= 90)
+            tier = {
+              label: "High Trust",
+              color: "text-emerald-500",
+              badgeBg: "bg-emerald-500/10 border-emerald-500/20",
+              description:
+                "Outstanding contribution quality, active peer code reviews, and strong open-source presence.",
+            };
+          else if (trustScore >= 70)
+            tier = {
+              label: "Verified",
+              color: "text-blue-500",
+              badgeBg: "bg-blue-500/10 border-blue-500/20",
+              description:
+                "Consistent, legitimate activities across multiple public repositories with clear documentation.",
+            };
+          else if (trustScore >= 50)
+            tier = {
+              label: "Basic",
+              color: "text-slate-500",
+              badgeBg: "bg-slate-500/10 border-slate-500/20",
+              description:
+                "Initial ranking signal. Contributions are valid but concentrated in self-owned repositories.",
+            };
+          else
+            tier = {
+              label: "Low Trust",
+              color: "text-amber-500",
+              badgeBg: "bg-amber-500/10 border-amber-500/20",
+              description:
+                "Suspicious commit frequency, low-content messages, or repetitive commit triggers detected.",
+            };
         }
 
         const scoreSegments = [
           { label: "PR Merge Rate", emoji: "🔀", positive: true, max: 15 },
           { label: "Code Reviews", emoji: "🔍", positive: true, max: 10 },
-          { label: "External Contributions", emoji: "🌐", positive: true, max: 15 },
-          { label: "Community Appreciation", emoji: "⭐", positive: true, max: 10 },
-          { label: "Low-content Commits", emoji: "⚠️", positive: false, max: 15 },
+          {
+            label: "External Contributions",
+            emoji: "🌐",
+            positive: true,
+            max: 15,
+          },
+          {
+            label: "Community Appreciation",
+            emoji: "⭐",
+            positive: true,
+            max: 10,
+          },
+          {
+            label: "Low-content Commits",
+            emoji: "⚠️",
+            positive: false,
+            max: 15,
+          },
           { label: "Repeated Commits", emoji: "🔁", positive: false, max: 10 },
-          { label: "Activity Concentration", emoji: "🎯", positive: false, max: 5 }
+          {
+            label: "Activity Concentration",
+            emoji: "🎯",
+            positive: false,
+            max: 5,
+          },
         ];
 
         return (
@@ -1601,33 +2108,45 @@ if (updateData.avatar) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
                 <div>
                   <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-violet-500" /> Developer Trust Score
+                    <ShieldCheck className="w-5 h-5 text-violet-500" />{" "}
+                    Developer Trust Score
                   </h3>
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                    Quality-based ranking signal — evaluates contribution impact, not just volume.
+                    Quality-based ranking signal — evaluates contribution
+                    impact, not just volume.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <span className={`block text-4xl font-black leading-none ${tier.color}`}>
+                    <span
+                      className={`block text-4xl font-black leading-none ${tier.color}`}
+                    >
                       {trustScore !== null ? trustScore : "—"}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">out of 100</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
+                      out of 100
+                    </span>
                   </div>
-                  <span className={`px-3 py-1.5 rounded-lg border text-xs font-black ${tier.badgeBg} ${tier.color}`}>
+                  <span
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-black ${tier.badgeBg} ${tier.color}`}
+                  >
                     {tier.label}
                   </span>
                 </div>
               </div>
 
               <div className="mt-5 space-y-1">
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">{tier.description}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">
+                  {tier.description}
+                </p>
 
                 {/* Score bar: base (50) + positives fills left, deductions eat from right */}
                 <div className="mt-4">
                   <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1.5">
                     <span>Score Composition</span>
-                    <span>{trustScore !== null ? `${trustScore}/100` : "—"}</span>
+                    <span>
+                      {trustScore !== null ? `${trustScore}/100` : "—"}
+                    </span>
                   </div>
                   <div className="w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden flex">
                     {trustScore !== null && (
@@ -1637,13 +2156,14 @@ if (updateData.avatar) {
                           className="h-full rounded-full transition-all duration-700"
                           style={{
                             width: `${trustScore}%`,
-                            background: trustScore >= 90
-                              ? "linear-gradient(90deg,#10b981,#34d399)"
-                              : trustScore >= 70
-                              ? "linear-gradient(90deg,#3b82f6,#60a5fa)"
-                              : trustScore >= 50
-                              ? "linear-gradient(90deg,#6366f1,#818cf8)"
-                              : "linear-gradient(90deg,#f59e0b,#fbbf24)"
+                            background:
+                              trustScore >= 90
+                                ? "linear-gradient(90deg,#10b981,#34d399)"
+                                : trustScore >= 70
+                                  ? "linear-gradient(90deg,#3b82f6,#60a5fa)"
+                                  : trustScore >= 50
+                                    ? "linear-gradient(90deg,#6366f1,#818cf8)"
+                                    : "linear-gradient(90deg,#f59e0b,#fbbf24)",
                           }}
                         />
                       </>
@@ -1654,16 +2174,21 @@ if (updateData.avatar) {
                 {/* Signal breakdown table */}
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
                   {scoreSegments.map((seg, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-xs"
+                    >
                       <span className="flex items-center gap-1.5 font-semibold text-slate-500">
                         <span>{seg.emoji}</span>
                         {seg.label}
                       </span>
-                      <span className={`font-bold text-[10px] px-1.5 py-0.5 rounded ${
-                        seg.positive
-                          ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                          : "text-red-500 dark:text-red-400 bg-red-500/10"
-                      }`}>
+                      <span
+                        className={`font-bold text-[10px] px-1.5 py-0.5 rounded ${
+                          seg.positive
+                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                            : "text-red-500 dark:text-red-400 bg-red-500/10"
+                        }`}
+                      >
                         {seg.positive ? `+${seg.max} max` : `-${seg.max} max`}
                       </span>
                     </div>
@@ -1671,7 +2196,9 @@ if (updateData.avatar) {
                 </div>
 
                 <p className="mt-4 text-[10px] text-slate-400 font-semibold border-t border-slate-100 dark:border-slate-800 pt-3">
-                  Base score: 50 pts · Sync your GitHub data to refresh this score. Trust Score is an additional signal and does not replace GitRank points.
+                  Base score: 50 pts · Sync your GitHub data to refresh this
+                  score. Trust Score is an additional signal and does not
+                  replace GitRank points.
                 </p>
               </div>
             </Card>
@@ -1680,7 +2207,6 @@ if (updateData.avatar) {
       })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         <Card className="lg:col-span-2 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
@@ -1700,7 +2226,8 @@ if (updateData.avatar) {
               if (badge.id === "b1") unlocked = true;
               if (badge.id === "b2" && gitRankPoints >= 100) unlocked = true;
               if (badge.id === "b3" && streak >= 10) unlocked = true;
-              if (badge.id === "b4" && codingVersePoints >= 100) unlocked = true;
+              if (badge.id === "b4" && codingVersePoints >= 100)
+                unlocked = true;
               if (badge.id === "b5" && referralPoints >= 1000) unlocked = true;
 
               return (
@@ -1708,25 +2235,37 @@ if (updateData.avatar) {
                   key={badge.id}
                   className={`
                     relative overflow-hidden p-4 rounded-xl border flex items-center gap-3.5 group transition-all duration-300
-                    ${unlocked 
-                      ? "border-violet-500/20 bg-slate-50/50 dark:bg-slate-950/20" 
-                      : "border-slate-200/30 dark:border-slate-800/20 bg-slate-100/10 dark:bg-slate-950/5 opacity-50"}
+                    ${
+                      unlocked
+                        ? "border-violet-500/20 bg-slate-50/50 dark:bg-slate-950/20"
+                        : "border-slate-200/30 dark:border-slate-800/20 bg-slate-100/10 dark:bg-slate-950/5 opacity-50"
+                    }
                   `}
                 >
                   {unlocked && (
                     <div className="absolute right-2 top-2 w-7 h-7 flex-shrink-0 opacity-80 group-hover:scale-110 transition-transform">
-                      <LottiePlayer animationData={successTick} loop={false} className="w-full h-full" />
+                      <LottiePlayer
+                        animationData={successTick}
+                        loop={false}
+                        className="w-full h-full"
+                      />
                     </div>
                   )}
 
-                  <div className={`w-11 h-11 rounded-full bg-gradient-to-tr ${badge.color} text-white flex items-center justify-center font-black text-sm shadow-md`}>
+                  <div
+                    className={`w-11 h-11 rounded-full bg-gradient-to-tr ${badge.color} text-white flex items-center justify-center font-black text-sm shadow-md`}
+                  >
                     {badge.name.charAt(0)}
                   </div>
 
                   <div>
                     <h4 className="font-extrabold text-slate-900 dark:text-white leading-tight flex items-center gap-1">
                       {badge.name}
-                      {!unlocked && <span className="text-[8px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">Locked</span>}
+                      {!unlocked && (
+                        <span className="text-[8px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">
+                          Locked
+                        </span>
+                      )}
                     </h4>
                     <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
                       {badge.description}
@@ -1744,9 +2283,13 @@ if (updateData.avatar) {
 
         <Card className="flex flex-col items-center justify-center p-8 text-center relative overflow-hidden bg-gradient-to-br from-violet-600/10 to-indigo-600/10 border-violet-500/15">
           <div className="w-40 h-40 flex items-center justify-center mb-4">
-            <LottiePlayer animationData={trophyAnimation} loop={true} className="w-full h-full" />
+            <LottiePlayer
+              animationData={trophyAnimation}
+              loop={true}
+              className="w-full h-full"
+            />
           </div>
-          
+
           <div className="space-y-1">
             <h3 className="font-extrabold text-slate-900 dark:text-white leading-tight my-0">
               Community Champion
@@ -1761,7 +2304,6 @@ if (updateData.avatar) {
             RankerHub Verified Member
           </div>
         </Card>
-
       </div>
 
       {isOwnProfile && (
@@ -1801,10 +2343,12 @@ if (updateData.avatar) {
 
               <div className="space-y-1">
                 <h3 className="text-xl font-black text-white my-0 flex items-center gap-2">
-                  <User className="w-5 h-5 text-violet-500" /> Edit Developer Profile
+                  <User className="w-5 h-5 text-violet-500" /> Edit Developer
+                  Profile
                 </h3>
                 <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                  Update your display name, profile avatar, education, and onboarding details.
+                  Update your display name, profile avatar, education, and
+                  onboarding details.
                 </p>
               </div>
 
@@ -1854,11 +2398,24 @@ if (updateData.avatar) {
                       onChange={(e) => setEditGender(e.target.value)}
                       className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
                     >
-                      <option value="" disabled className="bg-slate-900">Select gender</option>
-                      <option value="male" className="bg-slate-900">Male</option>
-                      <option value="female" className="bg-slate-900">Female</option>
-                      <option value="non-binary" className="bg-slate-900">Non-Binary</option>
-                      <option value="prefer-not-to-say" className="bg-slate-900">Prefer not to say</option>
+                      <option value="" disabled className="bg-slate-900">
+                        Select gender
+                      </option>
+                      <option value="male" className="bg-slate-900">
+                        Male
+                      </option>
+                      <option value="female" className="bg-slate-900">
+                        Female
+                      </option>
+                      <option value="non-binary" className="bg-slate-900">
+                        Non-Binary
+                      </option>
+                      <option
+                        value="prefer-not-to-say"
+                        className="bg-slate-900"
+                      >
+                        Prefer not to say
+                      </option>
                     </select>
                   </div>
 
@@ -1894,7 +2451,7 @@ if (updateData.avatar) {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                       <Building2 className="w-3 h-3" /> Mumbai College
                     </label>
-                    
+
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
@@ -1971,7 +2528,7 @@ if (updateData.avatar) {
                     )}
                   </AnimatePresence>
                 </div>
-                
+
                 {/* Currently Learning */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -1986,7 +2543,11 @@ if (updateData.avatar) {
                         {tag}
                         <button
                           type="button"
-                          onClick={() => setEditLearningTags(prev => prev.filter((_, i) => i !== index))}
+                          onClick={() =>
+                            setEditLearningTags((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
                           className="hover:text-red-400 transition-colors"
                         >
                           ×
@@ -2005,8 +2566,14 @@ if (updateData.avatar) {
                           if (e.key === "Enter") {
                             e.preventDefault();
                             const val = learningInput.trim();
-                            if (val && !(editLearningTags || []).includes(val)) {
-                              setEditLearningTags(prev => [...(prev || []), val]);
+                            if (
+                              val &&
+                              !(editLearningTags || []).includes(val)
+                            ) {
+                              setEditLearningTags((prev) => [
+                                ...(prev || []),
+                                val,
+                              ]);
                               setLearningInput("");
                             }
                           }
@@ -2018,7 +2585,10 @@ if (updateData.avatar) {
                         onClick={() => {
                           const val = learningInput.trim();
                           if (val && !(editLearningTags || []).includes(val)) {
-                            setEditLearningTags(prev => [...(prev || []), val]);
+                            setEditLearningTags((prev) => [
+                              ...(prev || []),
+                              val,
+                            ]);
                             setLearningInput("");
                           }
                         }}
@@ -2028,7 +2598,9 @@ if (updateData.avatar) {
                       </button>
                     </div>
                   )}
-                  <p className="text-[10px] text-slate-500">Add up to 5 tags (press Enter or click Add)</p>
+                  <p className="text-[10px] text-slate-500">
+                    Add up to 5 tags (press Enter or click Add)
+                  </p>
                 </div>
                 {/* Submit & Cancel Buttons */}
                 <div className="flex gap-3 pt-2">
@@ -2053,7 +2625,7 @@ if (updateData.avatar) {
           </div>
         )}
       </AnimatePresence>
-      
+
       <AnimatePresence>
         {isEmbedModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -2082,7 +2654,8 @@ if (updateData.avatar) {
                   <Code className="w-5 h-5 text-violet-500" /> Embed on GitHub
                 </h3>
                 <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                  Copy the Markdown snippet below to showcase your live RankerHub stats on your GitHub profile README.
+                  Copy the Markdown snippet below to showcase your live
+                  RankerHub stats on your GitHub profile README.
                 </p>
               </div>
 

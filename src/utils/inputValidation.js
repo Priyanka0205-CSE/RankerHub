@@ -21,7 +21,7 @@ const DANGEROUS_PATTERNS = [
 
 // Global version of dangerous patterns for sanitization to remove all occurrences
 const DANGEROUS_PATTERNS_GLOBAL = DANGEROUS_PATTERNS.map(
-  (pattern) => new RegExp(pattern.source, pattern.flags + 'g')
+  (pattern) => new RegExp(pattern.source, pattern.flags + "g"),
 );
 
 /**
@@ -30,17 +30,17 @@ const DANGEROUS_PATTERNS_GLOBAL = DANGEROUS_PATTERNS.map(
  * @returns {string} Sanitized text
  */
 export const sanitizeText = (text) => {
-  if (!text || typeof text !== 'string') return '';
+  if (!text || typeof text !== "string") return "";
 
   let sanitized = text.trim();
 
   // Remove dangerous patterns (all occurrences)
   for (const pattern of DANGEROUS_PATTERNS_GLOBAL) {
-    sanitized = sanitized.replace(pattern, '');
+    sanitized = sanitized.replace(pattern, "");
   }
 
   // Remove excessive whitespace
-  sanitized = sanitized.replace(/\s+/g, ' ');
+  sanitized = sanitized.replace(/\s+/g, " ");
 
   // Limit length to prevent storage abuse
   if (sanitized.length > 500) {
@@ -57,11 +57,11 @@ export const sanitizeText = (text) => {
  * @returns {object} { isValid: boolean, sanitized: string, error: string }
  */
 export const validateGitHubUsername = (username) => {
-  if (!username || typeof username !== 'string') {
+  if (!username || typeof username !== "string") {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Username must be a non-empty string'
+      sanitized: "",
+      error: "Username must be a non-empty string",
     };
   }
 
@@ -71,8 +71,9 @@ export const validateGitHubUsername = (username) => {
   if (!GITHUB_USERNAME_REGEX.test(trimmed)) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Invalid GitHub username format. Usernames must be 1-39 characters, alphanumeric and hyphens only'
+      sanitized: "",
+      error:
+        "Invalid GitHub username format. Usernames must be 1-39 characters, alphanumeric and hyphens only",
     };
   }
 
@@ -80,15 +81,15 @@ export const validateGitHubUsername = (username) => {
   if (trimmed.length > 39) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Username exceeds maximum length of 39 characters'
+      sanitized: "",
+      error: "Username exceeds maximum length of 39 characters",
     };
   }
 
   return {
     isValid: true,
     sanitized: trimmed,
-    error: null
+    error: null,
   };
 };
 
@@ -98,11 +99,11 @@ export const validateGitHubUsername = (username) => {
  * @returns {object} { isValid: boolean, sanitized: string, error: string }
  */
 export const validateEmail = (email) => {
-  if (!email || typeof email !== 'string') {
+  if (!email || typeof email !== "string") {
     return {
       isValid: true, // Email is optional
-      sanitized: '',
-      error: null
+      sanitized: "",
+      error: null,
     };
   }
 
@@ -112,8 +113,8 @@ export const validateEmail = (email) => {
   if (trimmed.length > 254) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Email exceeds maximum length'
+      sanitized: "",
+      error: "Email exceeds maximum length",
     };
   }
 
@@ -121,15 +122,15 @@ export const validateEmail = (email) => {
   if (!EMAIL_REGEX.test(trimmed)) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Invalid email format'
+      sanitized: "",
+      error: "Invalid email format",
     };
   }
 
   return {
     isValid: true,
     sanitized: trimmed,
-    error: null
+    error: null,
   };
 };
 
@@ -139,11 +140,11 @@ export const validateEmail = (email) => {
  * @returns {object} { isValid: boolean, sanitized: string, error: string }
  */
 export const validateDisplayName = (name) => {
-  if (!name || typeof name !== 'string') {
+  if (!name || typeof name !== "string") {
     return {
       isValid: true, // Name is optional
-      sanitized: 'Developer',
-      error: null
+      sanitized: "Developer",
+      error: null,
     };
   }
 
@@ -153,23 +154,23 @@ export const validateDisplayName = (name) => {
   if (trimmed.length === 0) {
     return {
       isValid: true,
-      sanitized: 'Developer',
-      error: null
+      sanitized: "Developer",
+      error: null,
     };
   }
 
   if (trimmed.length > 100) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Display name exceeds maximum length of 100 characters'
+      sanitized: "",
+      error: "Display name exceeds maximum length of 100 characters",
     };
   }
 
   return {
     isValid: true,
     sanitized: trimmed,
-    error: null
+    error: null,
   };
 };
 
@@ -179,11 +180,11 @@ export const validateDisplayName = (name) => {
  * @returns {object} { isValid: boolean, sanitized: string, error: string }
  */
 export const validateAvatarUrl = (url) => {
-  if (!url || typeof url !== 'string') {
+  if (!url || typeof url !== "string") {
     return {
       isValid: true, // Avatar is optional
-      sanitized: '',
-      error: null
+      sanitized: "",
+      error: null,
     };
   }
 
@@ -193,8 +194,8 @@ export const validateAvatarUrl = (url) => {
   if (!URL_REGEX.test(trimmed)) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Invalid avatar URL. Must be a valid HTTP(S) URL'
+      sanitized: "",
+      error: "Invalid avatar URL. Must be a valid HTTP(S) URL",
     };
   }
 
@@ -202,25 +203,25 @@ export const validateAvatarUrl = (url) => {
   if (trimmed.length > 2048) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Avatar URL exceeds maximum length'
+      sanitized: "",
+      error: "Avatar URL exceeds maximum length",
     };
   }
 
   // Ensure it's from trusted domain (avatar.githubusercontent.com)
   const url_obj = new URL(trimmed);
-  if (!url_obj.hostname.includes('githubusercontent.com')) {
+  if (!url_obj.hostname.includes("githubusercontent.com")) {
     return {
       isValid: false,
-      sanitized: '',
-      error: 'Avatar must be from trusted GitHub image host'
+      sanitized: "",
+      error: "Avatar must be from trusted GitHub image host",
     };
   }
 
   return {
     isValid: true,
     sanitized: trimmed,
-    error: null
+    error: null,
   };
 };
 
@@ -232,10 +233,10 @@ export const validateAvatarUrl = (url) => {
 export const validateUserData = (userData) => {
   const errors = [];
   const sanitized = {
-    githubUsername: '',
-    name: 'Developer',
-    email: '',
-    avatar: ''
+    githubUsername: "",
+    name: "Developer",
+    email: "",
+    avatar: "",
   };
 
   // Validate username (required)
@@ -273,7 +274,7 @@ export const validateUserData = (userData) => {
   return {
     isValid: errors.length === 0,
     sanitized,
-    errors
+    errors,
   };
 };
 
@@ -283,7 +284,7 @@ export const validateUserData = (userData) => {
  * @returns {boolean} True if dangerous patterns detected
  */
 export const containsXSSPatterns = (text) => {
-  if (!text || typeof text !== 'string') return false;
+  if (!text || typeof text !== "string") return false;
 
   for (const pattern of DANGEROUS_PATTERNS) {
     if (pattern.test(text)) {

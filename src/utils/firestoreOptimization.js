@@ -11,7 +11,8 @@ import { db } from "../lib/firebase";
  * Reduces repeated reads for the same document
  */
 export class FirestoreCache {
-  constructor(ttlMs = 5 * 60 * 1000) { // 5 minutes default TTL
+  constructor(ttlMs = 5 * 60 * 1000) {
+    // 5 minutes default TTL
     this.cache = new Map();
     this.ttl = ttlMs;
   }
@@ -38,7 +39,7 @@ export class FirestoreCache {
   set(docPath, data) {
     this.cache.set(docPath, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -191,11 +192,11 @@ export class FirestoreBatchOptimizer {
     if (activeBatch) {
       try {
         for (const op of operationsToCommit) {
-          if (op.type === 'set') {
+          if (op.type === "set") {
             activeBatch.set(op.docRef, op.data, op.options);
-          } else if (op.type === 'update') {
+          } else if (op.type === "update") {
             activeBatch.update(op.docRef, op.data);
-          } else if (op.type === 'delete') {
+          } else if (op.type === "delete") {
             activeBatch.delete(op.docRef);
           }
         }

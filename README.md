@@ -18,6 +18,7 @@ Students spread their activity across many platforms — some build projects on 
 ## 🌟 Core Features
 
 ### 🔐 1. GitHub OAuth & Advanced Onboarding
+
 - **Secure Login**: Passwordless auth using Firebase Authentication linked to GitHub OAuth.
 - **Onboarding Wizard**: Captures developer details (college, gender, social handles, and all platform usernames) on first login.
 - **Platform Username Linking**: Connect GitHub, LeetCode, Codeforces, GFG, and HackerRank handles in one place.
@@ -30,23 +31,27 @@ Students spread their activity across many platforms — some build projects on 
 RankerHub pulls your activity from across the internet and unifies it:
 
 #### GitHub ✅ (Auto-tracked via Official API)
+
 - Commits, Pull Requests, Code Reviews
 - Public Repositories, Stars received
 - GitHub contribution streak
 - Followers
 
 #### LeetCode ✅ (Auto-tracked via Public GraphQL)
+
 - Problems solved (Easy / Medium / Hard breakdown)
 - Contest rating and contest history
 - Global ranking
 
 #### Codeforces ✅ (Auto-tracked via Official API)
+
 - Current rating and max rating
 - Contest participation history
 - Problem submissions and verdicts
 - Rank title (Pupil, Specialist, Expert, etc.)
 
 #### GeeksforGeeks ⚠️ (Auto-tracked via Public Profile)
+
 - Coding score
 - Problems solved
 - Monthly score
@@ -54,6 +59,7 @@ RankerHub pulls your activity from across the internet and unifies it:
 - Contest participation
 
 #### HackerRank ⚠️ (Auto-tracked via Public Endpoints)
+
 - Badges earned per domain
 - Skill certifications
 - Stars per skill track (Problem Solving, Python, SQL, etc.)
@@ -103,6 +109,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 ---
 
 ### 🏅 4. GitRank — Global Leaderboard
+
 - Ranks users based on their unified RankerHub score.
 - **Sub-Leaderboards:**
   - Top 10 Developers
@@ -115,6 +122,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 ---
 
 ### 🏫 5. College vs College Leaderboard
+
 - Every user represents their college.
 - Colleges are ranked by the combined RankerHub scores of all their students.
 - Massive engagement driver — compete for your institution.
@@ -129,6 +137,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 ---
 
 ### 👩‍💻 6. RankHer Leaderboard
+
 - A dedicated space celebrating **female developer achievements**.
 - Gender-filtered GitRank, DSA leaderboard, and contest rankings.
 - Exclusive RankHer badges and achievements to promote diversity in tech.
@@ -136,6 +145,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 ---
 
 ### 🌌 7. CodingVerse — Interactive Challenges
+
 - **Theory Challenges**: MCQ and text-input questions covering:
   - Object-Oriented Programming (OOP)
   - Database Management Systems (DBMS)
@@ -147,6 +157,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 ---
 
 ### 🦉 8. CodingOwl — AI Activity Assistant
+
 - Meet **Oliver the Owl**: an AI-powered assistant that:
   - Tracks and summarizes your activity across all platforms
   - Shows your ranking trends and score breakdowns
@@ -157,6 +168,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 ---
 
 ### 🎖️ 9. Hackathon & Course Activity (Self-Reported + AI Verified)
+
 Students self-report their achievements with proof:
 
 ```
@@ -175,6 +187,7 @@ Certificate stored permanently on your RankerHub profile as verified proof — m
 ---
 
 ### 💚 10. Repo Health Analyzer
+
 - Scans any public GitHub repository for quality metrics:
   - README existence and quality
   - LICENSE file
@@ -187,6 +200,7 @@ Certificate stored permanently on your RankerHub profile as verified proof — m
 ---
 
 ### 🎨 11. Developer Card Builder
+
 - Dynamic HTML5/SVG profile card generator.
 - Showcases your RankerHub score, platform stats, streaks, and badges.
 - One-click download and share to GitHub profile, LinkedIn, or Twitter.
@@ -195,6 +209,7 @@ Certificate stored permanently on your RankerHub profile as verified proof — m
 ---
 
 ### 📅 12. Monthly Dev Digest
+
 Auto-generated monthly summary shareable on LinkedIn / Twitter:
 
 ```
@@ -211,24 +226,27 @@ One-click share. Every post is free marketing for RankerHub.
 ---
 
 ### 👥 13. Matchmaker & Friends
+
 - **Find Coding Buddies**: Match with developers who share your skills, availability, and interests.
 - **Follow System**: Track classmates and friends — monitor their streaks and leaderboard movement.
 
 ---
 
 ### 🎯 14. Streak & Achievement System
+
 - **Daily Streaks**: Encourages consistent activity across platforms.
 - **Badges & Accomplishments**: Unlock standard and rare achievements:
-  - *First Solve*, *Consistency King*, *Java Master*
-  - *Open Source Starter*, *Contest Warrior*
-  - *RankHer Top 10*, *Hackathon Champion*
-  - *Certified Pro* (for verified certifications)
+  - _First Solve_, _Consistency King_, _Java Master_
+  - _Open Source Starter_, _Contest Warrior_
+  - _RankHer Top 10_, _Hackathon Champion_
+  - _Certified Pro_ (for verified certifications)
 
 ---
 
 ## 🗄️ Database Schema
 
 ### `users` Collection (`/users/{uid}`)
+
 ```json
 {
   "uid": "Firebase Auth UID",
@@ -261,6 +279,7 @@ One-click share. Every post is free marketing for RankerHub.
 ```
 
 ### `referrals` Collection (`/referrals/{uid}`)
+
 ```json
 {
   "uid": "Referrer User UID",
@@ -271,6 +290,7 @@ One-click share. Every post is free marketing for RankerHub.
 ```
 
 ### `certificates` Collection (`/certificates/{docId}`)
+
 ```json
 {
   "uid": "User UID",
@@ -289,25 +309,27 @@ One-click share. Every post is free marketing for RankerHub.
 
 ## 🏗️ Technical Stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React + Vite, Tailwind CSS, React Router, Framer Motion, Lucide Icons, Swiper |
-| **Backend** | Serverless — Google Firebase |
-| **Auth** | Firebase Authentication + GitHub OAuth |
-| **Database** | Cloud Firestore (real-time NoSQL) |
-| **Hosting** | Firebase Hosting |
-| **AI** | Firebase AI Logic (Gemini API) — CodingOwl + Certificate OCR |
-| **APIs** | GitHub REST API, Codeforces API, LeetCode GraphQL, GFG & HackerRank public profiles |
+| Layer        | Technology                                                                          |
+| ------------ | ----------------------------------------------------------------------------------- |
+| **Frontend** | React + Vite, Tailwind CSS, React Router, Framer Motion, Lucide Icons, Swiper       |
+| **Backend**  | Serverless — Google Firebase                                                        |
+| **Auth**     | Firebase Authentication + GitHub OAuth                                              |
+| **Database** | Cloud Firestore (real-time NoSQL)                                                   |
+| **Hosting**  | Firebase Hosting                                                                    |
+| **AI**       | Firebase AI Logic (Gemini API) — CodingOwl + Certificate OCR                        |
+| **APIs**     | GitHub REST API, Codeforces API, LeetCode GraphQL, GFG & HackerRank public profiles |
 
 ---
 
 ## ⚙️ Setup & Installation
 
 ### Prerequisites
+
 - [Node.js](https://nodejs.org/) (v20.0.0 or higher)
 - [Git](https://git-scm.com/)
 
 ### Clone & Install
+
 ```bash
 git clone https://github.com/indresh404/RankerHub.git
 cd RankerHub
@@ -315,11 +337,13 @@ npm install
 ```
 
 ### Configure Environment Variables
+
 ```bash
 cp .env.example .env
 ```
 
 Fill in `.env`:
+
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -331,6 +355,7 @@ VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
 ### Run
+
 ```bash
 npm run dev       # Local development
 npm run test      # Unit tests
@@ -341,5 +366,6 @@ npm run build     # Production build
 ---
 
 ## 👥 Project Maintainer
+
 - **Maintainer**: [@indresh404](https://github.com/indresh404)
 - **Program**: Proudly built for **Nexus Summer of Code 2026 (NSoC 2026)**

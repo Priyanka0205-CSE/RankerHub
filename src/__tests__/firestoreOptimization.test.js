@@ -48,7 +48,7 @@ describe("FirestoreCache", () => {
       name: "Charlie",
       score: 20,
       skills: ["JS"],
-      active: true
+      active: true,
     });
 
     // Verify retrieval
@@ -56,7 +56,7 @@ describe("FirestoreCache", () => {
       name: "Charlie",
       score: 20,
       skills: ["JS"],
-      active: true
+      active: true,
     });
   });
 

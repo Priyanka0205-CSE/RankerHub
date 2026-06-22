@@ -55,7 +55,7 @@ export const addDaysToDateString = (dateStr, days) => {
 export const calculateGithubStreak = (
   eventTimestamps,
   timeZone,
-  referenceDate = new Date()
+  referenceDate = new Date(),
 ) => {
   const tz = resolveTimezone(timeZone);
   const eventDates = new Set();
@@ -93,7 +93,7 @@ export const evaluateLoginStreak = (
   lastLoginIso,
   currentLoginIso,
   currentStreak,
-  timeZone
+  timeZone,
 ) => {
   const tz = resolveTimezone(timeZone);
   const currentDateStr = toLocalDateString(currentLoginIso, tz);
@@ -122,7 +122,7 @@ export const evaluateCodingVerseStreak = (
   lastSolveDateStr,
   currentStreak,
   timeZone,
-  referenceDate = new Date()
+  referenceDate = new Date(),
 ) => {
   const tz = resolveTimezone(timeZone);
   const todayStr = toLocalDateString(referenceDate, tz);

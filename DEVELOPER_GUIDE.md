@@ -1,4 +1,3 @@
-
 # 🛠️ RankerHub Developer Environment Setup Guide
 
 Welcome to the RankerHub developer documentation! This guide will help you set up the project locally on your machine, connect it to your own Firebase development environment, and start contributing.
@@ -148,4 +147,4 @@ Wait for review and feedback.
 
 🚀 Happy Coding
 Thanks for contributing to RankerHub. We appreciate your help in making the project better for everyone.
-````
+```

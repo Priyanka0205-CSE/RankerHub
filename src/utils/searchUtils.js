@@ -69,8 +69,7 @@ export const filterByLanguage = (users, language) => {
   if (!language || language === "All") return users;
   return users.filter(
     (user) =>
-      user.language &&
-      user.language.toLowerCase() === language.toLowerCase()
+      user.language && user.language.toLowerCase() === language.toLowerCase(),
   );
 };
 
@@ -84,9 +83,7 @@ export const filterByRole = (users, role) => {
   if (!role) return users;
   const roleSearch = role.toLowerCase();
   return users.filter(
-    (user) =>
-      user.role &&
-      user.role.toLowerCase().includes(roleSearch)
+    (user) => user.role && user.role.toLowerCase().includes(roleSearch),
   );
 };
 
@@ -139,7 +136,7 @@ export const getSearchSuggestions = (users, query) => {
         suggestionsMap.set(key, {
           type: "name",
           value: name,
-          display: `${name} (@${username})`
+          display: `${name} (@${username})`,
         });
       }
     }
@@ -150,7 +147,7 @@ export const getSearchSuggestions = (users, query) => {
         suggestionsMap.set(key, {
           type: "username",
           value: username,
-          display: `@${username}`
+          display: `@${username}`,
         });
       }
     }
@@ -161,7 +158,7 @@ export const getSearchSuggestions = (users, query) => {
         suggestionsMap.set(key, {
           type: "language",
           value: user.language,
-          display: `Language: ${user.language}`
+          display: `Language: ${user.language}`,
         });
       }
     }
@@ -173,7 +170,7 @@ export const getSearchSuggestions = (users, query) => {
         suggestionsMap.set(key, {
           type: "role",
           value: user.role,
-          display: `Role: ${user.role}`
+          display: `Role: ${user.role}`,
         });
       }
     }

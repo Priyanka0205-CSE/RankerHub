@@ -10,9 +10,8 @@ const MobileSearchInput = ({ onClose }) => {
   const navigate = useNavigate();
   const inputRef = useRef(null);
 
-  const searchResults = query.trim().length > 0
-    ? searchLeaderboard(query).slice(0, 5)
-    : [];
+  const searchResults =
+    query.trim().length > 0 ? searchLeaderboard(query).slice(0, 5) : [];
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -77,7 +76,9 @@ const MobileSearchInput = ({ onClose }) => {
                       {user.name}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      @{user.username}{" • "}{user.language}
+                      @{user.username}
+                      {" • "}
+                      {user.language}
                     </p>
                   </div>
                 </button>

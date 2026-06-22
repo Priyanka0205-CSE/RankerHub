@@ -17,7 +17,11 @@ export const getYesterdayString = () => {
 /**
  * Calculates updated streak with 1-day grace period logic
  */
-export const calculateStreak = (lastActiveDate, currentStreak, streakFreezes = 0) => {
+export const calculateStreak = (
+  lastActiveDate,
+  currentStreak,
+  streakFreezes = 0,
+) => {
   const today = getTodayString();
   const yesterday = getYesterdayString();
 

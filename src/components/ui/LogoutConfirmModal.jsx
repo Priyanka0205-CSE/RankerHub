@@ -29,9 +29,12 @@ export const LogoutConfirmModal = ({ onClose, onConfirm }) => {
 
         {/* Header */}
         <div className="space-y-1">
-          <h3 className="text-xl font-black text-slate-900 dark:text-white my-0">Confirm Logout</h3>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white my-0">
+            Confirm Logout
+          </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
-            Are you sure you want to log out of RankerHub? You will need to sign in again to access your developer overview stats.
+            Are you sure you want to log out of RankerHub? You will need to sign
+            in again to access your developer overview stats.
           </p>
         </div>
 

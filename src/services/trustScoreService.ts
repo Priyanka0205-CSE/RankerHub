@@ -66,10 +66,10 @@ export const calculateTrustScore = (
   stats: GitHubStats,
   events: GitHubEvent[],
   repos: GitHubRepo[],
-  mergedPRsCount: number
+  mergedPRsCount: number,
 ): TrustBreakdown => {
   const lowerUsername = username.toLowerCase();
-  
+
   // 1. Base Score
   const baseScore = 50;
 
@@ -94,8 +94,8 @@ export const calculateTrustScore = (
   // C. Contributions to External Repositories (Max 15 pts)
   let externalPoints = 0;
   let externalCount = 0;
-  
-  events.forEach(event => {
+
+  events.forEach((event) => {
     if (event.repo && event.repo.name) {
       const parts = event.repo.name.split("/");
       const owner = parts[0]?.toLowerCase();
@@ -129,12 +129,23 @@ export const calculateTrustScore = (
   let lowContentDeduction = 0;
   let totalCommitsParsed = 0;
   let lowContentCommitsCount = 0;
-  const suspiciousKeywords = ["fix", "update", "test", "commit", "temp", "a", "asdf", "dummy", "wip", "hello"];
+  const suspiciousKeywords = [
+    "fix",
+    "update",
+    "test",
+    "commit",
+    "temp",
+    "a",
+    "asdf",
+    "dummy",
+    "wip",
+    "hello",
+  ];
 
-  const pushEvents = events.filter(e => e.type === "PushEvent");
-  pushEvents.forEach(e => {
+  const pushEvents = events.filter((e) => e.type === "PushEvent");
+  pushEvents.forEach((e) => {
     const commitsList = e.payload?.commits || [];
-    commitsList.forEach(c => {
+    commitsList.forEach((c) => {
       totalCommitsParsed++;
       const message = c.message.trim().toLowerCase();
       if (message.length < 6 || suspiciousKeywords.includes(message)) {
@@ -152,9 +163,9 @@ export const calculateTrustScore = (
   // B. Repeated Identical Commits (Max -10 pts)
   let repeatedCommitDeduction = 0;
   const commitMessages: string[] = [];
-  pushEvents.forEach(e => {
+  pushEvents.forEach((e) => {
     const commitsList = e.payload?.commits || [];
-    commitsList.forEach(c => {
+    commitsList.forEach((c) => {
       commitMessages.push(c.message.trim().toLowerCase());
     });
   });
@@ -178,8 +189,12 @@ export const calculateTrustScore = (
   let selfActivityCount = 0;
   let totalActivityCount = 0;
 
-  events.forEach(e => {
-    if (e.type === "PushEvent" || e.type === "PullRequestEvent" || e.type === "IssuesEvent") {
+  events.forEach((e) => {
+    if (
+      e.type === "PushEvent" ||
+      e.type === "PullRequestEvent" ||
+      e.type === "IssuesEvent"
+    ) {
       totalActivityCount++;
       const parts = e.repo?.name?.split("/");
       const owner = parts[0]?.toLowerCase();
@@ -198,8 +213,15 @@ export const calculateTrustScore = (
     0,
     Math.min(
       100,
-      baseScore + prMergePoints + reviewPoints + externalPoints + appreciationPoints - (lowContentDeduction + repeatedCommitDeduction + concentrationDeduction)
-    )
+      baseScore +
+        prMergePoints +
+        reviewPoints +
+        externalPoints +
+        appreciationPoints -
+        (lowContentDeduction +
+          repeatedCommitDeduction +
+          concentrationDeduction),
+    ),
   );
 
   return {
@@ -211,7 +233,7 @@ export const calculateTrustScore = (
     lowContentDeduction,
     repeatedCommitDeduction,
     concentrationDeduction,
-    totalScore
+    totalScore,
   };
 };
 
@@ -228,7 +250,8 @@ export const getTrustTier = (score: number): TrustTier => {
       label: "High Trust",
       color: "text-emerald-500",
       badgeBg: "bg-emerald-500/10 border-emerald-500/20",
-      description: "Outstanding contribution quality, active peer code reviews, and strong open-source presence."
+      description:
+        "Outstanding contribution quality, active peer code reviews, and strong open-source presence.",
     };
   }
   if (score >= 70) {
@@ -236,7 +259,8 @@ export const getTrustTier = (score: number): TrustTier => {
       label: "Verified",
       color: "text-blue-500",
       badgeBg: "bg-blue-500/10 border-blue-500/20",
-      description: "Consistent, legitimate activities across multiple public repositories with clear documentation."
+      description:
+        "Consistent, legitimate activities across multiple public repositories with clear documentation.",
     };
   }
   if (score >= 50) {
@@ -244,13 +268,15 @@ export const getTrustTier = (score: number): TrustTier => {
       label: "Basic",
       color: "text-slate-400 dark:text-slate-500",
       badgeBg: "bg-slate-500/10 border-slate-500/20",
-      description: "Initial ranking signal. Contributions are valid but concentrated in self-owned repositories."
+      description:
+        "Initial ranking signal. Contributions are valid but concentrated in self-owned repositories.",
     };
   }
   return {
     label: "Low Trust",
     color: "text-amber-500",
     badgeBg: "bg-amber-500/10 border-amber-500/20",
-    description: "Suspicious commit frequency, low-content messages, or repetitive commit triggers detected."
+    description:
+      "Suspicious commit frequency, low-content messages, or repetitive commit triggers detected.",
   };
 };

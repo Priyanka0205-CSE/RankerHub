@@ -24,8 +24,8 @@ const AppContent = () => {
 function App() {
   useEffect(() => {
     const path = window.location.pathname;
-    if (path !== '/' && path !== '/index.html') {
-      window.location.replace('/#' + path);
+    if (path !== "/" && path !== "/index.html") {
+      window.location.replace("/#" + path);
     }
   }, []);
 

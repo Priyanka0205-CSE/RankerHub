@@ -3,8 +3,8 @@
  * Resolves Issue #346 - NSoC '26
  */
 
-const ETAG_CACHE_PREFIX = 'gh_etag_';
-const DATA_CACHE_PREFIX = 'gh_data_';
+const ETAG_CACHE_PREFIX = "gh_etag_";
+const DATA_CACHE_PREFIX = "gh_data_";
 
 // 🔒 Cryptographic Leak Isolation: Token is stored ONLY in ephemeral memory.
 // It never touches localStorage, cookies, or console logs.
@@ -25,18 +25,18 @@ export const clearGitHubAuthToken = () => {
 export const fetchGitHubData = async (endpoint) => {
   try {
     const headers = {
-      'Accept': 'application/vnd.github.v3+json',
+      Accept: "application/vnd.github.v3+json",
     };
 
     // Safely inject token if available
     if (ephemeralAccessToken) {
-      headers['Authorization'] = `Bearer ${ephemeralAccessToken}`;
+      headers["Authorization"] = `Bearer ${ephemeralAccessToken}`;
     }
 
     // 💡 Conditional ETag Ingestion: Check lightweight local store
     const cachedETag = localStorage.getItem(ETAG_CACHE_PREFIX + endpoint);
     if (cachedETag) {
-      headers['If-None-Match'] = cachedETag; // Prevents API quota usage if data is unchanged
+      headers["If-None-Match"] = cachedETag; // Prevents API quota usage if data is unchanged
     }
 
     const response = await fetch(endpoint, { headers });
@@ -51,12 +51,16 @@ export const fetchGitHubData = async (endpoint) => {
 
     // Handle Rate Limit Lockouts securely
     if (response.status === 403 || response.status === 429) {
-      const remaining = response.headers.get('x-ratelimit-remaining');
-      if (remaining === '0') {
-        console.warn("[GitHub API] Rate limit hit. Serving stale cache if available to prevent lockout.");
+      const remaining = response.headers.get("x-ratelimit-remaining");
+      if (remaining === "0") {
+        console.warn(
+          "[GitHub API] Rate limit hit. Serving stale cache if available to prevent lockout.",
+        );
         const fallbackData = localStorage.getItem(DATA_CACHE_PREFIX + endpoint);
         if (fallbackData) return JSON.parse(fallbackData);
-        throw new Error("GitHub API Rate Limit Exceeded and no cache available.");
+        throw new Error(
+          "GitHub API Rate Limit Exceeded and no cache available.",
+        );
       }
     }
 
@@ -66,7 +70,7 @@ export const fetchGitHubData = async (endpoint) => {
 
     // Process new data
     const data = await response.json();
-    const newETag = response.headers.get('etag');
+    const newETag = response.headers.get("etag");
 
     // Update lightweight local store with new ETag and Payload
     if (newETag) {
@@ -75,12 +79,16 @@ export const fetchGitHubData = async (endpoint) => {
     }
 
     return data;
-
   } catch (error) {
     // 🛡️ Cryptographic Leak Isolation: Sanitize error logs
-    console.error("[GitHub Interceptor] Request failed for endpoint:", endpoint.split('?')[0]);
-    
+    console.error(
+      "[GitHub Interceptor] Request failed for endpoint:",
+      endpoint.split("?")[0],
+    );
+
     // Fixed: Attached the original error as 'cause' to satisfy 'preserve-caught-error'
-    throw new Error("GitHub fetch operation failed gracefully.", { cause: error });
+    throw new Error("GitHub fetch operation failed gracefully.", {
+      cause: error,
+    });
   }
 };

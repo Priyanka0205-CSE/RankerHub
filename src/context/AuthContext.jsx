@@ -5,7 +5,7 @@ import {
   onAuthStateChanged,
   getAdditionalUserInfo,
   getRedirectResult,
-  GithubAuthProvider
+  GithubAuthProvider,
 } from "firebase/auth";
 import {
   doc,
@@ -15,12 +15,15 @@ import {
   onSnapshot,
   writeBatch,
   serverTimestamp,
-  runTransaction
+  runTransaction,
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 import { validateUserData } from "../utils/inputValidation";
-import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
+import {
+  userDataCache,
+  listenerOptimizer,
+} from "../utils/firestoreOptimization";
 
 const AuthContext = createContext({});
 
@@ -42,9 +45,14 @@ const checkAndUpdateStreak = async (data, docRef) => {
 
       const latestData = userDoc.data();
       const currentNow = new Date();
-      const latestLastLogin = latestData.lastLogin ? new Date(latestData.lastLogin) : null;
+      const latestLastLogin = latestData.lastLogin
+        ? new Date(latestData.lastLogin)
+        : null;
 
-      if (latestLastLogin && latestLastLogin.toDateString() === currentNow.toDateString()) {
+      if (
+        latestLastLogin &&
+        latestLastLogin.toDateString() === currentNow.toDateString()
+      ) {
         return;
       }
 
@@ -68,12 +76,16 @@ const checkAndUpdateStreak = async (data, docRef) => {
         newStreak = 1;
       }
 
-      const newTotalPoints = (latestData.points?.gitRankPoints || 0) +
-                             (latestData.points?.referralPoints || 0) +
-                             (latestData.points?.codingVersePoints || 0) +
-                             newStreakPoints;
+      const newTotalPoints =
+        (latestData.points?.gitRankPoints || 0) +
+        (latestData.points?.referralPoints || 0) +
+        (latestData.points?.codingVersePoints || 0) +
+        newStreakPoints;
 
-      const newLongestStreak = Math.max(latestData.longestStreak || 0, newStreak);
+      const newLongestStreak = Math.max(
+        latestData.longestStreak || 0,
+        newStreak,
+      );
 
       transaction.update(docRef, {
         streak: newStreak,
@@ -81,7 +93,7 @@ const checkAndUpdateStreak = async (data, docRef) => {
         lastLogin: currentNow.toISOString(),
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints,
-        hubCoins: (data.hubCoins || 0) + 10
+        hubCoins: (data.hubCoins || 0) + 10,
       });
     });
   } catch (err) {
@@ -116,9 +128,14 @@ export const AuthProvider = ({ children }) => {
           }
 
           const additionalInfo = getAdditionalUserInfo(result);
-          const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();
+          const githubUsername = (
+            additionalInfo?.username ||
+            authUser.displayName ||
+            ""
+          ).trim();
           const githubId = additionalInfo?.profile?.id || null;
-          const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
+          const avatar =
+            additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
           const userDocRef = doc(db, "users", authUser.uid);
           const docSnap = await getDoc(userDocRef);
@@ -145,15 +162,19 @@ export const AuthProvider = ({ children }) => {
                 streakPoints: 0,
                 referralPoints: 0,
                 auditorPoints: 0,
-                totalPoints: 0
+                totalPoints: 0,
               },
-              lastAuditReward: null
+              lastAuditReward: null,
             };
             await setDoc(userDocRef, skeletalUser);
           } else {
-            await setDoc(userDocRef, {
-              lastLogin: new Date().toISOString(),
-            }, { merge: true });
+            await setDoc(
+              userDocRef,
+              {
+                lastLogin: new Date().toISOString(),
+              },
+              { merge: true },
+            );
           }
         }
       })
@@ -180,31 +201,42 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         }
 
-        unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
+        unsubscribeSnapshot = onSnapshot(
+          userDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
 
-            userDataCache.set(docPath, data);
+              userDataCache.set(docPath, data);
 
-            listenerOptimizer.debounce(currentUser.uid, (userData) => {
-              setUserData(userData);
-              setIsOnboarding(userData.onboardingStatus === "incomplete");
-              setLoading(false);
-            }, data);
+              listenerOptimizer.debounce(
+                currentUser.uid,
+                (userData) => {
+                  setUserData(userData);
+                  setIsOnboarding(userData.onboardingStatus === "incomplete");
+                  setLoading(false);
+                },
+                data,
+              );
 
-            checkAndUpdateStreak(data, userDocRef);
-          } else {
-            userDataCache.delete(docPath);
-            listenerOptimizer.debounce(currentUser.uid, () => {
-              setUserData(null);
-              setIsOnboarding(true);
-              setLoading(false);
-            }, null);
-          }
-        }, (_error) => {
-          setLoading(false);
-        });
-
+              checkAndUpdateStreak(data, userDocRef);
+            } else {
+              userDataCache.delete(docPath);
+              listenerOptimizer.debounce(
+                currentUser.uid,
+                () => {
+                  setUserData(null);
+                  setIsOnboarding(true);
+                  setLoading(false);
+                },
+                null,
+              );
+            }
+          },
+          (_error) => {
+            setLoading(false);
+          },
+        );
       } else {
         setUser(null);
         setUserData(null);
@@ -224,7 +256,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = JSON.parse(e.newValue);
         if (!payload || payload.uid !== auth?.currentUser?.uid) return;
-        setUserData(prev => {
+        setUserData((prev) => {
           if (!prev) return prev;
           return { ...prev, avatar: payload.avatar };
         });
@@ -233,8 +265,9 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    window.addEventListener("storage", e => handleStorageChange(e));
-    return () => window.removeEventListener("storage", e => handleStorageChange(e));
+    window.addEventListener("storage", (e) => handleStorageChange(e));
+    return () =>
+      window.removeEventListener("storage", (e) => handleStorageChange(e));
   }, []);
 
   const login = async (requestRepoScope = true) => {
@@ -250,7 +283,7 @@ export const AuthProvider = ({ children }) => {
         githubUsername: additionalInfo?.username || authUser.displayName || "",
         name: authUser.displayName || additionalInfo?.username || "Developer",
         email: authUser.email || "",
-        avatar: additionalInfo?.profile?.avatar_url || authUser.photoURL || ""
+        avatar: additionalInfo?.profile?.avatar_url || authUser.photoURL || "",
       };
 
       const validation = validateUserData(rawUserData);
@@ -291,19 +324,23 @@ export const AuthProvider = ({ children }) => {
             streakPoints: 10,
             referralPoints: 0,
             auditorPoints: 0,
-            totalPoints: 10
+            totalPoints: 10,
           },
           hubCoins: 500,
           inventory: ["oliver"],
           activeMascot: "oliver",
-          lastAuditReward: null
+          lastAuditReward: null,
         };
         await setDoc(userDocRef, skeletalUser);
       } else {
-        await setDoc(userDocRef, {
-          lastLogin: today.toISOString(),
-          ...(requestRepoScope && { privateRepoSyncEnabled: true })
-        }, { merge: true });
+        await setDoc(
+          userDocRef,
+          {
+            lastLogin: today.toISOString(),
+            ...(requestRepoScope && { privateRepoSyncEnabled: true }),
+          },
+          { merge: true },
+        );
       }
 
       return authUser;
@@ -346,15 +383,16 @@ export const AuthProvider = ({ children }) => {
         const liveInventory = liveData.inventory || ["oliver"];
 
         if (liveCoins < price) throw new Error("Insufficient HubCoins");
-        if (liveInventory.includes(mascotId)) throw new Error("Mascot already owned");
+        if (liveInventory.includes(mascotId))
+          throw new Error("Mascot already owned");
 
         transaction.update(userRef, {
           hubCoins: liveCoins - price,
           inventory: [...liveInventory, mascotId],
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         });
       });
-      setUserData(prev => ({
+      setUserData((prev) => ({
         ...prev,
         hubCoins: (prev.hubCoins ?? 0) - price,
         inventory: [...(prev.inventory || ["oliver"]), mascotId],
@@ -368,13 +406,14 @@ export const AuthProvider = ({ children }) => {
   const equipMascot = async (mascotId) => {
     if (!user || !userData) throw new Error("Not authenticated");
     const currentInventory = userData.inventory || ["oliver"];
-    if (!currentInventory.includes(mascotId)) throw new Error("Mascot not owned");
+    if (!currentInventory.includes(mascotId))
+      throw new Error("Mascot not owned");
 
     try {
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, {
         activeMascot: mascotId,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
     } catch (err) {
       console.error("Failed to equip mascot:", err);
@@ -393,7 +432,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(trimmedUsername)) {
-      throw new Error("GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.");
+      throw new Error(
+        "GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.",
+      );
     }
 
     const encodedUsername = encodeURIComponent(trimmedUsername);
@@ -401,9 +442,12 @@ export const AuthProvider = ({ children }) => {
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {
-      const { data: profileData, rateLimitError: profileRateLimit } = await githubFetch(() =>
-        axios.get(`https://api.github.com/users/${encodedUsername}`, { headers })
-      );
+      const { data: profileData, rateLimitError: profileRateLimit } =
+        await githubFetch(() =>
+          axios.get(`https://api.github.com/users/${encodedUsername}`, {
+            headers,
+          }),
+        );
       if (profileRateLimit) {
         const profileRateLimitError = new Error(profileRateLimit);
         throw new Error(profileRateLimit, { cause: profileRateLimitError });
@@ -414,16 +458,26 @@ export const AuthProvider = ({ children }) => {
       let stars = 0;
       let primaryLanguage = "JavaScript";
       try {
-        const { data: reposData, rateLimitError: reposRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`, { headers })
-        );
+        const { data: reposData, rateLimitError: reposRateLimit } =
+          await githubFetch(() =>
+            axios.get(
+              `https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`,
+              { headers },
+            ),
+          );
         if (!reposRateLimit && reposData) {
-          stars = reposData.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
+          stars = reposData.reduce(
+            (sum, r) => sum + (r.stargazers_count || 0),
+            0,
+          );
           const langCounts = {};
-          reposData.forEach(r => {
-            if (r.language) langCounts[r.language] = (langCounts[r.language] || 0) + 1;
+          reposData.forEach((r) => {
+            if (r.language)
+              langCounts[r.language] = (langCounts[r.language] || 0) + 1;
           });
-          const sortedLangs = Object.keys(langCounts).sort((a, b) => langCounts[b] - langCounts[a]);
+          const sortedLangs = Object.keys(langCounts).sort(
+            (a, b) => langCounts[b] - langCounts[a],
+          );
           if (sortedLangs.length > 0) primaryLanguage = sortedLangs[0];
         }
       } catch (err) {
@@ -432,9 +486,13 @@ export const AuthProvider = ({ children }) => {
 
       let commits = 0;
       try {
-        const { data: commitsData, rateLimitError: commitsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers })
-        );
+        const { data: commitsData, rateLimitError: commitsRateLimit } =
+          await githubFetch(() =>
+            axios.get(
+              `https://api.github.com/search/commits?q=author:${encodedUsername}`,
+              { headers },
+            ),
+          );
         if (commitsRateLimit) console.warn(commitsRateLimit);
         else commits = commitsData?.total_count || 0;
       } catch (err) {
@@ -443,9 +501,13 @@ export const AuthProvider = ({ children }) => {
 
       let prs = 0;
       try {
-        const { data: prsData, rateLimitError: prsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers })
-        );
+        const { data: prsData, rateLimitError: prsRateLimit } =
+          await githubFetch(() =>
+            axios.get(
+              `https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`,
+              { headers },
+            ),
+          );
         if (prsRateLimit) console.warn(prsRateLimit);
         else prs = prsData?.total_count || 0;
       } catch (err) {
@@ -454,9 +516,13 @@ export const AuthProvider = ({ children }) => {
 
       let reviews = 0;
       try {
-        const { data: reviewsData, rateLimitError: reviewsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers })
-        );
+        const { data: reviewsData, rateLimitError: reviewsRateLimit } =
+          await githubFetch(() =>
+            axios.get(
+              `https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`,
+              { headers },
+            ),
+          );
         if (reviewsRateLimit) console.warn(reviewsRateLimit);
         else reviews = reviewsData?.total_count || 0;
       } catch (err) {
@@ -465,18 +531,24 @@ export const AuthProvider = ({ children }) => {
 
       let githubStreak = 0;
       try {
-        const { data: eventsData, rateLimitError: eventsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/users/${username}/events?per_page=100`, { headers })
-        );
+        const { data: eventsData, rateLimitError: eventsRateLimit } =
+          await githubFetch(() =>
+            axios.get(
+              `https://api.github.com/users/${username}/events?per_page=100`,
+              { headers },
+            ),
+          );
         if (!eventsRateLimit && eventsData) {
           const eventDates = new Set(
-            eventsData.filter(e => e.created_at).map(e => e.created_at.split('T')[0])
+            eventsData
+              .filter((e) => e.created_at)
+              .map((e) => e.created_at.split("T")[0]),
           );
           const today = new Date();
-          const todayStr = today.toISOString().split('T')[0];
+          const todayStr = today.toISOString().split("T")[0];
           const yesterday = new Date(today);
           yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          const yesterdayStr = yesterday.toISOString().split("T")[0];
           let dateToCheck = new Date(today);
           if (eventDates.has(todayStr)) {
             // active today
@@ -487,7 +559,7 @@ export const AuthProvider = ({ children }) => {
           }
           if (dateToCheck) {
             while (true) {
-              const checkStr = dateToCheck.toISOString().split('T')[0];
+              const checkStr = dateToCheck.toISOString().split("T")[0];
               if (eventDates.has(checkStr)) {
                 githubStreak++;
                 dateToCheck.setDate(dateToCheck.getDate() - 1);
@@ -499,10 +571,20 @@ export const AuthProvider = ({ children }) => {
         console.warn("GitHub events retrieval failed for streak:", err);
       }
 
-      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10) + (githubStreak * 10);
+      const gitRankPoints =
+        commits * 2 + prs * 5 + reviews * 10 + githubStreak * 10;
 
-      return { commits, prs, reviews, publicRepos, stars, followers, primaryLanguage, githubStreak, gitRankPoints };
-
+      return {
+        commits,
+        prs,
+        reviews,
+        publicRepos,
+        stars,
+        followers,
+        primaryLanguage,
+        githubStreak,
+        gitRankPoints,
+      };
     } catch (error) {
       const rateLimitMsg = getRateLimitMessage(error);
       if (rateLimitMsg) {
@@ -510,7 +592,17 @@ export const AuthProvider = ({ children }) => {
         throw new Error(rateLimitMsg, { cause: error });
       }
       console.error("Error executing GitHub stats fetcher snapshot:", error);
-      return { commits: 0, prs: 0, reviews: 0, publicRepos: 0, stars: 0, followers: 0, primaryLanguage: "JavaScript", githubStreak: 0, gitRankPoints: 0 };
+      return {
+        commits: 0,
+        prs: 0,
+        reviews: 0,
+        publicRepos: 0,
+        stars: 0,
+        followers: 0,
+        primaryLanguage: "JavaScript",
+        githubStreak: 0,
+        gitRankPoints: 0,
+      };
     }
   };
 
@@ -534,7 +626,8 @@ export const AuthProvider = ({ children }) => {
       const userRef = doc(db, "users", user.uid);
 
       const userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) throw new Error("User document does not exist in Firestore!");
+      if (!userDoc.exists())
+        throw new Error("User document does not exist in Firestore!");
 
       const liveData = userDoc.data();
       const currentReferralPoints = liveData.points?.referralPoints || 0;
@@ -542,7 +635,11 @@ export const AuthProvider = ({ children }) => {
       const currentStreakPoints = liveData.points?.streakPoints || 0;
 
       const newGitRankPoints = ghStats.gitRankPoints;
-      const newTotalPoints = newGitRankPoints + currentReferralPoints + currentCodingVersePoints + currentStreakPoints;
+      const newTotalPoints =
+        newGitRankPoints +
+        currentReferralPoints +
+        currentCodingVersePoints +
+        currentStreakPoints;
 
       const batch = writeBatch(db);
       batch.update(userRef, {
@@ -553,10 +650,10 @@ export const AuthProvider = ({ children }) => {
         "githubStats.stars": ghStats.stars,
         "githubStats.followers": ghStats.followers,
         "githubStats.primaryLanguage": ghStats.primaryLanguage,
-        "githubStreak": ghStats.githubStreak,
+        githubStreak: ghStats.githubStreak,
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
-        "lastSync": serverTimestamp()
+        lastSync: serverTimestamp(),
       });
 
       await batch.commit();
@@ -571,7 +668,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData, purchaseMascot, equipMascot }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userData,
+        loading,
+        isOnboarding,
+        login,
+        logout,
+        fetchGitHubStats,
+        syncGitHubData,
+        ghAccessToken,
+        setUserData,
+        purchaseMascot,
+        equipMascot,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

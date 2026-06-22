@@ -3,19 +3,34 @@ import {
   searchLeaderboard,
   filterByLanguage,
   filterByRole,
-  getSearchSuggestions
+  getSearchSuggestions,
 } from "../utils/searchUtils";
 
 // Mock the leaderboard data modules since they are empty in main
 vi.mock("../data/leaderboard", () => {
   return {
     leaderboardData: [
-      { name: "Alice Smith", username: "alice", role: "Frontend Developer", language: "JavaScript" },
-      { name: "Bob Johnson", username: "bob", role: "Backend Developer", language: "Python" }
+      {
+        name: "Alice Smith",
+        username: "alice",
+        role: "Frontend Developer",
+        language: "JavaScript",
+      },
+      {
+        name: "Bob Johnson",
+        username: "bob",
+        role: "Backend Developer",
+        language: "Python",
+      },
     ],
     womenLeaderboardData: [
-      { name: "Clara Davis", username: "clara", role: "Engineering Lead", language: "Go" }
-    ]
+      {
+        name: "Clara Davis",
+        username: "clara",
+        role: "Engineering Lead",
+        language: "Go",
+      },
+    ],
   };
 });
 
@@ -39,9 +54,9 @@ describe("searchUtils", () => {
         return {
           leaderboardData: [
             { name: null, username: "usernameonly", role: "Dev" },
-            { name: "NoUsername", username: undefined, role: "Dev" }
+            { name: "NoUsername", username: undefined, role: "Dev" },
           ],
-          womenLeaderboardData: []
+          womenLeaderboardData: [],
         };
       });
 
@@ -56,7 +71,7 @@ describe("searchUtils", () => {
       { name: "Alice Smith", username: "alice" },
       { name: "Bob Jones", username: "bob" },
       { name: undefined, username: "guest123" },
-      { name: "Guest User", username: null }
+      { name: "Guest User", username: null },
     ];
 
     it("should generate suggestions based on partial input", () => {
@@ -70,24 +85,24 @@ describe("searchUtils", () => {
       expect(() => getSearchSuggestions(users, "guest")).not.toThrow();
       const suggestions = getSearchSuggestions(users, "guest");
       // Guest User match
-      expect(suggestions.some(s => s.value === "Guest User")).toBe(true);
+      expect(suggestions.some((s) => s.value === "Guest User")).toBe(true);
     });
 
     it("should prevent duplicate suggestions when multiple users match the same suggestion value", () => {
       const usersWithDupes = [
         { name: "Alice Smith", username: "alice", language: "JavaScript" },
         { name: "Alice Smith", username: "alice2", language: "JavaScript" },
-        { name: "Bob Jones", username: "bob", language: "Python" }
+        { name: "Bob Jones", username: "bob", language: "Python" },
       ];
       // Search for language "JavaScript" where multiple users have it
       const suggestions = getSearchSuggestions(usersWithDupes, "java");
-      const jsSuggestions = suggestions.filter(s => s.type === "language");
+      const jsSuggestions = suggestions.filter((s) => s.type === "language");
       expect(jsSuggestions.length).toBe(1);
       expect(jsSuggestions[0].value).toBe("JavaScript");
 
       // Search for name "Alice Smith" where multiple users share the name
       const nameSuggestions = getSearchSuggestions(usersWithDupes, "alice");
-      const nameMatches = nameSuggestions.filter(s => s.type === "name");
+      const nameMatches = nameSuggestions.filter((s) => s.type === "name");
       expect(nameMatches.length).toBe(1);
       expect(nameMatches[0].display).toBe("Alice Smith (@alice)"); // First occurrence is preserved
     });
@@ -96,7 +111,7 @@ describe("searchUtils", () => {
   describe("filterByLanguage and filterByRole", () => {
     const users = [
       { name: "Alice", language: "JavaScript", role: "Frontend" },
-      { name: "Bob", language: "Python", role: "Backend" }
+      { name: "Bob", language: "Python", role: "Backend" },
     ];
 
     it("should filter by language", () => {

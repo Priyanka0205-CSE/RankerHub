@@ -5,7 +5,17 @@ import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 import GlobalModals from "../components/ui/GlobalModals";
-import { Settings as SettingsIcon, Code, Award, Users, Target, BookOpen, Shield, Sparkles, Activity } from "lucide-react";
+import {
+  Settings as SettingsIcon,
+  Code,
+  Award,
+  Users,
+  Target,
+  BookOpen,
+  Shield,
+  Sparkles,
+  Activity,
+} from "lucide-react";
 
 // Lazy Loaded Pages to reduce initial JS bundle
 const Home = React.lazy(() => import("../pages/Home"));
@@ -40,16 +50,25 @@ const LoadingScreen = ({ message }) => (
           <div className="w-6 h-6 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full animate-pulse" />
         </div>
       </div>
-      
+
       {/* Animated text */}
       <div className="space-y-2 text-center">
         <span className="text-sm font-bold bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent tracking-widest uppercase animate-pulse">
           {message || "Loading..."}
         </span>
         <div className="flex gap-1 justify-center">
-          <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-          <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-          <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+          <div
+            className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce"
+            style={{ animationDelay: "0s" }}
+          />
+          <div
+            className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce"
+            style={{ animationDelay: "0.2s" }}
+          />
+          <div
+            className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-bounce"
+            style={{ animationDelay: "0.4s" }}
+          />
         </div>
       </div>
     </div>
@@ -87,7 +106,11 @@ const OnboardingRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (userData?.onboardingStatus === "complete" || !isOnboarding || (userData && userData.onboardingStatus !== "incomplete")) {
+  if (
+    userData?.onboardingStatus === "complete" ||
+    !isOnboarding ||
+    (userData && userData.onboardingStatus !== "incomplete")
+  ) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -142,7 +165,7 @@ const SettingsPage = () => (
         "🎨 Theme & Visual Customization",
         "🤖 Oliver the Owl Personalization",
         "📊 Advanced Analytics Dashboard",
-        "🔌 Third-party App Integrations"
+        "🔌 Third-party App Integrations",
       ]}
       estimatedArrival="Q3 2026"
       showHourglass={true}
@@ -153,19 +176,48 @@ const SettingsPage = () => (
     {/* Quick Stats Preview */}
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {[
-        { icon: Code, label: "Active Sessions", value: "24", color: "from-blue-500 to-cyan-500" },
-        { icon: Award, label: "Achievements", value: "12", color: "from-amber-500 to-orange-500" },
-        { icon: Users, label: "Connections", value: "8", color: "from-emerald-500 to-teal-500" },
-        { icon: Target, label: "Goals Met", value: "89%", color: "from-violet-500 to-purple-500" }
+        {
+          icon: Code,
+          label: "Active Sessions",
+          value: "24",
+          color: "from-blue-500 to-cyan-500",
+        },
+        {
+          icon: Award,
+          label: "Achievements",
+          value: "12",
+          color: "from-amber-500 to-orange-500",
+        },
+        {
+          icon: Users,
+          label: "Connections",
+          value: "8",
+          color: "from-emerald-500 to-teal-500",
+        },
+        {
+          icon: Target,
+          label: "Goals Met",
+          value: "89%",
+          color: "from-violet-500 to-purple-500",
+        },
       ].map((stat, idx) => (
-        <div key={idx} className="bg-white dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 transition-all group">
+        <div
+          key={idx}
+          className="bg-white dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 transition-all group"
+        >
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg bg-gradient-to-r ${stat.color} bg-opacity-10 group-hover:scale-110 transition-transform`}>
+            <div
+              className={`p-2 rounded-lg bg-gradient-to-r ${stat.color} bg-opacity-10 group-hover:scale-110 transition-transform`}
+            >
               <stat.icon className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">
+                {stat.value}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {stat.label}
+              </p>
             </div>
           </div>
         </div>
@@ -182,12 +234,12 @@ const routeMetadata = {
     { path: "/rankher", name: "RankHer", icon: "👩‍💻" },
     { path: "/codingverse", name: "CodingVerse", icon: "🌌" },
     { path: "/codingowl", name: "CodingOwl", icon: "🦉" },
-    { path: "/repo-health", name: "Repo Health", icon: "💚" }
+    { path: "/repo-health", name: "Repo Health", icon: "💚" },
   ],
   legal: [
     { path: "/about", name: "About", icon: "ℹ️" },
     { path: "/terms", name: "Terms", icon: "📜" },
-    { path: "/privacy", name: "Privacy", icon: "🔒" }
+    { path: "/privacy", name: "Privacy", icon: "🔒" },
   ],
   dashboard: [
     { path: "/dashboard", name: "Dashboard", icon: "📊" },
@@ -196,14 +248,16 @@ const routeMetadata = {
     { path: "/dashboard/codingowl", name: "CodingOwl", icon: "🦉" },
     { path: "/dashboard/friends", name: "Friends", icon: "👥" },
     { path: "/dashboard/profile", name: "Profile", icon: "👤" },
-    { path: "/dashboard/settings", name: "Settings", icon: "⚙️" }
-  ]
+    { path: "/dashboard/settings", name: "Settings", icon: "⚙️" },
+  ],
 };
 
 export const AppRoutes = () => {
   return (
     <>
-      <Suspense fallback={<LoadingScreen message="Preparing your workspace..." />}>
+      <Suspense
+        fallback={<LoadingScreen message="Preparing your workspace..." />}
+      >
         <Routes>
           {/* Public Site Layout & Pages */}
           <Route element={<PublicLayout />}>
@@ -223,13 +277,33 @@ export const AppRoutes = () => {
           <Route path="/privacy" element={<Privacy />} />
 
           {/* Public Login page (standalone) - guarded from logged in users */}
-          <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
-          
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <Login />
+              </GuestRoute>
+            }
+          />
+
           {/* Onboarding page (standalone) - guarded so only incomplete profiles see it */}
-          <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
-          
+          <Route
+            path="/onboarding"
+            element={
+              <OnboardingRoute>
+                <Onboarding />
+              </OnboardingRoute>
+            }
+          />
+
           {/* Layout dashboard sub-pages - locked to authenticated & fully onboarded users */}
-          <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/gitrank" element={<GitRank />} />
             <Route path="/dashboard/rankher" element={<RankHer />} />
@@ -238,11 +312,17 @@ export const AppRoutes = () => {
             <Route path="/dashboard/codingowl" element={<CodingOwl />} />
             <Route path="/dashboard/matchmaker" element={<Matchmaker />} />
             <Route path="/dashboard/friends" element={<Friends />} />
-            <Route path="/dashboard/friends/leaderboard" element={<Friends />} />
+            <Route
+              path="/dashboard/friends/leaderboard"
+              element={<Friends />}
+            />
             <Route path="/dashboard/friends/followers" element={<Friends />} />
             <Route path="/dashboard/friends/following" element={<Friends />} />
             <Route path="/dashboard/profile" element={<Profile />} />
-            <Route path="/dashboard/profile/card-builder" element={<CardBuilder />} />
+            <Route
+              path="/dashboard/profile/card-builder"
+              element={<CardBuilder />}
+            />
             <Route path="/dashboard/profile/:username" element={<Profile />} />
             <Route path="/dashboard/settings" element={<SettingsPage />} />
             <Route path="/dashboard/auditor" element={<Auditor />} />

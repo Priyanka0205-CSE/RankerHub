@@ -17,7 +17,6 @@ jobs:
       github.event.comment.user.type != 'Bot' &&
       contains(github.event.comment.body, '/assign')
     runs-on: ubuntu-latest
-
     steps:
       - name: Assign or reject
         uses: actions/github-script@v9

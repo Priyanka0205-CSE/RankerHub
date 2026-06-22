@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { reportUser } from '../services/reportService';
+import { useState } from "react";
+import { reportUser } from "../services/reportService";
 
-const REASONS = ['Fake Profile', 'Spam', 'Abusive Content', 'Other'];
+const REASONS = ["Fake Profile", "Spam", "Abusive Content", "Other"];
 
 const ReportModal = ({ reportedUid, reporterUid, onClose, toast }) => {
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -12,7 +12,7 @@ const ReportModal = ({ reportedUid, reporterUid, onClose, toast }) => {
     setLoading(true);
     try {
       await reportUser(reporterUid, reportedUid, reason);
-      toast.success('Report submitted. Thank you!');
+      toast.success("Report submitted. Thank you!");
       onClose();
     } catch (err) {
       toast.error(err.message);
@@ -28,7 +28,10 @@ const ReportModal = ({ reportedUid, reporterUid, onClose, toast }) => {
         <p className="text-sm text-gray-500 mb-3">Select a reason:</p>
 
         {REASONS.map((r) => (
-          <label key={r} className="flex items-center gap-2 mb-2 cursor-pointer">
+          <label
+            key={r}
+            className="flex items-center gap-2 mb-2 cursor-pointer"
+          >
             <input
               type="radio"
               name="reason"
@@ -45,7 +48,7 @@ const ReportModal = ({ reportedUid, reporterUid, onClose, toast }) => {
             disabled={!reason || loading}
             className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
           >
-            {loading ? 'Submitting...' : 'Submit'}
+            {loading ? "Submitting..." : "Submit"}
           </button>
           <button
             onClick={onClose}

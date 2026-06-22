@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { saveRankSnapshot, getRankHistory } from "../services/rankHistoryService";
+import {
+  saveRankSnapshot,
+  getRankHistory,
+} from "../services/rankHistoryService";
 import * as firestoreSdk from "firebase/firestore";
 
 // Mock firebase/firestore
@@ -11,14 +14,14 @@ vi.mock("firebase/firestore", () => {
     collection: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
-    limit: vi.fn()
+    limit: vi.fn(),
   };
 });
 
 // Mock database
 vi.mock("../lib/firebase", () => {
   return {
-    db: {}
+    db: {},
   };
 });
 
@@ -26,7 +29,7 @@ vi.mock("../lib/firebase", () => {
 vi.mock("../utils/streakCalculator", () => {
   return {
     toLocalDateString: vi.fn(() => "2026-06-15"),
-    resolveTimezone: vi.fn(() => "UTC")
+    resolveTimezone: vi.fn(() => "UTC"),
   };
 });
 
@@ -48,16 +51,16 @@ describe("rankHistoryService", () => {
         "users",
         "user123",
         "rankHistory",
-        "2026-06-15"
+        "2026-06-15",
       );
       expect(firestoreSdk.setDoc).toHaveBeenCalledWith(
         mockDocRef,
         expect.objectContaining({
           rank: 42,
           totalPoints: 1200,
-          date: "2026-06-15"
+          date: "2026-06-15",
         }),
-        { merge: true }
+        { merge: true },
       );
     });
 
@@ -71,15 +74,24 @@ describe("rankHistoryService", () => {
     it("should fetch snapshots and sort them", async () => {
       const mockSnapshots = [
         { data: () => ({ rank: 40, totalPoints: 1200, date: "2026-06-15" }) },
-        { data: () => ({ rank: 42, totalPoints: 1150, date: "2026-06-14" }) }
+        { data: () => ({ rank: 42, totalPoints: 1150, date: "2026-06-14" }) },
       ];
       firestoreSdk.getDocs.mockResolvedValue(mockSnapshots);
 
       const history = await getRankHistory("user123");
 
-      expect(firestoreSdk.collection).toHaveBeenCalledWith(expect.anything(), "users", "user123", "rankHistory");
+      expect(firestoreSdk.collection).toHaveBeenCalledWith(
+        expect.anything(),
+        "users",
+        "user123",
+        "rankHistory",
+      );
       expect(history).toHaveLength(2);
-      expect(history[0]).toEqual({ rank: 40, totalPoints: 1200, date: "2026-06-15" });
+      expect(history[0]).toEqual({
+        rank: 40,
+        totalPoints: 1200,
+        date: "2026-06-15",
+      });
     });
   });
 });

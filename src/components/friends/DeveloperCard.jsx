@@ -1,10 +1,22 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Check, UserPlus, UsersRound, Trophy } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  UserPlus,
+  UsersRound,
+  Trophy,
+} from "lucide-react";
 import Card from "../ui/Card";
 import GradientButton from "../ui/GradientButton";
 
-export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact = false, showPoints = false }) => {
+export const DeveloperCard = ({
+  developer,
+  isFollowing,
+  onToggleFollow,
+  compact = false,
+  showPoints = false,
+}) => {
   return (
     <Card className={`${compact ? "p-4" : "p-5"} h-full flex flex-col gap-4`}>
       <div className="flex items-start gap-4">
@@ -67,7 +79,9 @@ export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact 
 
       <div
         className={`mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-3 ${
-          compact ? "flex-col sm:flex-row sm:items-center sm:justify-between" : "flex-col items-stretch"
+          compact
+            ? "flex-col sm:flex-row sm:items-center sm:justify-between"
+            : "flex-col items-stretch"
         }`}
       >
         <div className="text-xs text-slate-400 dark:text-slate-500 font-semibold space-y-1">
@@ -81,7 +95,11 @@ export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact 
               {developer.totalPoints?.toLocaleString() || 0} XP
             </span>
           )}
-          {!compact && <span className="block truncate max-w-[220px]">{developer.activity}</span>}
+          {!compact && (
+            <span className="block truncate max-w-[220px]">
+              {developer.activity}
+            </span>
+          )}
         </div>
 
         <GradientButton

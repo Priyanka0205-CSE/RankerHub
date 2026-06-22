@@ -1,11 +1,17 @@
 import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, GithubAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import {
+  connectAuthEmulator,
+  getAuth,
+  GithubAuthProvider,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-import { 
-  connectFirestoreEmulator, 
-  initializeFirestore, 
-  persistentLocalCache, 
-  persistentMultipleTabManager 
+import {
+  connectFirestoreEmulator,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -21,36 +27,47 @@ const firebaseConfig = {
 
 // Validate required config values
 const requiredConfigKeys = [
-  'apiKey',
-  'authDomain',
-  'projectId',
-  'storageBucket',
-  'messagingSenderId',
-  'appId'
+  "apiKey",
+  "authDomain",
+  "projectId",
+  "storageBucket",
+  "messagingSenderId",
+  "appId",
 ];
 
-const hasRequiredConfig = requiredConfigKeys.every((key) => Boolean(firebaseConfig[key]));
+const hasRequiredConfig = requiredConfigKeys.every((key) =>
+  Boolean(firebaseConfig[key]),
+);
 
 if (!hasRequiredConfig) {
-  console.warn("Firebase is not configured. Auth, database, analytics, and storage services are disabled for this environment.");
+  console.warn(
+    "Firebase is not configured. Auth, database, analytics, and storage services are disabled for this environment.",
+  );
 }
 
 // Initialize Firebase
 const app = hasRequiredConfig ? initializeApp(firebaseConfig) : null;
 
-const shouldUseEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
-const authEmulatorHost = import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || "localhost";
-const authEmulatorPort = Number(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_PORT || 9099);
-const firestoreEmulatorHost = import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || "localhost";
-const firestoreEmulatorPort = Number(import.meta.env.VITE_FIRESTORE_EMULATOR_PORT || 8080);
+const shouldUseEmulators =
+  import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
+const authEmulatorHost =
+  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || "localhost";
+const authEmulatorPort = Number(
+  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_PORT || 9099,
+);
+const firestoreEmulatorHost =
+  import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || "localhost";
+const firestoreEmulatorPort = Number(
+  import.meta.env.VITE_FIRESTORE_EMULATOR_PORT || 8080,
+);
 
 // Initialize Firebase services
 export const auth = app ? getAuth(app) : null;
 export const githubProvider = new GithubAuthProvider();
 
 // Configure GitHub Provider with additional scopes if needed
-githubProvider.addScope('read:user');
-githubProvider.addScope('user:email');
+githubProvider.addScope("read:user");
+githubProvider.addScope("user:email");
 
 // Set custom parameters for GitHub provider
 githubProvider.setCustomParameters({});
@@ -60,13 +77,13 @@ githubProvider.setCustomParameters({});
  * Uses initializeFirestore to declare named persistent tab synchronization with custom cache limits.
  * Enforces a strict 40MB cache threshold boundary to prevent device browser disk/memory bloating.
  */
-export const db = app 
+export const db = app
   ? initializeFirestore(app, {
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager(),
-        cacheSizeBytes: 40 * 1024 * 1024 // Exactly 40 Megabytes (41,943,040 Bytes) Cache Threshold Limit
-      })
-    }) 
+        cacheSizeBytes: 40 * 1024 * 1024, // Exactly 40 Megabytes (41,943,040 Bytes) Cache Threshold Limit
+      }),
+    })
   : null;
 
 if (shouldUseEmulators && auth && db) {
@@ -95,21 +112,23 @@ export const storage = app ? getStorage(app) : null;
 // Helper function to sign in with GitHub
 export const signInWithGitHub = async (requestRepoScope = false) => {
   if (!auth) {
-    throw new Error("Firebase is not configured. Add the required VITE_FIREBASE_* values before signing in.");
+    throw new Error(
+      "Firebase is not configured. Add the required VITE_FIREBASE_* values before signing in.",
+    );
   }
 
   const dynamicProvider = new GithubAuthProvider();
-  dynamicProvider.addScope('read:user');
-  dynamicProvider.addScope('user:email');
-  
+  dynamicProvider.addScope("read:user");
+  dynamicProvider.addScope("user:email");
+
   if (requestRepoScope) {
-    dynamicProvider.addScope('repo');
+    dynamicProvider.addScope("repo");
   }
 
   try {
     const result = await signInWithPopup(auth, dynamicProvider);
     const user = result.user;
-    
+
     const credential = GithubAuthProvider.credentialFromResult(result);
     const accessToken = credential.accessToken;
 
@@ -121,7 +140,7 @@ export const signInWithGitHub = async (requestRepoScope = false) => {
       lastLogin: new Date().toISOString(),
     };
 
-    return { user, accessToken, userData, result }; 
+    return { user, accessToken, userData, result };
   } catch (error) {
     console.error("GitHub sign-in error:", error);
     throw error;
