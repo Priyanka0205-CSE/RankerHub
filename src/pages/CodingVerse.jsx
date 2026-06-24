@@ -401,13 +401,13 @@ export const CodingVerse = () => {
 
   // Global Standings State (Issue #302)
   const [activeSidebarTab, setActiveSidebarTab] = useState("stats"); // "stats" | "leaderboard"
-  // -- Difficulty Filter (Issue #615) --
-const [difficultyFilter, setDifficultyFilter] = useState(
-  () => localStorage.getItem("codingverse_difficulty") || "All"
-);
-useEffect(() => {
-  localStorage.setItem("codingverse_difficulty", difficultyFilter);
-}, [difficultyFilter]);
+  const [difficultyFilter, setDifficultyFilter] = useState(
+    () => localStorage.getItem("codingverse_difficulty") || "All"
+  );
+  useEffect(() => {
+    localStorage.setItem("codingverse_difficulty", difficultyFilter);
+  }, [difficultyFilter]);
+
   const [leaderboardUsers, setLeaderboardUsers] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState("");
