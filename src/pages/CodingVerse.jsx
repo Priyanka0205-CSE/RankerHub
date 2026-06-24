@@ -170,7 +170,7 @@ sys.stderr = _stderr
 
       try {
         const py = await initPyodide();
-        
+
         await py.runPythonAsync(\`
 _stdout.seek(0)
 _stdout.truncate(0)
