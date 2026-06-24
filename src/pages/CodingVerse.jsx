@@ -1070,8 +1070,8 @@ export const CodingVerse = () => {
             ))}
           </div>
           {theoryQuestions
-  .filter((q) => difficultyFilter === "All" || q.difficulty === difficultyFilter)
-  .map((q) => {
+          .filter((q) => difficultyFilter === "All" || q.difficulty === difficultyFilter)
+          .map((q) => {
             const isSolved = answeredQuestions.includes(q.id);
             const isAttempted = attemptedQuestions.includes(q.id);
             const isWrong = wrongAnswers[q.id] === true;
