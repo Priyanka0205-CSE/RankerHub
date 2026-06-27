@@ -1267,13 +1267,8 @@ export const GitRank = () => {
               <input
                 type="text"
                 placeholder="Search user...  [ / ]"
-<<<<<<< HEAD
-                ref={searchInputRef}
-                value={searchTerm}
-=======
               ref={searchInputRef}
                 value={searchInput}
->>>>>>> b257f5e (fix: debounce leaderboard search input to prevent excessive re-renders (#609))
                 onChange={handleSearchChange}
                 className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
               />
